@@ -1,0 +1,85 @@
+.admin-billings-container {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.billing-stats-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.billing-stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.billing-table-row {
+  transition: background-color 0.2s;
+}
+
+.billing-table-row:hover {
+  background-color: #f8f9fa;
+}
+
+.status-chip-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.client-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.delivery-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.amount-cell {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.days-warning {
+  font-weight: 500;
+}
+
+.days-warning.critical {
+  color: #e74c3c;
+}
+
+.days-warning.warning {
+  color: #f39c12;
+}
+
+.days-warning.normal {
+  color: #95a5a6;
+}
+
+.filter-section {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.edit-status-icon {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.edit-status-icon:hover {
+  color: #3498db;
+}
+
+@media (max-width: 768px) {
+  .billing-stats-card {
+    margin-bottom: 16px;
+  }
+  
+  .filter-section {
+    padding: 12px;
+  }
+}

@@ -1,0 +1,113 @@
+/* Filter Form Styles */
+
+.filter-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #374151;
+  letter-spacing: 0.3px;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 10px 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  transition: all 0.2s ease;
+  background: white;
+  font-family: inherit;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #4a6fa5;
+  box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.1);
+}
+
+.filter-group input::placeholder {
+  color: #94a3b8;
+}
+
+.filter-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 40px;
+}
+
+.filter-group input[type="number"] {
+  appearance: textfield;
+}
+
+.filter-group input[type="number"]::-webkit-inner-spin-button,
+.filter-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.filter-group input[type="date"] {
+  cursor: pointer;
+}
+
+/* Range Inputs (for min/max fields) */
+.age-range,
+.range-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.age-range input,
+.range-inputs input {
+  flex: 1;
+}
+
+/* Full Width Filter Groups */
+.filter-group.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .filter-form-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Disabled State */
+.filter-group input:disabled,
+.filter-group select:disabled {
+  background: #f1f5f9;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Invalid State */
+.filter-group input:invalid,
+.filter-group select:invalid {
+  border-color: #ef4444;
+}
+
+/* Success State (when filter is applied) */
+.filter-group.has-value input,
+.filter-group.has-value select {
+  border-color: #10b981;
+  background: #f0fdf4;
+}

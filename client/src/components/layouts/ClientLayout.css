@@ -1,0 +1,47 @@
+/* Client Layout - Header-based design matching admin */
+
+.client-layout {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+}
+
+.client-content {
+  margin-top: 70px; /* Header height */
+  padding: 0; /* Remove padding to use full width */
+  min-height: calc(100vh - 70px);
+  overflow-y: auto;
+  background-color: #f5f7fa;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch; /* Use full width instead of centering */
+}
+
+/* Center content with max width */
+.client-content > *:not(.profile-container):not(.pinned-locations) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1400px; /* Maximum content width */
+}
+
+/* Profile pages centered */
+.client-content .profile-container {
+  min-height: calc(100vh - 70px);
+  margin: 0; /* Remove auto centering */
+  padding: 0;
+  width: 100%;
+  max-width: 100%; /* Remove width constraint - let inner content be constrained instead */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .client-content {
+    padding: 0; /* No padding - let inner content handle spacing */
+  }
+}
+
+@media (max-width: 480px) {
+  .client-content {
+    padding: 0; /* No padding - let inner content handle spacing */
+  }
+} 

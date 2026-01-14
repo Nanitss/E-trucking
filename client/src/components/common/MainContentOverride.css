@@ -1,0 +1,54 @@
+/* Center the main content area */
+.main-content {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 20px !important;
+  width: 100% !important;
+}
+
+/* Add responsive padding */
+@media (max-width: 1240px) {
+  .main-content {
+    padding: 20px 40px !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding: 20px 20px !important;
+  }
+}
+
+/* Ensure cards are properly spaced and aligned */
+.stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+  gap: 20px !important;
+  margin-bottom: 30px !important;
+}
+
+/* Style for Recent Activity section */
+.recent-activity {
+  background: white !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Ensure content doesn't stretch too wide on large screens */
+.container {
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  min-height: 100vh !important;
+}
+
+/* Main area layout */
+.main-area {
+  flex: 1 !important;
+  padding: 20px !important;
+  background-color: #f5f6fa !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+}

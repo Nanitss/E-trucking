@@ -1,0 +1,534 @@
+/* Container & page header (same as .dashboard-container / .dashboard-header) */
+
+/* Admin Page Container */
+.admin-page-container {
+  min-height: 100vh;
+  background-color: #f8fafc;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+.admin-content {
+  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  padding-bottom: 2rem;
+}
+
+/* Page Header */
+.page-header {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+  border: 1px solid #e5e7eb;
+}
+
+.page-header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+}
+
+.page-header-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-header-icon {
+  width: 48px;
+  height: 48px;
+  background: #3b82f6;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.page-header-text h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.page-header-text p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Modern Button Styles */
+.modern-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.modern-btn-primary {
+  background: #3b82f6;
+  color: white;
+  border: 1px solid #3b82f6;
+}
+
+.modern-btn-primary:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: white;
+}
+
+.modern-btn-secondary {
+  background: #f9fafb;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.modern-btn-secondary:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Dashboard Theme - Greeting Section */
+.greeting-section {
+  margin-bottom: 2rem;
+}
+
+.greeting-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.greeting-subtitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.card-icon {
+  width: 48px;
+  height: 48px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.card-content {
+  flex: 1;
+}
+
+.card-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+}
+
+.card-label {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-change {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.card-change.positive {
+  color: #059669;
+}
+
+.card-change.negative {
+  color: #dc2626;
+}
+
+.card-change.neutral {
+  color: #6b7280;
+}
+
+.user-list-container {
+    background-color: #f5f7fa;
+    padding: 20px 30px;
+    max-width: 1400px;
+    margin: 0 auto;
+    color: #333;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+  }
+  
+  .page-header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0;
+    color: #2c3e50;
+  }
+  
+  /* Re-use your .btn classes from Dashboard.css */
+  .page-header .btn {
+        padding: 8px 14px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: p  ointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        font-size: 13px;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-sm {
+        padding: 6px 12px;
+        font-size: 12px;
+      }
+      
+      .btn-primary {
+        background-color: #0056b3;
+        color: white;
+      }
+      
+      .btn-primary:hover {
+        background-color: #004494;
+      }
+      
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+      
+      .btn-secondary:hover {
+        background-color: #5a6268;
+      }
+    /* uses .btn, .btn-primary from Dashboard.css */
+  
+  
+  /* Table wrapper like a card */
+  .table-responsive {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+  }
+  
+  /* Styled data table */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .data-table th,
+  .data-table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ecf0f1;
+  }
+  
+  .data-table th {
+    background-color: #0056b3;
+    color: white;
+    font-weight: 500;
+  }
+  
+  /* Status badges (reuse your Dashboard badge colors) */
+  .status-badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: white;
+    text-transform: capitalize;
+  }
+  
+  .status-badge.active       { background-color: #2ecc71; }
+  .status-badge.inactive     { background-color: #e74c3c; }
+  .status-badge.on-delivery   { background-color: #f39c12; }
+  
+  /* Actions column buttons */
+  .actions .action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-right: 8px;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .actions .action-btn.edit   { color: #2ecc71; }
+  .actions .action-btn.delete { color: #e74c3c; }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .table-responsive { overflow-x: auto; }
+  }
+
+/* Table Container */
+.staff-table-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  margin-top: 2rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Table Styles */
+.staff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.staff-table thead {
+  background: #f9fafb;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.staff-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.8125rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+}
+
+.staff-table th.sortable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.staff-table th.sortable:hover {
+  background: #f3f4f6;
+}
+
+.staff-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.15s;
+}
+
+.staff-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.staff-table td {
+  padding: 1rem;
+  color: #4b5563;
+}
+
+/* Staff Name Cell */
+.staff-name-cell {
+  font-weight: 500;
+}
+
+.staff-name-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.staff-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.staff-name-text {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* Department Badge */
+.department-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: #f3f4f6;
+  color: #374151;
+  text-transform: capitalize;
+}
+
+/* Table Actions */
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-btn {
+  padding: 0.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-width: 36px;
+  min-height: 36px;
+  background: #3b82f6 !important;
+  border: 2px solid #000000 !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.action-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.5;
+  opacity: 1 !important;
+  display: block !important;
+  visibility: visible !important;
+}
+
+.action-btn:hover {
+  background: #2563eb !important;
+  border-color: #000000 !important;
+  color: white !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Both buttons use same style */
+.table-actions .action-btn.view-btn,
+.action-btn.view-btn {
+  background: #3b82f6 !important;
+  border: 2px solid #000000 !important;
+  color: white !important;
+}
+
+.table-actions .action-btn.view-btn svg,
+.action-btn.view-btn svg {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+.table-actions .action-btn.view-btn:hover,
+.action-btn.view-btn:hover {
+  background: #2563eb !important;
+  border-color: #000000 !important;
+  color: white !important;
+}
+
+.table-actions .action-btn.edit-btn,
+.action-btn.edit-btn {
+  background: #3b82f6 !important;
+  border: 2px solid #000000 !important;
+  color: white !important;
+}
+
+.table-actions .action-btn.edit-btn svg,
+.action-btn.edit-btn svg {
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+.table-actions .action-btn.edit-btn:hover,
+.action-btn.edit-btn:hover {
+  background: #2563eb !important;
+  border-color: #000000 !important;
+  color: white !important;
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #fafbfc;
+}
+
+.pagination-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: white;
+  color: #374151;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #6b7280;
+  font-size: 0.875rem;
+}

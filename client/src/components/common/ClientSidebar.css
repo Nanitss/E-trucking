@@ -1,0 +1,409 @@
+/* Modern Client Sidebar */
+.client-sidebar {
+  width: var(--sidebar-width);
+  background-color: var(--gray-900);
+  color: white;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.2s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  flex-shrink: 0;
+  border-right: 1px solid var(--gray-800);
+}
+
+.client-sidebar.collapsed {
+  width: 70px;
+}
+
+.client-sidebar .sidebar-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 var(--spacing-lg);
+  border-bottom: 1px solid var(--gray-800);
+  text-align: left;
+}
+
+.client-sidebar .logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.client-sidebar .logo img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  margin-right: var(--spacing-sm);
+}
+
+.client-sidebar .logo span {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+  white-space: nowrap;
+  color: #fbbf24; /* Gold accent for client branding */
+  text-align: left;
+  line-height: var(--line-height-tight);
+}
+
+.client-sidebar .toggle-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-left: auto;
+}
+
+.client-sidebar .user-info {
+  padding: var(--spacing-lg);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  border-bottom: 1px solid var(--gray-800);
+  text-align: left;
+}
+
+.client-sidebar .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #fbbf24; /* Gold background for client avatar */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: var(--font-weight-semibold);
+  margin-right: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--gray-900);
+  flex-shrink: 0;
+}
+
+.client-sidebar .user-details {
+  text-align: left;
+  flex: 1;
+}
+
+.client-sidebar .user-details h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-align: left;
+  line-height: var(--line-height-tight);
+}
+
+.client-sidebar .user-details p {
+  margin: 2px 0 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--gray-400);
+  text-transform: capitalize;
+  text-align: left;
+  line-height: var(--line-height-tight);
+}
+
+.client-sidebar .sidebar-menu {
+  flex: 1;
+  padding: var(--spacing-sm) 0;
+  overflow-y: auto;
+}
+
+.client-sidebar .menu-item {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  padding: var(--spacing-sm) var(--spacing-lg) !important;
+  color: var(--gray-300) !important;
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: 100%;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  margin: 0 var(--spacing-sm);
+  border-radius: 0;
+}
+
+.client-sidebar .menu-item::after,
+.client-sidebar .menu-item::before {
+  display: none;
+  content: none;
+  border: none;
+  background: none;
+}
+
+.client-sidebar .menu-item:hover::after {
+  opacity: 1;
+}
+
+.client-sidebar .menu-item.active {
+  position: relative;
+  background-color: #1e40af; /* Blue background for active items */
+  color: white;
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--border-radius-md);
+}
+
+.client-sidebar .menu-item.active [class^="icon-"] {
+  opacity: 1 !important;
+}
+
+.client-sidebar .menu-item:hover {
+  background-color: var(--gray-800); /* Subtle hover effect */
+  color: white;
+  border-radius: var(--border-radius-md);
+}
+
+.client-sidebar .menu-item:hover .menu-icon,
+.client-sidebar .menu-item.active .menu-icon {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: #fbbf24; /* Gold color for icons */
+}
+
+.client-sidebar .menu-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin-right: var(--spacing-sm) !important;
+  flex-shrink: 0;
+}
+
+.client-sidebar .menu-label {
+  margin-left: 0;
+  white-space: nowrap;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-tight);
+  transition: all 0.15s ease;
+  text-align: left;
+  flex: 1;
+}
+
+.client-sidebar .menu-item:hover .menu-label {
+  padding-left: 5px;
+}
+
+.client-sidebar .sidebar-footer {
+  padding: 12px 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.client-sidebar .logout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  text-align: left;
+}
+
+.client-sidebar .logout-btn:hover {
+  color: white;
+}
+
+.client-sidebar .logout-btn .menu-icon {
+  color: #dc2626;
+  margin-right: 8px !important;
+}
+
+/* Icon styles */
+.client-sidebar [class^="icon-"] {
+  display: block !important;
+  width: 16px !important;
+  height: 16px !important;
+  background-color: currentColor !important;
+  mask-size: contain !important;
+  -webkit-mask-size: contain !important;
+  margin-right: 8px !important;
+  position: relative !important;
+  left: 0 !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+.client-sidebar .menu-item.active [class^="icon-"] {
+  opacity: 1 !important;
+}
+
+/* Client-specific menu groups and styling */
+.client-sidebar .menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 15px 20px;
+}
+
+.client-sidebar .menu-group-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 20px 0 8px 0;
+  padding: 0 15px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-align: left;
+  border: none;
+  background: transparent;
+}
+
+.client-sidebar .menu-group-label::before,
+.client-sidebar .menu-group-label::after {
+  display: none;
+  content: none;
+}
+
+/* Group count indicator for client */
+.client-sidebar .group-count {
+  background-color: rgba(251, 191, 36, 0.3); /* Gold background for client */
+  color: white;
+  font-size: 10px;
+  border-radius: 10px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+/* Menu badges for notifications - client styling */
+.client-sidebar .menu-badge {
+  position: absolute;
+  right: 15px;
+  background-color: #fbbf24; /* Gold badges for client */
+  color: #1a2b3f;
+  font-size: 10px;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-weight: 500;
+}
+
+.client-sidebar .menu-badge:empty {
+  display: none;
+}
+
+.client-sidebar .menu-badge:not(:empty) {
+  background-color: #fbbf24; /* Gold default */
+}
+
+/* Special badge styles for client */
+.client-sidebar .menu-badge.hot-badge {
+  background-color: #ef4444;
+  color: white;
+}
+
+.client-sidebar .menu-badge.active-badge {
+  background-color: #10b981;
+  color: white;
+}
+
+.client-sidebar .menu-badge[data-content="New"] {
+  background-color: #1e40af; /* Blue for new items */
+  color: white;
+}
+
+/* Special styling for Book Truck button */
+.client-sidebar .book-truck-btn {
+  background: rgba(251, 191, 36, 0.1) !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  border-radius: 5px !important;
+  margin: 5px 15px !important;
+  padding: 10px 15px !important;
+  transition: all 0.3s ease !important;
+  justify-content: flex-start !important;
+  text-align: left;
+}
+
+.client-sidebar .book-truck-btn:hover {
+  background: rgba(251, 191, 36, 0.2) !important;
+  border-color: #fbbf24 !important;
+  transform: translateX(0) !important;
+  color: white !important;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .client-sidebar {
+    width: 60px;
+  }
+  
+  .client-sidebar .logo span,
+  .client-sidebar .user-info,
+  .client-sidebar .menu-label {
+    display: none;
+  }
+  
+  .client-sidebar .sidebar-header {
+    justify-content: center;
+    padding: 0;
+  }
+  
+  .client-sidebar .toggle-btn {
+    display: none;
+  }
+  
+  .client-sidebar .sidebar-footer {
+    display: flex;
+    justify-content: center;
+    padding: 15px 0;
+  }
+  
+  .client-sidebar .logout-btn {
+    justify-content: center;
+    width: auto;
+  }
+  
+  .client-sidebar .user-info {
+    justify-content: center;
+    padding: 15px 0;
+  }
+  
+  .client-sidebar .menu-item {
+    justify-content: center;
+    padding: 10px 0 !important;
+  }
+  
+  .client-sidebar .menu-icon {
+    margin-right: 0 !important;
+  }
+  
+  .client-sidebar .book-truck-btn {
+    margin: 5px 10px !important;
+    padding: 10px !important;
+    justify-content: center !important;
+  }
+  
+  .client-sidebar .logout-btn .menu-label {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .client-sidebar .avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+} 

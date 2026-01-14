@@ -1,0 +1,54 @@
+/* Specific adjustments for Delivery Tracker page */
+.delivery-tracker-container {
+  margin-left: 20px !important;
+  margin-right: 32px !important;
+  padding: 24px 32px !important;
+  min-height: calc(100vh - 70px) !important;
+  box-sizing: border-box !important;
+  width: calc(100% - 52px) !important; /* 20px left margin + 32px right margin */
+}
+
+/* Keep the section container full width with proper spacing */
+.section-container {
+  width: 100% !important;
+  margin-bottom: 24px !important;
+  background: white !important;
+  border-radius: 8px !important;
+  padding: 24px !important;
+}
+
+/* Ensure filter section maintains proper layout and spacing */
+.filters-section {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 24px !important;
+  margin-bottom: 16px !important;
+  padding: 0 16px !important;
+}
+
+/* Ensure filter groups have proper width and spacing */
+.filter-group {
+  flex: 1 !important;
+  margin-bottom: 16px !important;
+}
+
+/* Maintain table layout with proper spacing */
+.modern-deliveries-table-wrapper {
+  width: 100% !important;
+  overflow-x: auto !important;
+  background: white !important;
+  border-radius: 8px !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  margin-top: 24px !important;
+}
+
+.modern-deliveries-table {
+  width: 100% !important;
+  padding: 16px !important;
+}
+
+/* Proper spacing for table header and cells */
+.modern-deliveries-table th,
+.modern-deliveries-table td {
+  padding: 12px 16px !important;
+}

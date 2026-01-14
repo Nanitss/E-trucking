@@ -1,0 +1,16 @@
+/* Override client layout styles with higher specificity */
+.client-content .profile-container,
+.client-layout .profile-container,
+.app-container .profile-container,
+div[class*="profile-container"] {
+  margin-left: 160px !important;
+  width: calc(100% - 280px) !important;
+  padding: 24px !important;
+  min-height: calc(100vh - 70px) !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure content doesn't overflow */
+.client-content {
+  overflow-x: hidden !important;
+}

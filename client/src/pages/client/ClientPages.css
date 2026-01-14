@@ -1,0 +1,95 @@
+/* 
+ * Global Client Pages Styling
+ * Ensures consistent, professional layout across all client pages
+ */
+
+/* Base container for all client pages */
+.client-page-container {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+  min-height: calc(100vh - 70px);
+}
+
+/* Page header styling */
+.client-page-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid rgba(251, 191, 36, 0.3);
+}
+
+.client-page-header h1,
+.client-page-header h2 {
+  margin: 0 0 0.5rem 0;
+  color: #1e40af;
+  font-weight: 700;
+}
+
+.client-page-header p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* Content sections */
+.client-page-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Cards grid */
+.client-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Individual card styling */
+.client-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  transition: all 0.2s ease;
+}
+
+.client-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Search and filter section */
+.client-filters-section {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 1.5rem;
+}
+
+.client-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .client-page-container {
+    padding: 1rem;
+  }
+  
+  .client-cards-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .client-filters-grid {
+    grid-template-columns: 1fr;
+  }
+}
