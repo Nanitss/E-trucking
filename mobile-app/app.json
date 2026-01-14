@@ -1,0 +1,63 @@
+{
+  "expo": {
+    "name": "Trucking Driver",
+    "slug": "trucking-driver-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.trucking.driverapp",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to track delivery routes and provide GPS tracking for drivers.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs background location access to continuously track driver locations during deliveries.",
+        "NSLocationAlwaysUsageDescription": "This app needs location access to track delivery routes even when the app is in the background."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.trucking.driverapp",
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "WRITE_EXTERNAL_STORAGE",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Trucking Driver to use your location to track deliveries and provide navigation assistance.",
+          "locationAlwaysPermission": "Allow Trucking Driver to use your location in the background for continuous delivery tracking.",
+          "locationWhenInUsePermission": "Allow Trucking Driver to use your location for delivery tracking and navigation.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Trucking Driver to access camera for taking delivery proof photos."
+        }
+      ]
+    ]
+  }
+} 
