@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/images/logo.png.webp" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="E-Trucking Management Web Application" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/images/logo.png.webp" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <title>E-Trucking Management System</title>
+
+    <!-- Google Maps API with callback and error handling -->
+    <script>
+      // Global callback function for Google Maps API
+      function initGoogleMaps() {
+        console.log("Google Maps API loaded successfully");
+        window.googleMapsLoaded = true;
+        // Dispatch event to notify React components
+        window.dispatchEvent(new Event("googleMapsLoaded"));
+      }
+
+      // Global error handler for Google Maps API
+      function handleGoogleMapsError() {
+        console.error("Failed to load Google Maps API");
+        window.googleMapsError = true;
+        window.dispatchEvent(new Event("googleMapsError"));
+      }
+
+      // Set initial states
+      window.googleMapsLoaded = false;
+      window.googleMapsError = false;
+    </script>
+
+    <!-- Load Google Maps API with callback -->
+    <script
+      src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=places&callback=initGoogleMaps"
+      async
+      defer
+      onerror="handleGoogleMapsError()"
+    ></script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

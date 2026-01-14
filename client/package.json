@@ -1,0 +1,49 @@
+{
+  "name": "trucking-web-client",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@babel/runtime": "^7.27.1",
+    "@babel/runtime-corejs3": "^7.27.1",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/icons-material": "^7.1.0",
+    "@mui/material": "^7.1.0",
+    "axios": "^1.4.0",
+    "date-fns": "^4.1.0",
+    "firebase": "^12.4.0",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "paymongo.js": "^1.1.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-icons": "^4.10.1",
+    "react-router-dom": "5.3.4",
+    "react-scripts": "5.0.1",
+    "web-vitals": "^5.0.1"
+  },
+  "scripts": {
+    "start": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts start",
+    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "proxy": "http://localhost:5007",
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-runtime": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-react": "^7.27.1"
+  }
+}
