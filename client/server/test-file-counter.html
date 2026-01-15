@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test File Counter - Truck Creation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .file-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .file-input {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .file-input.required {
+            border-color: #dc3545;
+            background: #fff5f5;
+        }
+        .file-input.optional {
+            border-color: #6c757d;
+            background: #f8f9fa;
+        }
+        .required-label {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .optional-label {
+            color: #6c757d;
+            font-weight: bold;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test File Counter - Truck Creation</h1>
+        
+        <div class="test-section">
+            <h3>📋 Test Truck Creation with Documents</h3>
+            <p>This test will create a truck with documents and verify the file counter functionality.</p>
+            
+            <form id="truckForm">
+                <div class="form-group">
+                    <label for="truckPlate">Truck Plate Number:</label>
+                    <input type="text" id="truckPlate" name="truckPlate" value="TEST_COUNTER_123" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="truckType">Truck Type:</label>
+                    <input type="text" id="truckType" name="truckType" value="6 wheeler" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="truckBrand">Truck Brand:</label>
+                    <input type="text" id="truckBrand" name="truckBrand" value="Isuzu" required>
+                </div>
+                
+                <div class="file-inputs">
+                    <div class="file-input required">
+                        <label class="required-label">📄 OR Document (Required)</label>
+                        <input type="file" name="orDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small>Original Receipt - Required</small>
+                    </div>
+                    
+                    <div class="file-input required">
+                        <label class="required-label">📋 CR Document (Required)</label>
+                        <input type="file" name="crDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small>Certificate of Registration - Required</small>
+                    </div>
+                    
+                    <div class="file-input required">
+                        <label class="required-label">🛡️ Insurance Document (Required)</label>
+                        <input type="file" name="insuranceDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+                        <small>Insurance Policy - Required</small>
+                    </div>
+                    
+                    <div class="file-input optional">
+                        <label class="optional-label">🚗 License Requirement (Optional)</label>
+                        <input type="file" name="licenseRequirement" accept=".pdf,.jpg,.jpeg,.png">
+                        <small>License Requirements - Optional</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit">🚛 Create Truck with Documents</button>
+                    <button type="button" class="btn-secondary" onclick="clearForm()">🗑️ Clear Form</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div id="result" class="result info">Ready to test. Fill out the form above and submit to see the results.</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 What to Test</h3>
+            <ul>
+                <li><strong>File Counter:</strong> Check if the truck card shows the correct number of uploaded files</li>
+                <li><strong>Document Names:</strong> Verify file names are displayed correctly in the FileViewer</li>
+                <li><strong>Compliance Status:</strong> Check if the compliance status updates based on document count</li>
+                <li><strong>Required vs Optional:</strong> Verify that required documents (3) and optional documents (1) are counted separately</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('truckForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            resultDiv.textContent = '🔄 Creating truck with documents...';
+            
+            try {
+                const formData = new FormData(this);
+                
+                // Add some additional truck data
+                formData.append('truckCapacity', '10 tons');
+                formData.append('modelYear', '2023');
+                
+                const response = await fetch('/api/test-truck-create', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `✅ Truck Created Successfully!
+
+🚛 Truck Details:
+- ID: ${result.truck?.id || 'N/A'}
+- Plate: ${result.truck?.truckPlate || 'N/A'}
+- Type: ${result.truck?.truckType || 'N/A'}
+
+📁 Document Information:
+- Total Files: ${result.truck?.documentCompliance?.documentCount || 0}
+- Required Documents: ${result.truck?.documentCompliance?.requiredDocumentCount || 0}/3
+- Optional Documents: ${result.truck?.documentCompliance?.optionalDocumentCount || 0}/1
+- Compliance Status: ${result.truck?.documentCompliance?.overallStatus || 'N/A'}
+
+📄 Uploaded Documents:
+${JSON.stringify(result.uploadedDocuments, null, 2)}
+
+🎯 Next Steps:
+1. Go to the Truck List page
+2. Look for truck "TEST_COUNTER_123"
+3. Check the file counter badge (should show X files)
+4. Click "View Details" to see document breakdown
+5. Verify file names are displayed correctly`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Error Creating Truck:
+
+${result.message || 'Unknown error'}
+
+${result.errors ? 'Errors:\n' + result.errors.join('\n') : ''}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Network Error:
+
+${error.message}
+
+Make sure the server is running on port 5000.`;
+            }
+        });
+        
+        function clearForm() {
+            document.getElementById('truckForm').reset();
+            document.getElementById('result').className = 'result info';
+            document.getElementById('result').textContent = 'Ready to test. Fill out the form above and submit to see the results.';
+        }
+    </script>
+</body>
+</html>

@@ -44,3 +44,5 @@ composer.phar
 # Misc
 .npm
 .eslintcache
+
+uploads/

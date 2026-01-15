@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Upload Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Document Upload Test</h1>
+        <p>This page tests the document upload functionality of your trucking app.</p>
+        
+        <form id="uploadForm">
+            <div class="form-group">
+                <label for="truckPlate">Truck Plate Number:</label>
+                <input type="text" id="truckPlate" name="truckPlate" value="TEST123" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="orDocument">OR Document (Original Receipt):</label>
+                <input type="file" id="orDocument" name="orDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="crDocument">CR Document (Certificate of Registration):</label>
+                <input type="file" id="crDocument" name="crDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="insuranceDocument">Insurance Document:</label>
+                <input type="file" id="insuranceDocument" name="insuranceDocument" accept=".pdf,.jpg,.jpeg,.png" required>
+            </div>
+            
+            <button type="submit">🚀 Upload Documents</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '🔄 Uploading documents...';
+            resultDiv.className = 'result';
+            
+            try {
+                const formData = new FormData();
+                formData.append('truckPlate', document.getElementById('truckPlate').value);
+                
+                const orFile = document.getElementById('orDocument').files[0];
+                const crFile = document.getElementById('crDocument').files[0];
+                const insuranceFile = document.getElementById('insuranceDocument').files[0];
+                
+                if (orFile) formData.append('orDocument', orFile);
+                if (crFile) formData.append('crDocument', crFile);
+                if (insuranceFile) formData.append('insuranceDocument', insuranceFile);
+                
+                console.log('📄 Files to upload:', {
+                    orDocument: orFile ? `${orFile.name} (${orFile.size} bytes)` : 'None',
+                    crDocument: crFile ? `${crFile.name} (${crFile.size} bytes)` : 'None',
+                    insuranceDocument: insuranceFile ? `${insuranceFile.name} (${insuranceFile.size} bytes)` : 'None'
+                });
+                
+                const response = await fetch('/api/test-upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `✅ Upload Successful!\n\n📋 Response:\n${JSON.stringify(result, null, 2)}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ Upload Failed!\n\n📋 Response:\n${JSON.stringify(result, null, 2)}`;
+                    resultDiv.className = 'result error';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Error: ${error.message}`;
+                resultDiv.className = 'result error';
+                console.error('Upload error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

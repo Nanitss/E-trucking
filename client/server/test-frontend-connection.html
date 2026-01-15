@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .truck-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #fafafa;
+        }
+        .truck-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .truck-plate {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .document-count {
+            background: #3498db;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .document-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        .document-name {
+            font-weight: bold;
+            color: #34495e;
+            margin-bottom: 5px;
+        }
+        .document-info {
+            color: #7f8c8d;
+            font-size: 11px;
+        }
+        .status-complete { color: #27ae60; }
+        .status-missing { color: #e74c3c; }
+        .status-optional { color: #f39c12; }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        .error {
+            background: #e74c3c;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .success {
+            background: #27ae60;
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚛 Frontend Connection Test</h1>
+        <p>Testing connection to the working file server on port 5009</p>
+        
+        <button onclick="testConnection()" id="testBtn">Test Connection</button>
+        <button onclick="loadTrucks()" id="loadBtn" disabled>Load Trucks</button>
+        
+        <div id="status"></div>
+        <div id="trucks"></div>
+    </div>
+
+    <script>
+        let isConnected = false;
+
+        async function testConnection() {
+            const statusDiv = document.getElementById('status');
+            const testBtn = document.getElementById('testBtn');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            statusDiv.innerHTML = '<div class="loading">Testing connection...</div>';
+            testBtn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:5009/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <div class="success">
+                            ✅ Connection successful!<br>
+                            Server: ${data.message}<br>
+                            Documents Path: ${data.documentsPath}<br>
+                            Timestamp: ${data.timestamp}
+                        </div>
+                    `;
+                    isConnected = true;
+                    loadBtn.disabled = false;
+                } else {
+                    throw new Error(data.message || 'Unknown error');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Connection failed: ${error.message}<br>
+                        Make sure the working file server is running on port 5009
+                    </div>
+                `;
+                isConnected = false;
+                loadBtn.disabled = true;
+            }
+            
+            testBtn.disabled = false;
+        }
+
+        async function loadTrucks() {
+            if (!isConnected) {
+                alert('Please test connection first');
+                return;
+            }
+            
+            const trucksDiv = document.getElementById('trucks');
+            const loadBtn = document.getElementById('loadBtn');
+            
+            trucksDiv.innerHTML = '<div class="loading">Loading trucks...</div>';
+            loadBtn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:5009/api/simple-files/trucks-with-documents');
+                const data = await response.json();
+                
+                if (response.ok && data.trucks) {
+                    displayTrucks(data.trucks);
+                } else {
+                    throw new Error(data.message || 'Invalid response format');
+                }
+            } catch (error) {
+                trucksDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Failed to load trucks: ${error.message}
+                    </div>
+                `;
+            }
+            
+            loadBtn.disabled = false;
+        }
+
+        function displayTrucks(trucks) {
+            const trucksDiv = document.getElementById('trucks');
+            
+            if (trucks.length === 0) {
+                trucksDiv.innerHTML = '<div class="loading">No trucks found with documents</div>';
+                return;
+            }
+            
+            const trucksHTML = trucks.map(truck => {
+                const documents = truck.documents || {};
+                const docCount = Object.keys(documents).length;
+                const compliance = truck.documentCompliance || {};
+                
+                const documentsHTML = Object.entries(documents).map(([docType, doc]) => {
+                    const status = compliance[docType] || 'unknown';
+                    const statusClass = `status-${status}`;
+                    
+                    return `
+                        <div class="document-item">
+                            <div class="document-name">${docType}</div>
+                            <div class="document-info">
+                                <div>File: ${doc.filename}</div>
+                                <div>Size: ${(doc.fileSize / 1024).toFixed(1)} KB</div>
+                                <div class="${statusClass}">Status: ${status}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="truck-card">
+                        <div class="truck-header">
+                            <div class="truck-plate">🚛 ${truck.truckPlate}</div>
+                            <div class="document-count">${docCount} docs</div>
+                        </div>
+                        <div>
+                            <strong>Overall Status:</strong> 
+                            <span class="status-${compliance.overallStatus || 'unknown'}">
+                                ${compliance.overallStatus || 'unknown'}
+                            </span>
+                        </div>
+                        <div>
+                            <strong>Required:</strong> ${compliance.requiredDocumentCount || 0}/3 | 
+                            <strong>Optional:</strong> ${compliance.optionalDocumentCount || 0}/1
+                        </div>
+                        <div class="documents-grid">
+                            ${documentsHTML}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            trucksDiv.innerHTML = `
+                <h2>📋 Found ${trucks.length} Trucks with Documents</h2>
+                ${trucksHTML}
+            `;
+        }
+
+        // Auto-test connection on page load
+        window.onload = testConnection;
+    </script>
+</body>
+</html>

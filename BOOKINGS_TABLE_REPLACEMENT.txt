@@ -1,0 +1,144 @@
+            {/* Modern Bookings Table */}
+            {filteredDeliveries.length === 0 ? (
+              <div className="trucks-empty-state">
+                <div className="empty-state-icon">📋</div>
+                <h3 className="empty-state-title">No bookings found</h3>
+                <p className="empty-state-description">
+                  No bookings match your current filters. Try adjusting your search criteria.
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="bookings-table-container">
+                  <table className="bookings-table">
+                    <thead>
+                      <tr>
+                        <th>Delivery ID</th>
+                        <th 
+                          onClick={() => handleSort('DeliveryDate')}
+                          className="sortable"
+                          style={{cursor: 'pointer'}}
+                        >
+                          Delivery Date {sortField === 'DeliveryDate' && (sortDirection === 'asc' ? '▲' : '▼')}
+                        </th>
+                        <th>Status</th>
+                        <th>Truck Info</th>
+                        <th className="actions-column">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getPaginatedDeliveries().map(delivery => (
+                        <tr key={delivery.DeliveryID} className="booking-row">
+                          <td className="delivery-id-cell">
+                            <span className="delivery-id">#{delivery.DeliveryID.substring(0, 12)}</span>
+                          </td>
+                          <td className="date-cell">
+                            {formatDate(delivery.DeliveryDate, delivery)}
+                          </td>
+                          <td className="status-cell">
+                            <span className={`status-badge modern ${delivery.DeliveryStatus?.toLowerCase()}`}>
+                              {delivery.DeliveryStatus}
+                            </span>
+                          </td>
+                          <td className="truck-info-cell">
+                            <div className="truck-info-compact">
+                              <span className="truck-plate-compact">{delivery.TruckPlate || 'N/A'}</span>
+                              {delivery.TruckBrand && delivery.TruckBrand !== 'Unknown' && (
+                                <span className="truck-type-compact">{delivery.TruckBrand}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="actions-cell">
+                            <div className="action-buttons">
+                              {/* View Details - Always available */}
+                              <button
+                                className="action-btn view-btn"
+                                onClick={() => handleViewDetails(delivery)}
+                                title="View full details"
+                              >
+                                <FaEye />
+                              </button>
+                              
+                              {/* Reschedule - Only if delivery can be rescheduled */}
+                              {canRescheduleDelivery(delivery) && (
+                                <button
+                                  className="action-btn reschedule-btn"
+                                  onClick={() => handleRebookDelivery(delivery)}
+                                  title="Reschedule delivery (3+ days before or more than 24 hours notice)"
+                                >
+                                  <FaCalendarAlt />
+                                </button>
+                              )}
+                              
+                              {/* Reroute - Only if can modify */}
+                              {canModifyDelivery(delivery) && (
+                                <button
+                                  className="action-btn reroute-btn"
+                                  onClick={() => handleChangeRoute(delivery)}
+                                  title="Change route"
+                                >
+                                  <FaRoute />
+                                </button>
+                              )}
+                              
+                              {/* Cancel - Only if can modify */}
+                              {canModifyDelivery(delivery) && (
+                                <button
+                                  className="action-btn cancel-btn"
+                                  onClick={() => handleCancelDelivery(delivery)}
+                                  title="Cancel delivery"
+                                >
+                                  <FaTimes />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {getTotalPagesForBookings() > 1 && (
+                  <div className="table-pagination">
+                    <div className="pagination-info">
+                      Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredDeliveries.length)} of {filteredDeliveries.length} bookings
+                    </div>
+                    <div className="pagination-controls">
+                      <button
+                        className="btn btn-pagination"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(1)}
+                      >
+                        First
+                      </button>
+                      <button
+                        className="btn btn-pagination"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                      >
+                        Previous
+                      </button>
+                      <span className="page-indicator">
+                        Page {currentPage} of {getTotalPagesForBookings()}
+                      </span>
+                      <button
+                        className="btn btn-pagination"
+                        disabled={currentPage === getTotalPagesForBookings()}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                      >
+                        Next
+                      </button>
+                      <button
+                        className="btn btn-pagination"
+                        disabled={currentPage === getTotalPagesForBookings()}
+                        onClick={() => setCurrentPage(getTotalPagesForBookings())}
+                      >
+                        Last
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}

@@ -1,0 +1,49 @@
+[2025-05-12T06:29:18.844Z] 🚀 Starting MySQL to Firebase migration...
+[2025-05-12T06:29:18.845Z] ⏳ Migrating users to users...
+[2025-05-12T06:29:18.881Z] ✅ Retrieved 17 records from MySQL table: users
+[2025-05-12T06:29:19.610Z] ❌ Error importing to Firestore collection users: 7 PERMISSION_DENIED: Cloud Firestore API has not been used in project e-trucking-8d905 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=e-trucking-8d905 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+[2025-05-12T06:30:43.351Z] 🚀 Starting MySQL to Firebase migration...
+[2025-05-12T06:30:43.352Z] ⏳ Migrating users to users...
+[2025-05-12T06:30:43.383Z] ✅ Retrieved 17 records from MySQL table: users
+[2025-05-12T06:30:44.080Z] ❌ Error importing to Firestore collection users: 5 NOT_FOUND: 
+[2025-05-12T06:33:21.026Z] 🚀 Starting MySQL to Firebase migration...
+[2025-05-12T06:33:21.026Z] ⏳ Migrating users to users...
+[2025-05-12T06:33:21.056Z] ✅ Retrieved 17 records from MySQL table: users
+[2025-05-12T06:33:22.120Z] ✅ Committed remaining 17 documents to users
+[2025-05-12T06:33:22.120Z] ✅ Successfully imported 17 documents to Firestore collection: users
+[2025-05-12T06:33:22.120Z] ✅ Migration completed for users: 17 records migrated
+[2025-05-12T06:33:22.120Z] ⏳ Migrating clients to clients...
+[2025-05-12T06:33:22.122Z] ✅ Retrieved 1 records from MySQL table: clients
+[2025-05-12T06:33:22.444Z] ✅ Committed remaining 1 documents to clients
+[2025-05-12T06:33:22.444Z] ✅ Successfully imported 1 documents to Firestore collection: clients
+[2025-05-12T06:33:22.444Z] ✅ Migration completed for clients: 1 records migrated
+[2025-05-12T06:33:22.444Z] ⏳ Migrating drivers to drivers...
+[2025-05-12T06:33:22.445Z] ✅ Retrieved 4 records from MySQL table: drivers
+[2025-05-12T06:33:22.691Z] ✅ Committed remaining 4 documents to drivers
+[2025-05-12T06:33:22.692Z] ✅ Successfully imported 4 documents to Firestore collection: drivers
+[2025-05-12T06:33:22.692Z] ✅ Migration completed for drivers: 4 records migrated
+[2025-05-12T06:33:22.692Z] ⏳ Migrating operators to operators...
+[2025-05-12T06:33:22.693Z] ✅ Retrieved 2 records from MySQL table: operators
+[2025-05-12T06:33:22.814Z] ✅ Committed remaining 2 documents to operators
+[2025-05-12T06:33:22.814Z] ✅ Successfully imported 2 documents to Firestore collection: operators
+[2025-05-12T06:33:22.814Z] ✅ Migration completed for operators: 2 records migrated
+[2025-05-12T06:33:22.814Z] ⏳ Migrating helpers to helpers...
+[2025-05-12T06:33:22.815Z] ✅ Retrieved 6 records from MySQL table: helpers
+[2025-05-12T06:33:23.092Z] ✅ Committed remaining 6 documents to helpers
+[2025-05-12T06:33:23.092Z] ✅ Successfully imported 6 documents to Firestore collection: helpers
+[2025-05-12T06:33:23.092Z] ✅ Migration completed for helpers: 6 records migrated
+[2025-05-12T06:33:23.093Z] ⏳ Migrating staffs to staffs...
+[2025-05-12T06:33:23.094Z] ✅ Retrieved 1 records from MySQL table: staffs
+[2025-05-12T06:33:23.193Z] ✅ Committed remaining 1 documents to staffs
+[2025-05-12T06:33:23.193Z] ✅ Successfully imported 1 documents to Firestore collection: staffs
+[2025-05-12T06:33:23.193Z] ✅ Migration completed for staffs: 1 records migrated
+[2025-05-12T06:33:23.193Z] ⏳ Migrating trucks to trucks...
+[2025-05-12T06:33:23.194Z] ✅ Retrieved 7 records from MySQL table: trucks
+[2025-05-12T06:33:23.259Z] ✅ Committed remaining 7 documents to trucks
+[2025-05-12T06:33:23.259Z] ✅ Successfully imported 7 documents to Firestore collection: trucks
+[2025-05-12T06:33:23.260Z] ✅ Migration completed for trucks: 7 records migrated
+[2025-05-12T06:33:23.260Z] ⏳ Migrating client_allocated_trucks to allocations...
+[2025-05-12T06:33:23.261Z] ✅ Retrieved 0 records from MySQL table: client_allocated_trucks
+[2025-05-12T06:33:23.261Z] ✅ Successfully imported 0 documents to Firestore collection: allocations
+[2025-05-12T06:33:23.261Z] ✅ Migration completed for client_allocated_trucks: 0 records migrated
+[2025-05-12T06:33:23.261Z] ⏳ Migrating deliveries to deliveries...
