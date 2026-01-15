@@ -4,7 +4,7 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
@@ -286,13 +286,15 @@
   font-weight: 500;
 }
 
-.driver-info, .helper-info {
+.driver-info,
+.helper-info {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
 }
 
-.driver-name, .helper-name {
+.driver-name,
+.helper-name {
   font-weight: 500;
   color: #1f2937;
 }
@@ -317,7 +319,8 @@
   color: #92400e;
 }
 
-.status-badge.awaiting_driver, .status-badge.awaiting_helper {
+.status-badge.awaiting_driver,
+.status-badge.awaiting_helper {
   background: #e0e7ff;
   color: #3730a3;
 }
@@ -372,6 +375,35 @@
 .btn-icon {
   width: 16px;
   height: 16px;
+}
+
+/* Filter Popup Styles */
+.btn-ghost {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ghost:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.btn.active {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
 }
 
 .deliveries-empty-state {
@@ -490,7 +522,8 @@
   font-weight: 600;
 }
 
-.driver-cell, .helper-cell {
+.driver-cell,
+.helper-cell {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
@@ -650,15 +683,15 @@
   .deliveries-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .delivery-info-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .delivery-card-actions {
     flex-direction: column;
   }
-  
+
   .action-btn {
     justify-content: center;
   }
@@ -671,7 +704,7 @@
   max-width: 1400px;
   margin: 0 auto;
   color: #333;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .page-header {
@@ -750,7 +783,7 @@
 .card {
   background-color: white;
   border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   margin-bottom: 20px;
 }
@@ -907,7 +940,7 @@
   .table-container {
     overflow-x: auto;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
@@ -930,4 +963,4 @@
   .data-table td:nth-child(5) {
     display: none;
   }
-} 
+}
