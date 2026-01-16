@@ -187,7 +187,15 @@ const HelpersList = ({ currentUser }) => {
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((helper) => helper.status === statusFilter);
+      filtered = filtered.filter((helper) => {
+        const normalizedHelperStatus = helper.status
+          ?.toLowerCase()
+          .replace(/[\s-]/g, "");
+        const normalizedFilter = statusFilter
+          .toLowerCase()
+          .replace(/[\s-]/g, "");
+        return normalizedHelperStatus === normalizedFilter;
+      });
     }
 
     // Apply search query
@@ -328,7 +336,10 @@ const HelpersList = ({ currentUser }) => {
               </div>
               <div className="card-content">
                 <div className="card-value">
-                  {helpers.filter((h) => h.status === "active").length}
+                  {
+                    helpers.filter((h) => h.status?.toLowerCase() === "active")
+                      .length
+                  }
                 </div>
                 <div className="card-label">Active</div>
                 <div className="card-change positive">
@@ -340,13 +351,20 @@ const HelpersList = ({ currentUser }) => {
 
             <div className="summary-card">
               <div className="card-icon">
-                <TbClock size={24} />
+                <TbActivity size={24} />
               </div>
               <div className="card-content">
                 <div className="card-value">
-                  {helpers.filter((h) => h.status === "inactive").length}
+                  {
+                    helpers.filter((h) => {
+                      const status = h.status
+                        ?.toLowerCase()
+                        .replace(/[\s-]/g, "");
+                      return status === "ondelivery";
+                    }).length
+                  }
                 </div>
-                <div className="card-label">Inactive</div>
+                <div className="card-label">On Delivery</div>
                 <div className="card-change neutral">
                   <TbActivity size={12} />
                   0.0%
@@ -480,7 +498,7 @@ const HelpersList = ({ currentUser }) => {
                 position: "absolute",
                 top: "48px",
                 left: "0",
-                zIndex: 1000,
+                zIndex: 100,
                 background: "white",
                 borderRadius: "12px",
                 boxShadow:
@@ -534,6 +552,7 @@ const HelpersList = ({ currentUser }) => {
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="On Leave">On Leave</option>
+                    <option value="On Delivery">On Delivery</option>
                     <option value="Terminated">Terminated</option>
                   </select>
                 </div>

@@ -278,11 +278,12 @@ const DeliveryList = ({ currentUser }) => {
                     deliveries.filter(
                       (d) =>
                         d.DeliveryStatus?.toLowerCase() === "in-progress" ||
-                        d.DeliveryStatus?.toLowerCase() === "in progress"
+                        d.DeliveryStatus?.toLowerCase() === "in progress" ||
+                        d.DeliveryStatus?.toLowerCase() === "accepted"
                     ).length
                   }
                 </div>
-                <div className="card-label">In Progress</div>
+                <div className="card-label">Active</div>
                 <div className="card-change neutral">
                   <TbActivity size={12} />
                   0.0%
@@ -450,6 +451,7 @@ const DeliveryList = ({ currentUser }) => {
                     <option value="Accepted">Accepted</option>
                     <option value="In Progress">In Progress</option>
                     <option value="Delivered">Delivered</option>
+                    <option value="Completed">Completed</option>
                     <option value="Cancelled">Cancelled</option>
                   </select>
                 </div>

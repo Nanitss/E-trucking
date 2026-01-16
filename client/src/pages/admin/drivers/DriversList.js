@@ -393,7 +393,15 @@ const DriversList = ({ currentUser }) => {
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((driver) => driver.status === statusFilter);
+      filtered = filtered.filter((driver) => {
+        const normalizedDriverStatus = driver.status
+          ?.toLowerCase()
+          .replace(/[\s-]/g, "");
+        const normalizedFilter = statusFilter
+          .toLowerCase()
+          .replace(/[\s-]/g, "");
+        return normalizedDriverStatus === normalizedFilter;
+      });
     }
 
     // Apply search query
@@ -607,7 +615,10 @@ const DriversList = ({ currentUser }) => {
               </div>
               <div className="card-content">
                 <div className="card-value">
-                  {drivers.filter((d) => d.DriverStatus === "active").length}
+                  {
+                    drivers.filter((d) => d.status?.toLowerCase() === "active")
+                      .length
+                  }
                 </div>
                 <div className="card-label">Active</div>
                 <div className="card-change positive">
@@ -619,13 +630,20 @@ const DriversList = ({ currentUser }) => {
 
             <div className="summary-card">
               <div className="card-icon">
-                <TbClock size={24} />
+                <TbTruck size={24} />
               </div>
               <div className="card-content">
                 <div className="card-value">
-                  {drivers.filter((d) => d.DriverStatus === "inactive").length}
+                  {
+                    drivers.filter((d) => {
+                      const status = d.status
+                        ?.toLowerCase()
+                        .replace(/[\s-]/g, "");
+                      return status === "ondelivery";
+                    }).length
+                  }
                 </div>
-                <div className="card-label">Inactive</div>
+                <div className="card-label">On Delivery</div>
                 <div className="card-change neutral">
                   <TbActivity size={12} />
                   0.0%
@@ -759,7 +777,7 @@ const DriversList = ({ currentUser }) => {
                 position: "absolute",
                 top: "48px",
                 left: "0",
-                zIndex: 1000,
+                zIndex: 100,
                 background: "white",
                 borderRadius: "12px",
                 boxShadow:
@@ -813,6 +831,7 @@ const DriversList = ({ currentUser }) => {
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                     <option value="On Leave">On Leave</option>
+                    <option value="On Delivery">On Delivery</option>
                     <option value="Terminated">Terminated</option>
                   </select>
                 </div>
