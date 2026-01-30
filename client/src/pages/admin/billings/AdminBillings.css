@@ -1,3 +1,54 @@
 /* AdminBillings.css */
 
-/* Add any custom styles for the AdminBillings page here */
+/* 
+ * Billing Statistics - Custom Grid Layout
+ * Replaces Material UI Grid to ensure strict equal sizing 
+ */
+
+.billing-stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* Force 4 equal columns */
+  gap: 24px;
+  width: 100%;
+  margin-bottom: 32px;
+}
+
+.billing-stat-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%; /* Force full width of grid cell */
+  min-width: 0; /* Allow shrinking below content size if needed */
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.billing-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Responsive Breakpoints */
+
+/* Tablet: 2 columns */
+@media (max-width: 1024px) {
+  .billing-stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 600px) {
+  .billing-stats-container {
+    grid-template-columns: 1fr;
+  }
+}

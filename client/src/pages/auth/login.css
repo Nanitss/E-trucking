@@ -10,13 +10,18 @@
   display: flex;
   min-height: 100vh;
   background: #f8fafc;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Left Side - Hero Section */
 .auth-hero {
   flex: 1;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  background: linear-gradient(
+    135deg,
+    var(--primary-dark, #1a2a4a) 0%,
+    var(--primary-color, #2a407c) 100%
+  );
   border-radius: 0 0 80px 0;
   position: relative;
   display: flex;
@@ -25,8 +30,8 @@
   padding: 3rem;
   overflow: hidden;
   min-height: 100vh;
-  }
-  
+}
+
 /* Logo in top left */
 .hero-logo {
   display: flex;
@@ -61,8 +66,8 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.85rem;
   font-weight: 400;
-  }
-  
+}
+
 /* Hero Content - Centered */
 .hero-content {
   flex: 1;
@@ -73,34 +78,39 @@
 }
 
 .hero-title {
-    color: white;
-    font-size: 2.5rem;
+  color: white;
+  font-size: 2.5rem;
   font-weight: 800;
   line-height: 1.2;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   max-width: 450px;
 }
 
 .hero-title .highlight {
   position: relative;
-  }
+  color: #ffffff;
+  background: linear-gradient(135deg, #ffffff 0%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 4px rgba(255, 255, 255, 0.3));
+}
 
 .hero-title .highlight::after {
-  content: '🚛';
-  margin-left: 8px;
-  font-size: 2rem;
+  content: "";
 }
 
 /* Hero Illustration - Fixed positioning */
 .hero-illustration {
-    position: absolute;
+  position: absolute;
   bottom: 50px;
   right: 50px;
   width: 250px;
   height: 200px;
   z-index: 5;
-  }
-  
+}
+
 .illustration-scene {
   position: relative;
   width: 100%;
@@ -113,7 +123,7 @@
   background: rgba(255, 255, 255, 0.95);
   border-radius: 15px;
   padding: 15px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
@@ -232,8 +242,8 @@
 
 .form-group input:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  border-color: var(--primary-color, #2a407c);
+  box-shadow: 0 0 0 3px rgba(42, 64, 124, 0.15);
 }
 
 .form-group input::placeholder {
@@ -292,21 +302,31 @@
 /* Login Button */
 .login-button {
   width: 100%;
-  padding: 12px 20px;
-  background: #6366f1;
+  padding: 14px 20px;
+  background: linear-gradient(
+    135deg,
+    var(--primary-color, #2a407c) 0%,
+    var(--primary-hover, #4a68b0) 100%
+  );
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 1.5rem;
+  transition: all 0.3s ease;
+  margin-top: 0.5rem;
+  box-shadow: 0 4px 15px rgba(42, 64, 124, 0.3);
 }
 
 .login-button:hover {
-  background: #5b21b6;
-  transform: translateY(-1px);
+  background: linear-gradient(
+    135deg,
+    var(--primary-hover, #4a68b0) 0%,
+    var(--primary-color, #2a407c) 100%
+  );
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(42, 64, 124, 0.4);
 }
 
 .login-button:disabled {
@@ -315,69 +335,12 @@
   transform: none;
 }
 
-/* Social Login */
-.social-divider {
-  text-align: center;
-  margin: 1.5rem 0;
-  color: #94a3b8;
-  font-size: 0.9rem;
-  position: relative;
-}
-
-.social-divider::before,
-.social-divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: 45%;
-  height: 1px;
-  background: #e2e8f0;
-}
-
-.social-divider::before {
-  left: 0;
-}
-
-.social-divider::after {
-  right: 0;
-}
-
-.social-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 1.5rem;
-}
-
-.social-btn {
-  width: 45px;
-  height: 45px;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 8px;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-  font-size: 1.2rem;
-}
-
-.social-btn:hover {
-  border-color: #6366f1;
-  transform: translateY(-1px);
-}
-
-.social-btn.google { color: #4285f4; }
-.social-btn.facebook { color: #1877f2; }
-.social-btn.instagram { color: #e4405f; }
-.social-btn.twitter { color: #1da1f2; }
-.social-btn.linkedin { color: #0077b5; }
-
 /* Footer */
 .auth-footer {
   text-align: center;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
 .auth-footer p {
@@ -387,13 +350,14 @@
 }
 
 .signup-link {
-  color: #6366f1;
+  color: var(--primary-color, #2a407c);
   text-decoration: none;
   font-weight: 600;
 }
 
 .signup-link:hover {
   text-decoration: underline;
+  color: var(--primary-hover, #4a68b0);
 }
 
 /* Error Alert */
@@ -421,23 +385,27 @@
 
 /* Animations */
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes float {
-  0%, 100% { 
+  0%,
+  100% {
     transform: translateY(0px);
   }
-  50% { 
+  50% {
     transform: translateY(-10px);
   }
 }
 
 @keyframes bounce {
-  0%, 100% { 
+  0%,
+  100% {
     transform: translateY(0px) scale(1);
   }
-  50% { 
+  50% {
     transform: translateY(-5px) scale(1.05);
   }
 }
@@ -447,35 +415,35 @@
   .auth-container {
     flex-direction: column;
   }
-  
+
   .auth-hero {
     min-height: 40vh;
     border-radius: 0 0 40px 0;
     padding: 2rem;
     justify-content: center;
   }
-  
+
   .hero-logo {
     position: absolute;
     top: 2rem;
     left: 2rem;
   }
-  
+
   .hero-title {
     font-size: 2rem;
     text-align: center;
   }
-  
+
   .hero-illustration {
     display: none;
   }
-  
+
   .auth-form-container {
     flex: 1;
     padding: 2rem 1.5rem;
     min-height: auto;
   }
-  
+
   .language-selector {
     top: 1rem;
     right: 1.5rem;
@@ -486,15 +454,15 @@
   .auth-form-container {
     padding: 1.5rem 1rem;
   }
-  
+
   .hero-title {
     font-size: 1.75rem;
   }
-  
+
   .auth-header h2 {
     font-size: 1.5rem;
   }
-  
+
   .auth-card {
     max-width: 100%;
   }

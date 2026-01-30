@@ -4,11 +4,11 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
-  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-top: 1.5rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-bottom: 2rem;
@@ -195,123 +195,134 @@
 }
 
 .user-list-container {
-    background-color: #f5f7fa;
-    padding: 20px 30px;
-    max-width: 1400px;
-    margin: 0 auto;
-    color: #333;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-  
-  .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-  }
-  
-  .page-header h1 {
-    font-size: 24px;
-    font-weight: 600;
-    margin: 0;
-    color: #2c3e50;
-  }
-  
-  /* Re-use your .btn classes from Dashboard.css */
-  .page-header .btn {
-        padding: 8px 14px;
-        border-radius: 6px;
-        font-weight: 500;
-        cursor: p  ointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: none;
-        font-size: 13px;
-        transition: all 0.2s ease;
-      }
-      
-      .btn-sm {
-        padding: 6px 12px;
-        font-size: 12px;
-      }
-      
-      .btn-primary {
-        background-color: #0056b3;
-        color: white;
-      }
-      
-      .btn-primary:hover {
-        background-color: #004494;
-      }
-      
-      .btn-secondary {
-        background-color: #6c757d;
-        color: white;
-      }
-      
-      .btn-secondary:hover {
-        background-color: #5a6268;
-      }
-    /* uses .btn, .btn-primary from Dashboard.css */
-  
-  
-  /* Table wrapper like a card */
+  background-color: #f5f7fa;
+  padding: 20px 30px;
+  max-width: 1400px;
+  margin: 0 auto;
+  color: #333;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  color: #2c3e50;
+}
+
+/* Re-use your .btn classes from Dashboard.css */
+.page-header .btn {
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: p ointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background-color: #0056b3;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #004494;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+/* uses .btn, .btn-primary from Dashboard.css */
+
+/* Table wrapper like a card */
+.table-responsive {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+/* Styled data table */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.data-table th {
+  background-color: #0056b3;
+  color: white;
+  font-weight: 500;
+}
+
+/* Status badges (reuse your Dashboard badge colors) */
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: white;
+  text-transform: capitalize;
+}
+
+.status-badge.active {
+  background-color: #2ecc71;
+}
+.status-badge.inactive {
+  background-color: #e74c3c;
+}
+.status-badge.on-delivery {
+  background-color: #f39c12;
+}
+
+/* Actions column buttons */
+.actions .action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 8px;
+  padding: 4px;
+  transition: color 0.2s;
+}
+.actions .action-btn.edit {
+  color: #2ecc71;
+}
+.actions .action-btn.delete {
+  color: #e74c3c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
   .table-responsive {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    overflow: hidden;
+    overflow-x: auto;
   }
-  
-  /* Styled data table */
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  .data-table th,
-  .data-table td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ecf0f1;
-  }
-  
-  .data-table th {
-    background-color: #0056b3;
-    color: white;
-    font-weight: 500;
-  }
-  
-  /* Status badges (reuse your Dashboard badge colors) */
-  .status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
-    color: white;
-    text-transform: capitalize;
-  }
-  
-  .status-badge.active       { background-color: #2ecc71; }
-  .status-badge.inactive     { background-color: #e74c3c; }
-  .status-badge.on-delivery   { background-color: #f39c12; }
-  
-  /* Actions column buttons */
-  .actions .action-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    margin-right: 8px;
-    padding: 4px;
-    transition: color 0.2s;
-  }
-  .actions .action-btn.edit   { color: #2ecc71; }
-  .actions .action-btn.delete { color: #e74c3c; }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    .table-responsive { overflow-x: auto; }
-  }
+}
 
 /* Table Container */
 .staff-table-container {

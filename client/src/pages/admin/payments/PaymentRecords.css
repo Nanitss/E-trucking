@@ -4,11 +4,11 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
-  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-top: 1.5rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-bottom: 2rem;
@@ -504,30 +504,30 @@
   .page-container {
     padding: 15px;
   }
-  
+
   .status-summary {
     grid-template-columns: repeat(2, 1fr);
     gap: 15px;
   }
-  
+
   .filters {
     flex-direction: column;
     gap: 15px;
   }
-  
+
   .filter-group select,
   .filter-group input {
     min-width: 100%;
   }
-  
+
   .table-container {
     overflow-x: auto;
   }
-  
+
   .records-table {
     min-width: 800px;
   }
-  
+
   .records-table th,
   .records-table td {
     padding: 8px;
@@ -539,10 +539,10 @@
   .status-summary {
     grid-template-columns: 1fr;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
   }
-} 
+}

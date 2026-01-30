@@ -18,19 +18,16 @@
 }
 
 /* Center content with max width */
-.client-content > *:not(.profile-container):not(.pinned-locations) {
+.client-content > * {
   box-sizing: border-box;
   width: 100%;
-  max-width: 1400px; /* Maximum content width */
+  /* Max width is now handled by .client-page-container inside the pages */
 }
 
-/* Profile pages centered */
-.client-content .profile-container {
-  min-height: calc(100vh - 70px);
-  margin: 0; /* Remove auto centering */
-  padding: 0;
-  width: 100%;
-  max-width: 100%; /* Remove width constraint - let inner content be constrained instead */
+/* Allow full height for profile and pinned locations if needed */
+.client-content > .profile-container,
+.client-content > .pinned-locations {
+  height: 100%;
 }
 
 /* Responsive adjustments */
@@ -44,4 +41,4 @@
   .client-content {
     padding: 0; /* No padding - let inner content handle spacing */
   }
-} 
+}

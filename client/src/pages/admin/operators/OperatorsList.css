@@ -4,11 +4,11 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
-  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-top: 1.5rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-bottom: 2rem;
@@ -528,61 +528,61 @@
   .page-container {
     padding: 15px;
   }
-  
+
   .page-header {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
     text-align: center;
   }
-  
+
   .status-summary {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
   }
-  
+
   .status-card {
     padding: 15px;
   }
-  
+
   .status-card h3 {
     font-size: 1.5rem;
   }
-  
+
   .filters-container {
     flex-direction: column;
     gap: 15px;
     align-items: stretch;
   }
-  
+
   .search-group,
   .filter-group {
     min-width: auto;
   }
-  
+
   .btn {
     width: 100%;
   }
-  
+
   .table-responsive {
     font-size: 12px;
   }
-  
+
   .data-table th,
   .data-table td {
     padding: 8px 6px;
   }
-  
+
   .status-badge {
     font-size: 10px;
     padding: 2px 6px;
   }
-  
+
   .actions-cell {
     flex-direction: column;
     gap: 4px;
   }
-  
+
   .action-btn {
     font-size: 10px;
     padding: 4px 8px;
@@ -593,14 +593,13 @@
   .status-summary {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .data-table {
     font-size: 11px;
   }
-  
+
   .data-table th,
   .data-table td {
     padding: 6px 4px;
   }
 }
-  

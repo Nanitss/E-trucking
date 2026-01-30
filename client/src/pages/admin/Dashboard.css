@@ -4,11 +4,11 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
-  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-top: 1.5rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-bottom: 2rem;
@@ -18,7 +18,7 @@
 .est-trans-dashboard {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   display: flex;
   flex-direction: column;
 }
@@ -78,7 +78,7 @@
   background: none !important;
   -webkit-background-clip: unset !important;
   -webkit-text-fill-color: unset !important;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
   background-image: none !important;
   background-color: transparent !important;
 }
@@ -942,7 +942,7 @@
   .analytics-widgets {
     grid-template-columns: 1fr 1fr;
   }
-  
+
   .delivery-vehicles {
     grid-column: 1;
     grid-row: 3;
@@ -953,49 +953,49 @@
   .dashboard-content {
     padding: 1rem;
   }
-  
+
   .header-top,
   .header-bottom {
     padding: 1rem;
   }
-  
+
   .header-actions {
     gap: 1rem;
   }
-  
+
   .search-bar input {
     width: 150px;
   }
-  
+
   .nav-tabs {
     flex-wrap: wrap;
     gap: 0.25rem;
   }
-  
+
   .nav-tab {
     padding: 0.375rem 0.75rem;
     font-size: 0.75rem;
   }
-  
+
   .header-controls {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
-  
+
   .analytics-widgets {
     grid-template-columns: 1fr;
   }
-  
+
   .summary-cards {
     grid-template-columns: 1fr;
   }
-  
+
   .activities-filters {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
   }
-  
+
   .filter-tabs {
     flex-wrap: wrap;
   }
@@ -1005,15 +1005,15 @@
   .user-profile {
     display: none;
   }
-  
+
   .search-bar {
     display: none;
   }
-  
+
   .header-controls {
     display: none;
   }
-  
+
   .nav-tabs {
     display: none;
   }

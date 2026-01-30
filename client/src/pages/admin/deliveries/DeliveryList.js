@@ -79,7 +79,7 @@ const DeliveryList = ({ currentUser }) => {
     // Apply status filter
     if (statusFilter !== "all") {
       filtered = filtered.filter(
-        (d) => d.DeliveryStatus?.toLowerCase() === statusFilter.toLowerCase()
+        (d) => d.DeliveryStatus?.toLowerCase() === statusFilter.toLowerCase(),
       );
     }
 
@@ -92,7 +92,7 @@ const DeliveryList = ({ currentUser }) => {
           d.ClientName?.toLowerCase().includes(query) ||
           d.DriverName?.toLowerCase().includes(query) ||
           d.HelperName?.toLowerCase().includes(query) ||
-          d.TruckPlate?.toLowerCase().includes(query)
+          d.TruckPlate?.toLowerCase().includes(query),
       );
     }
 
@@ -236,7 +236,7 @@ const DeliveryList = ({ currentUser }) => {
                 <div className="card-value">
                   {
                     deliveries.filter(
-                      (d) => d.DeliveryStatus?.toLowerCase() === "cancelled"
+                      (d) => d.DeliveryStatus?.toLowerCase() === "cancelled",
                     ).length
                   }
                 </div>
@@ -256,7 +256,7 @@ const DeliveryList = ({ currentUser }) => {
                 <div className="card-value">
                   {
                     deliveries.filter(
-                      (d) => d.DeliveryStatus?.toLowerCase() === "pending"
+                      (d) => d.DeliveryStatus?.toLowerCase() === "pending",
                     ).length
                   }
                 </div>
@@ -279,7 +279,7 @@ const DeliveryList = ({ currentUser }) => {
                       (d) =>
                         d.DeliveryStatus?.toLowerCase() === "in-progress" ||
                         d.DeliveryStatus?.toLowerCase() === "in progress" ||
-                        d.DeliveryStatus?.toLowerCase() === "accepted"
+                        d.DeliveryStatus?.toLowerCase() === "accepted",
                     ).length
                   }
                 </div>
@@ -301,7 +301,7 @@ const DeliveryList = ({ currentUser }) => {
                     deliveries.filter(
                       (d) =>
                         d.DeliveryStatus?.toLowerCase() === "delivered" ||
-                        d.DeliveryStatus?.toLowerCase() === "completed"
+                        d.DeliveryStatus?.toLowerCase() === "completed",
                     ).length
                   }
                 </div>
@@ -595,7 +595,7 @@ const DeliveryList = ({ currentUser }) => {
                           <span className="mini-badge">
                             {formatDriverStatus(
                               delivery.DriverStatus,
-                              delivery.DriverApprovalStatus
+                              delivery.DriverApprovalStatus,
                             )}
                           </span>
                         </div>
@@ -606,7 +606,7 @@ const DeliveryList = ({ currentUser }) => {
                           <span className="mini-badge">
                             {formatHelperStatus(
                               delivery.HelperStatus,
-                              delivery.HelperApprovalStatus
+                              delivery.HelperApprovalStatus,
                             )}
                           </span>
                         </div>
@@ -628,32 +628,23 @@ const DeliveryList = ({ currentUser }) => {
                           >
                             <TbEye size={18} />
                           </Link>
-                          <Link
-                            to={`/admin/deliveries/${
-                              delivery.DeliveryID || ""
-                            }`}
-                            className="action-btn edit-btn"
-                            title="Edit Delivery"
-                          >
-                            <TbEdit size={18} />
-                          </Link>
                           <button
                             onClick={() => {
                               const truckIdentifier =
                                 delivery.TruckPlate || delivery.TruckID;
                               console.log(
                                 "🚚 Opening tracking for delivery:",
-                                delivery.DeliveryID
+                                delivery.DeliveryID,
                               );
                               console.log(
                                 "🚚 Truck Plate/ID:",
-                                truckIdentifier
+                                truckIdentifier,
                               );
 
                               if (!truckIdentifier) {
                                 showAlert(
                                   "No truck assigned to this delivery",
-                                  "warning"
+                                  "warning",
                                 );
                                 return;
                               }

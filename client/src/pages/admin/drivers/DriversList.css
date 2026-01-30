@@ -2,11 +2,11 @@
 .admin-page-container {
   min-height: 100vh;
   background-color: #f8fafc;
-  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 .admin-content {
-  padding-top: 160px; /* Account for fixed header and dropdown */
+  padding-top: 1.5rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
   padding-bottom: 2rem;
@@ -207,7 +207,6 @@
 .card-change.neutral {
   color: #6b7280;
 }
-
 
 .drivers-list-container {
   padding: 20px;
@@ -512,8 +511,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Modern Dashboard Styles */
@@ -1233,6 +1236,29 @@
   opacity: 1 !important;
 }
 
+/* License Status Badge - Separate column styling */
+.license-status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.license-status-badge.expired {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.license-status-badge.expiring {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -1240,19 +1266,19 @@
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 15px;
   }
-  
+
   .filters-content {
     grid-template-columns: 1fr;
   }
-  
+
   .driver-cards-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .details-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .filter-actions {
     flex-direction: column;
     align-items: stretch;

@@ -551,21 +551,41 @@ const DriversList = ({ currentUser }) => {
     return details.join(", ");
   };
 
-  // Get license expiry warning text
+  // Get license expiry warning text (for License Status column - only license info)
   const getLicenseExpiryWarning = (driver) => {
     if (driver.status === "license-expired") {
-      return "❌ License Expired - Driver on Leave";
+      return "❌ License Expired";
     }
     if (
       driver.status === "license-expiring" &&
       driver.licenseExpiryDaysRemaining !== undefined
     ) {
       const days = driver.licenseExpiryDaysRemaining;
-      return `⚠️ License expires in ${days} day${
-        days !== 1 ? "s" : ""
-      } - Driver on Leave`;
+      return `⚠️ Expires in ${days} day${days !== 1 ? "s" : ""}`;
     }
     return null;
+  };
+
+  // Get display status (for Status column - shows On Leave when license issues)
+  const getDisplayStatus = (driver) => {
+    if (
+      driver.status === "license-expired" ||
+      driver.status === "license-expiring"
+    ) {
+      return "On Leave";
+    }
+    return driver.status || "Active";
+  };
+
+  // Get status badge class for display status
+  const getDisplayStatusBadgeClass = (driver) => {
+    if (
+      driver.status === "license-expired" ||
+      driver.status === "license-expiring"
+    ) {
+      return "status-on-leave";
+    }
+    return getStatusBadgeClass(driver.status);
   };
 
   if (loading) {
@@ -926,6 +946,7 @@ const DriversList = ({ currentUser }) => {
                       {sortField === "status" &&
                         (sortDirection === "asc" ? "↑" : "↓")}
                     </th>
+                    <th className="sortable">License Status</th>
                     <th
                       onClick={() => handleSort("documentCompliance")}
                       className="sortable"
@@ -958,18 +979,31 @@ const DriversList = ({ currentUser }) => {
                       <td>
                         <div className="status-cell">
                           <span
-                            className={`status-badge ${getStatusBadgeClass(
-                              driver.status
+                            className={`status-badge ${getDisplayStatusBadgeClass(
+                              driver
                             )}`}
                           >
-                            {driver.status || "Active"}
+                            {getDisplayStatus(driver)}
                           </span>
-                          {getLicenseExpiryWarning(driver) && (
-                            <div className="license-warning-badge">
-                              {getLicenseExpiryWarning(driver)}
-                            </div>
-                          )}
                         </div>
+                      </td>
+                      <td>
+                        {/* License Status Column */}
+                        {getLicenseExpiryWarning(driver) ? (
+                          <div
+                            className={`license-status-badge ${
+                              driver.status === "license-expired"
+                                ? "expired"
+                                : "expiring"
+                            }`}
+                          >
+                            {getLicenseExpiryWarning(driver)}
+                          </div>
+                        ) : (
+                          <span className="status-badge status-active">
+                            Active
+                          </span>
+                        )}
                       </td>
                       <td>
                         <div className="compliance-cell">

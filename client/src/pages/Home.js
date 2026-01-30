@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   FaTruck,
@@ -11,32 +11,128 @@ import {
   FaTwitter,
   FaLinkedin,
   FaInstagram,
+  FaBars,
+  FaTimes,
 } from "react-icons/fa";
 import "./home.css";
 // Ensure design system variables are loaded
 import "../styles/DesignSystem.css";
 
 const Home = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Handle scroll to change header appearance
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Toggle mobile menu
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  // Close mobile menu when clicking a link
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="home-container">
       {/* Navigation */}
-      <header className="home-header">
+      <header className={`home-header ${isScrolled ? "scrolled" : ""}`}>
         <nav className="home-nav">
-          <Link to="/" className="home-logo">
-            <div className="logo-icon">
-              <FaTruck size={24} color="#2A407C" />
-            </div>
-            <h1>E-TRUCKING</h1>
-          </Link>
-          <div className="nav-links">
-            <a href="#features">Features</a>
-            <a href="#about">About</a>
-            <a href="#contact">Contact</a>
-            <Link to="/login" className="quote-btn-nav">
+          <div className={`nav-pill ${isScrolled ? "scrolled" : ""}`}>
+            <a href="#" className="nav-link" onClick={closeMobileMenu}>
+              Home
+            </a>
+            <a href="#about" className="nav-link" onClick={closeMobileMenu}>
+              About
+            </a>
+            <a href="#features" className="nav-link" onClick={closeMobileMenu}>
+              Features
+            </a>
+            <a href="#showcase" className="nav-link" onClick={closeMobileMenu}>
+              Why Us
+            </a>
+            <a href="#stats" className="nav-link" onClick={closeMobileMenu}>
+              Stats
+            </a>
+            <a href="#contact" className="nav-link" onClick={closeMobileMenu}>
+              Contact
+            </a>
+            <Link to="/login" className="nav-cta-btn" onClick={closeMobileMenu}>
+              Login
+            </Link>
+          </div>
+
+          {/* Mobile hamburger menu button */}
+          <button
+            className="mobile-menu-btn"
+            onClick={toggleMobileMenu}
+            aria-label="Toggle menu"
+          >
+            {isMobileMenuOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
+          </button>
+        </nav>
+
+        {/* Mobile menu overlay */}
+        <div
+          className={`mobile-menu-overlay ${isMobileMenuOpen ? "open" : ""}`}
+        >
+          <div className="mobile-menu-content">
+            <a href="#" className="mobile-nav-link" onClick={closeMobileMenu}>
+              Home
+            </a>
+            <a
+              href="#about"
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              About
+            </a>
+            <a
+              href="#features"
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Features
+            </a>
+            <a
+              href="#showcase"
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Why Us
+            </a>
+            <a
+              href="#stats"
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Stats
+            </a>
+            <a
+              href="#contact"
+              className="mobile-nav-link"
+              onClick={closeMobileMenu}
+            >
+              Contact
+            </a>
+            <Link
+              to="/login"
+              className="mobile-cta-btn"
+              onClick={closeMobileMenu}
+            >
               Login to Portal
             </Link>
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* Hero Section */}

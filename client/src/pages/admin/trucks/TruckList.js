@@ -211,8 +211,8 @@ const TruckList = ({ currentUser }) => {
             StatusSummary: hasActiveDelivery
               ? "On Delivery"
               : hasActiveAllocation
-              ? "Allocated"
-              : truck.statusSummary || "Available",
+                ? "Allocated"
+                : truck.statusSummary || "Available",
             IsAvailable:
               !hasActiveDelivery &&
               !hasActiveAllocation &&
@@ -274,12 +274,12 @@ const TruckList = ({ currentUser }) => {
 
         console.log(
           "Raw API response (trucks with actual documents):",
-          trucksResponse.data
+          trucksResponse.data,
         );
         console.log("Raw API response (deliveries):", deliveriesResponse.data);
         console.log(
           "Raw API response (allocations):",
-          allocationsResponse.data
+          allocationsResponse.data,
         );
 
         // Store deliveries
@@ -288,7 +288,7 @@ const TruckList = ({ currentUser }) => {
           : [];
         setDeliveries(deliveriesData);
         console.log(
-          `📦 Loaded ${deliveriesData.length} deliveries for truck status validation`
+          `📦 Loaded ${deliveriesData.length} deliveries for truck status validation`,
         );
 
         // Store allocations
@@ -297,7 +297,7 @@ const TruckList = ({ currentUser }) => {
           : [];
         setAllocations(allocationsData);
         console.log(
-          `🔗 Loaded ${allocationsData.length} allocations for truck status validation`
+          `🔗 Loaded ${allocationsData.length} allocations for truck status validation`,
         );
 
         // Handle both array response and object with trucks property
@@ -318,7 +318,7 @@ const TruckList = ({ currentUser }) => {
             ) {
               console.warn(
                 `⚠️ Skipping truck with invalid ID: ${truckId}`,
-                truck
+                truck,
               );
               return false;
             }
@@ -328,7 +328,7 @@ const TruckList = ({ currentUser }) => {
           console.log(
             `📊 Filtered ${
               trucksData.length - validTrucks.length
-            } invalid trucks`
+            } invalid trucks`,
           );
 
           // Trucks already have documents from the backend file scanning
@@ -353,7 +353,7 @@ const TruckList = ({ currentUser }) => {
                 console.log(
                   `🚛 Truck ${
                     truck.truckPlate || truckId
-                  } has active delivery (${deliveryStatus})`
+                  } has active delivery (${deliveryStatus})`,
                 );
               }
 
@@ -374,7 +374,7 @@ const TruckList = ({ currentUser }) => {
                     truck.truckPlate || truckId
                   } has active allocation (Client: ${
                     allocation.clientId || "Unknown"
-                  })`
+                  })`,
                 );
               }
 
@@ -384,7 +384,7 @@ const TruckList = ({ currentUser }) => {
             console.log(
               `Processing truck ${
                 truck.truckPlate || truckId
-              }: hasActiveDelivery=${hasActiveDelivery}, hasActiveAllocation=${hasActiveAllocation}`
+              }: hasActiveDelivery=${hasActiveDelivery}, hasActiveAllocation=${hasActiveAllocation}`,
             );
 
             return {
@@ -415,8 +415,8 @@ const TruckList = ({ currentUser }) => {
               StatusSummary: hasActiveDelivery
                 ? "On Delivery"
                 : hasActiveAllocation
-                ? "Allocated"
-                : truck.statusSummary || "Available",
+                  ? "Allocated"
+                  : truck.statusSummary || "Available",
               IsAvailable:
                 !hasActiveDelivery &&
                 !hasActiveAllocation &&
@@ -432,7 +432,7 @@ const TruckList = ({ currentUser }) => {
 
           console.log(
             "Trucks with documents and delivery status:",
-            formattedTrucks
+            formattedTrucks,
           );
           setTrucks(formattedTrucks);
         } else {
@@ -468,7 +468,7 @@ const TruckList = ({ currentUser }) => {
     maintenance: trucks.filter(
       (truck) =>
         truck.NeedsMaintenance === true ||
-        truck.OperationalStatus === "maintenance"
+        truck.OperationalStatus === "maintenance",
     ).length,
   };
 
@@ -510,14 +510,14 @@ const TruckList = ({ currentUser }) => {
     // Apply allocation filter
     if (allocationFilter !== "all") {
       filtered = filtered.filter(
-        (truck) => truck.AllocationStatus?.toLowerCase() === allocationFilter
+        (truck) => truck.AllocationStatus?.toLowerCase() === allocationFilter,
       );
     }
 
     // Apply operational filter
     if (operationalFilter !== "all") {
       filtered = filtered.filter(
-        (truck) => truck.OperationalStatus?.toLowerCase() === operationalFilter
+        (truck) => truck.OperationalStatus?.toLowerCase() === operationalFilter,
       );
     }
 
@@ -538,7 +538,7 @@ const TruckList = ({ currentUser }) => {
           "Filtering truck by compliance:",
           truck,
           "filter:",
-          complianceFilter
+          complianceFilter,
         );
         if (!truck || !truck.documentCompliance)
           return complianceFilter === "incomplete";
@@ -556,7 +556,7 @@ const TruckList = ({ currentUser }) => {
           truck.TruckPlate?.toLowerCase().includes(query) ||
           truck.TruckType?.toLowerCase().includes(query) ||
           truck.TruckBrand?.toLowerCase().includes(query) ||
-          truck.TruckID?.toLowerCase().includes(query)
+          truck.TruckID?.toLowerCase().includes(query),
       );
     }
 
@@ -615,6 +615,28 @@ const TruckList = ({ currentUser }) => {
     if (truck.IsAllocated) return "status-allocated";
     if (truck.IsAvailable) return "status-available";
     return "status-unknown";
+  };
+
+  // Get display status (for Status column - shows Inactive when registration issues)
+  const getDisplayStatus = (truck) => {
+    if (
+      truck.OperationalStatus === "registration-expired" ||
+      truck.OperationalStatus === "registration-expiring"
+    ) {
+      return "Inactive";
+    }
+    return formatStatus(truck.OperationalStatus) || "Active";
+  };
+
+  // Get status badge class for display status
+  const getDisplayStatusBadgeClass = (truck) => {
+    if (
+      truck.OperationalStatus === "registration-expired" ||
+      truck.OperationalStatus === "registration-expiring"
+    ) {
+      return "status-inactive";
+    }
+    return getStatusBadgeClass(truck.OperationalStatus);
   };
 
   // Get license requirements for a truck type
@@ -762,7 +784,7 @@ const TruckList = ({ currentUser }) => {
                     trucks.filter(
                       (t) =>
                         t.NeedsMaintenance === true ||
-                        t.OperationalStatus === "maintenance"
+                        t.OperationalStatus === "maintenance",
                     ).length
                   }
                 </div>
@@ -1138,16 +1160,16 @@ const TruckList = ({ currentUser }) => {
                       <td>
                         <div className="status-cell">
                           <span
-                            className={`status-badge ${getStatusBadgeClass(
-                              truck.OperationalStatus
+                            className={`status-badge ${getDisplayStatusBadgeClass(
+                              truck,
                             )}`}
                           >
-                            {formatStatus(truck.OperationalStatus) || "Active"}
+                            {getDisplayStatus(truck)}
                           </span>
                         </div>
                       </td>
                       <td>
-                        {/* New Registration Status Column */}
+                        {/* Registration Status Column */}
                         {truck.registrationExpiryWarning ? (
                           <div
                             className={`registration-warning-badge ${
@@ -1157,7 +1179,7 @@ const TruckList = ({ currentUser }) => {
                             }`}
                           >
                             {truck.OperationalStatus === "registration-expired"
-                              ? `❌ Expired - Blocked`
+                              ? `❌ Expired`
                               : `⚠️ Expires in ${truck.registrationExpiryDaysRemaining} days`}
                           </div>
                         ) : (
@@ -1254,7 +1276,7 @@ const TruckList = ({ currentUser }) => {
                       <span
                         className={`truck-status-primary ${statusClass.replace(
                           "status-",
-                          ""
+                          "",
                         )}`}
                       >
                         {truck.OperationalStatus || "Active"}
@@ -1309,7 +1331,7 @@ const TruckList = ({ currentUser }) => {
                   {/* Document Compliance */}
                   <div
                     className={`truck-card-compliance ${getComplianceClass(
-                      truck
+                      truck,
                     )}`}
                   >
                     <div className="compliance-info">
@@ -1464,18 +1486,6 @@ const TruckList = ({ currentUser }) => {
                           {selectedTruck.AverageKmPerDelivery || 0} km
                         </span>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Last Odometer Update:
-                        </span>
-                        <span className="detail-value">
-                          {selectedTruck.LastOdometerUpdate
-                            ? new Date(
-                                selectedTruck.LastOdometerUpdate
-                              ).toLocaleDateString()
-                            : "Never"}
-                        </span>
-                      </div>
                     </div>
                   </div>
 
@@ -1489,7 +1499,7 @@ const TruckList = ({ currentUser }) => {
                         </span>
                         <span
                           className={`detail-badge ${getStatusBadgeClass(
-                            selectedTruck.OperationalStatus
+                            selectedTruck.OperationalStatus,
                           )}`}
                         >
                           {formatStatus(selectedTruck.OperationalStatus)}
@@ -1499,50 +1509,10 @@ const TruckList = ({ currentUser }) => {
                         <span className="detail-label">Allocation Status:</span>
                         <span
                           className={`detail-badge ${getStatusBadgeClass(
-                            selectedTruck.AllocationStatus
+                            selectedTruck.AllocationStatus,
                           )}`}
                         >
                           {formatStatus(selectedTruck.AllocationStatus)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Availability:</span>
-                        <span
-                          className={`detail-badge ${
-                            selectedTruck.IsAvailable
-                              ? "status-available"
-                              : "status-busy"
-                          }`}
-                        >
-                          {selectedTruck.IsAvailable
-                            ? "Available"
-                            : "Not Available"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Currently Allocated:
-                        </span>
-                        <span
-                          className={`detail-badge ${
-                            selectedTruck.IsAllocated
-                              ? "status-allocated"
-                              : "status-available"
-                          }`}
-                        >
-                          {selectedTruck.IsAllocated ? "Yes" : "No"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">In Use:</span>
-                        <span
-                          className={`detail-badge ${
-                            selectedTruck.IsInUse
-                              ? "status-busy"
-                              : "status-available"
-                          }`}
-                        >
-                          {selectedTruck.IsInUse ? "Yes" : "No"}
                         </span>
                       </div>
                       <div className="detail-item">
@@ -1566,7 +1536,7 @@ const TruckList = ({ currentUser }) => {
                     <div className="details-items">
                       {(() => {
                         const requirements = getLicenseRequirements(
-                          selectedTruck.TruckType
+                          selectedTruck.TruckType,
                         );
                         return (
                           <>
@@ -1609,7 +1579,7 @@ const TruckList = ({ currentUser }) => {
                         <span className="detail-label">Overall Status:</span>
                         <span
                           className={`detail-badge compliance-${getComplianceClass(
-                            selectedTruck
+                            selectedTruck,
                           ).replace("compliance-", "")}`}
                         >
                           {getComplianceStatus(selectedTruck)}
@@ -1678,30 +1648,7 @@ const TruckList = ({ currentUser }) => {
 
                   {/* Document Viewer */}
                   <div className="details-section">
-                    <h3>📁 Uploaded Documents</h3>
-                    <div className="document-summary">
-                      <div className="document-count-badge">
-                        <span className="count-icon">📁</span>
-                        <span className="count-text">
-                          {selectedTruck.documentCompliance?.documentCount || 0}{" "}
-                          files uploaded
-                        </span>
-                      </div>
-                      <div className="document-breakdown">
-                        <span className="required-docs">
-                          Required:{" "}
-                          {selectedTruck.documentCompliance
-                            ?.requiredDocumentCount || 0}
-                          /3
-                        </span>
-                        <span className="optional-docs">
-                          Optional:{" "}
-                          {selectedTruck.documentCompliance
-                            ?.optionalDocumentCount || 0}
-                          /1
-                        </span>
-                      </div>
-                    </div>
+                    <h3>📁 Documents</h3>
                     {selectedTruck.documents &&
                     Object.keys(selectedTruck.documents).length > 0 ? (
                       <div className="details-items">
@@ -1717,23 +1664,6 @@ const TruckList = ({ currentUser }) => {
                         </p>
                       </div>
                     )}
-                  </div>
-
-                  {/* Timestamps */}
-                  <div className="details-section">
-                    <h3>⏰ Timeline</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Date Added:</span>
-                        <span className="detail-value">
-                          {selectedTruck.DateAdded
-                            ? new Date(
-                                selectedTruck.DateAdded
-                              ).toLocaleDateString()
-                            : "Unknown"}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1853,7 +1783,7 @@ const TruckList = ({ currentUser }) => {
         "licenseRequirement",
       ];
       const completedCount = documentTypes.filter(
-        (docType) => truck.documentCompliance[docType] === "complete"
+        (docType) => truck.documentCompliance[docType] === "complete",
       ).length;
 
       return `${completedCount}/${documentTypes.length} documents`;
