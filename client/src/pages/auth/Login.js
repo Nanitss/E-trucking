@@ -1,27 +1,16 @@
 import React, { useState, useContext } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, Link } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
+import { FaTruck, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const history = useHistory();
   const { login } = useContext(AuthContext);
-
-  // Background styles
-  const leftBackgroundStyle = {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    width: "50%",
-    height: "100%",
-    backgroundImage: `url(${process.env.PUBLIC_URL}/images/truck-background.jpg), linear-gradient(135deg, #0a2463 0%, #1e3a8a 100%)`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    zIndex: 1,
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -159,102 +148,194 @@ const Login = () => {
     }
   };
 
-  const Loader = () => <div className="loader-small" />;
-
   return (
-    <div className="auth-container">
-      {/* Left Side - Hero Section */}
-      <div className="auth-hero">
-        {/* Logo in top left */}
-        <div className="hero-logo">
-          <div className="logo-badge">ET</div>
-          <div>
-            <div className="logo-text">E-TRUCKING</div>
-            <div className="logo-subtitle">Fleet Management System</div>
-          </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans">
+      <div className="flex w-full min-h-screen bg-white shadow-2xl overflow-hidden">
 
-        {/* Hero Content */}
-        <div className="hero-content">
-          <h1 className="hero-title">
-            Manage Your <span className="highlight">Fleet</span>
-            <br />
-            With Professional
-            <br />
-            Trucking Solutions.
-          </h1>
-        </div>
-
-        {/* Hero Illustration */}
-        <div className="hero-illustration">
-          <div className="illustration-scene">
-            <div className="truck-element main-truck">🚛</div>
-            <div className="truck-element delivery-box">📦</div>
-            <div className="truck-element route-pin">📍</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Right Side - Login Form */}
-      <div className="auth-form-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h2>Welcome Back</h2>
-            <p>Sign in to your E-Trucking dashboard</p>
+        {/* Left Side - Hero Section */}
+        <div className="hidden lg:flex lg:w-1/2 relative bg-blue-900 items-center justify-center overflow-hidden">
+          <div className="absolute inset-0">
+            <img
+              src={`${process.env.PUBLIC_URL}/images/truck-background.jpg`}
+              alt="Logistics Background"
+              className="w-full h-full object-cover opacity-30"
+              onError={(e) => {
+                e.target.style.display = 'none'; // Hide if fails
+                e.target.parentNode.style.backgroundColor = '#1e3a8a'; // Fallback color
+              }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/90 to-black/60"></div>
           </div>
 
-          {error && <div className="error-alert">{error}</div>}
-
-          <form className="auth-form" onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                name="username"
-                type="text"
-                value={formData.username}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-                placeholder="Enter your username"
-                autoComplete="username"
-              />
+          <div className="relative z-10 p-12 text-white max-w-lg">
+            <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
+              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+                <FaTruck className="text-2xl text-white" />
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight">E-TRUCKING</h2>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="password">Password</label>
-              <div className="password-field">
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  disabled={isLoading}
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                />
-                <button type="button" className="password-toggle">
-                  👁️
-                </button>
+            <h1 className="text-5xl font-bold leading-tight mb-6 animate-fade-in-up animation-delay-150">
+              Manage Your <span className="text-blue-400">Fleet</span> With Confidence
+            </h1>
+
+            <p className="text-lg text-blue-100 mb-8 leading-relaxed animate-fade-in-up animation-delay-300">
+              Access real-time tracking, automated dispatching, and comprehensive analytics all in one secure platform.
+            </p>
+
+            <div className="grid grid-cols-2 gap-4 animate-fade-in-up animation-delay-450">
+              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                <div className="text-2xl font-bold text-blue-300 mb-1">500+</div>
+                <div className="text-sm text-gray-300">Trucks Managed</div>
+              </div>
+              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-xl border border-white/10">
+                <div className="text-2xl font-bold text-blue-300 mb-1">10k+</div>
+                <div className="text-sm text-gray-300">Deliveries Completed</div>
               </div>
             </div>
+          </div>
 
-            <button type="submit" disabled={isLoading} className="login-button">
-              {isLoading ? (
-                <>
-                  <Loader />
-                  Signing In...
-                </>
-              ) : (
-                "Sign In"
-              )}
-            </button>
-          </form>
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl"></div>
+        </div>
 
-          <div className="auth-footer">
-            <p>Need an account? Contact your administrator</p>
+        {/* Right Side - Login Form */}
+        <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative">
+          <div className="w-full max-w-md space-y-8 animate-fade-in">
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
+              <FaTruck className="text-3xl text-blue-600" />
+              <span className="text-2xl font-extrabold text-gray-900">E-TRUCKING</span>
+            </div>
+
+            <div className="text-center lg:text-left">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Welcome Back</h2>
+              <p className="mt-2 text-sm text-gray-600">
+                Please sign in to access your dashboard
+              </p>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-md animate-pulse">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaUser className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="username"
+                      name="username"
+                      type="text"
+                      autoComplete="username"
+                      required
+                      className="appearance-none block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-gray-50 focus:bg-white"
+                      placeholder="Enter your username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FaLock className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      required
+                      className="appearance-none block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all sm:text-sm bg-gray-50 focus:bg-white"
+                      placeholder="Enter your password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <FaEyeSlash className="h-5 w-5" /> : <FaEye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <input
+                    id="remember-me"
+                    name="remember-me"
+                    type="checkbox"
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded cursor-pointer"
+                  />
+                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900 cursor-pointer">
+                    Remember me
+                  </label>
+                </div>
+
+                <div className="text-sm">
+                  <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                    Forgot password?
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className={`group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-md hover:shadow-lg transform active:scale-[0.98] ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 hover:-translate-y-0.5"
+                    }`}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing In...
+                    </div>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </div>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-xs text-gray-500">
+                © 2025 E-Trucking Management System. All rights reserved.
+              </p>
+              <Link to="/" className="inline-block mt-4 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">
+                ← Back to Home
+              </Link>
+            </div>
           </div>
         </div>
       </div>
