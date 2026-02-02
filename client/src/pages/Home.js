@@ -14,9 +14,6 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
-import "./home.css";
-// Ensure design system variables are loaded
-import "../styles/DesignSystem.css";
 
 const Home = () => {
   const [isScrolled, setIsScrolled] = useState(false);

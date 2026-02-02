@@ -1,29 +1,28 @@
 // src/pages/admin/operators/OperatorForm.js
-import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
-import axios from 'axios';
-import './OperatorForm.css';
+import React, { useState, useEffect } from "react";
+import { useParams, useHistory } from "react-router-dom";
+import axios from "axios";
 // Sidebar import removed - using header navigation now
 
 const OperatorForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
+  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
 
   const [formData, setFormData] = useState({
-    OperatorName: '',
-    OperatorAddress: '',
-    OperatorNumber: '',
-    OperatorEmploymentDate: '',
-    OperatorDocuments: '',
-    OperatorUserName: '',
-    OperatorPassword: '',
-    OperatorStatus: 'active'
+    OperatorName: "",
+    OperatorAddress: "",
+    OperatorNumber: "",
+    OperatorEmploymentDate: "",
+    OperatorDocuments: "",
+    OperatorUserName: "",
+    OperatorPassword: "",
+    OperatorStatus: "active",
   });
   const [loading, setLoading] = useState(isEditMode);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
 
   // Fetch operator data if in edit mode
   useEffect(() => {
@@ -33,29 +32,33 @@ const OperatorForm = () => {
       try {
         setLoading(true);
         console.log(`Fetching operator with ID: ${id}`);
-        console.log('API Base URL:', baseURL);
+        console.log("API Base URL:", baseURL);
 
         const response = await axios.get(`${baseURL}/api/operators/${id}`);
-        console.log('API Response:', response);
+        console.log("API Response:", response);
 
         const operator = response.data;
         if (operator.OperatorEmploymentDate) {
           // Format to YYYY-MM-DD for the date input
-          operator.OperatorEmploymentDate = new Date(operator.OperatorEmploymentDate)
+          operator.OperatorEmploymentDate = new Date(
+            operator.OperatorEmploymentDate,
+          )
             .toISOString()
-            .split('T')[0];
+            .split("T")[0];
         }
         setFormData(operator);
       } catch (err) {
-        console.error('Error fetching operator:', err);
+        console.error("Error fetching operator:", err);
         if (err.response) {
           setError(
             `Server error (${err.response.status}): ${
               err.response.data.sqlMessage || err.response.data.message
-            }`
+            }`,
           );
         } else if (err.request) {
-          setError('No response received from server. Please check your API connection.');
+          setError(
+            "No response received from server. Please check your API connection.",
+          );
         } else {
           setError(`Request error: ${err.message}`);
         }
@@ -72,7 +75,7 @@ const OperatorForm = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -80,17 +83,26 @@ const OperatorForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Form submission:', isEditMode ? 'UPDATE' : 'CREATE', formData);
+      console.log(
+        "Form submission:",
+        isEditMode ? "UPDATE" : "CREATE",
+        formData,
+      );
       const url = isEditMode
         ? `${baseURL}/api/operators/${id}`
         : `${baseURL}/api/operators`;
-      const method = isEditMode ? 'put' : 'post';
+      const method = isEditMode ? "put" : "post";
 
       const response = await axios[method](url, formData);
-      console.log(isEditMode ? 'Update response:' : 'Create response:', response);
+      console.log(
+        isEditMode ? "Update response:" : "Create response:",
+        response,
+      );
 
       setSuccessMessage(
-        isEditMode ? 'Operator updated successfully!' : 'Operator added successfully!'
+        isEditMode
+          ? "Operator updated successfully!"
+          : "Operator added successfully!",
       );
       setError(null);
 
@@ -99,31 +111,33 @@ const OperatorForm = () => {
       if (!isEditMode) {
         // Reset form for new create
         setFormData({
-          OperatorName: '',
-          OperatorAddress: '',
-          OperatorNumber: '',
-          OperatorEmploymentDate: '',
-          OperatorDocuments: '',
-          OperatorUserName: '',
-          OperatorPassword: '',
-          OperatorStatus: 'active'
+          OperatorName: "",
+          OperatorAddress: "",
+          OperatorNumber: "",
+          OperatorEmploymentDate: "",
+          OperatorDocuments: "",
+          OperatorUserName: "",
+          OperatorPassword: "",
+          OperatorStatus: "active",
         });
       }
 
       // Redirect back to list after a brief pause
       setTimeout(() => {
-        history.push('/admin/operators');
+        history.push("/admin/operators");
       }, 1500);
     } catch (err) {
-      console.error('Error saving operator:', err);
+      console.error("Error saving operator:", err);
       if (err.response) {
         setError(
           `Server error (${err.response.status}): ${
             err.response.data.sqlMessage || err.response.data.message
-          }`
+          }`,
         );
       } else if (err.request) {
-        setError('No response received from server. Please check your API connection.');
+        setError(
+          "No response received from server. Please check your API connection.",
+        );
       } else {
         setError(`Request error: ${err.message}`);
       }
@@ -137,22 +151,27 @@ const OperatorForm = () => {
   return (
     <div className="form-container">
       <div className="page-header">
-        <h1>{isEditMode ? 'Edit Operator' : 'Add New Operator'}</h1>
+        <h1>{isEditMode ? "Edit Operator" : "Add New Operator"}</h1>
       </div>
 
       {error && (
         <div className="error-message">
           {error}
-          <div style={{ marginTop: '10px', fontSize: '12px' }}>
+          <div style={{ marginTop: "10px", fontSize: "12px" }}>
             <button onClick={() => setError(null)}>Dismiss</button>
-            <button onClick={() => window.location.reload()} style={{ marginLeft: '10px' }}>
+            <button
+              onClick={() => window.location.reload()}
+              style={{ marginLeft: "10px" }}
+            >
               Refresh Page
             </button>
           </div>
         </div>
       )}
 
-      {successMessage && <div className="success-message">{successMessage}</div>}
+      {successMessage && (
+        <div className="success-message">{successMessage}</div>
+      )}
 
       <form onSubmit={handleSubmit} className="data-form">
         <div className="form-group">
@@ -212,7 +231,7 @@ const OperatorForm = () => {
             type="text"
             id="OperatorDocuments"
             name="OperatorDocuments"
-            value={formData.OperatorDocuments || ''}
+            value={formData.OperatorDocuments || ""}
             onChange={handleChange}
             maxLength="255"
           />
@@ -233,13 +252,13 @@ const OperatorForm = () => {
 
         <div className="form-group">
           <label htmlFor="OperatorPassword">
-            {isEditMode ? 'Password (Leave blank to keep current)' : 'Password'}
+            {isEditMode ? "Password (Leave blank to keep current)" : "Password"}
           </label>
           <input
             type="password"
             id="OperatorPassword"
             name="OperatorPassword"
-            value={formData.OperatorPassword || ''}
+            value={formData.OperatorPassword || ""}
             onChange={handleChange}
             {...(!isEditMode && { required: true })}
             maxLength="255"
@@ -264,12 +283,12 @@ const OperatorForm = () => {
           <button
             type="button"
             className="btn btn-secondary"
-            onClick={() => history.push('/admin/operators')}
+            onClick={() => history.push("/admin/operators")}
           >
             Cancel
           </button>
           <button type="submit" className="btn btn-primary">
-            {isEditMode ? 'Update Operator' : 'Add Operator'}
+            {isEditMode ? "Update Operator" : "Add Operator"}
           </button>
         </div>
       </form>

@@ -3,9 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
-import "../../../styles/ModernForms.css";
-import "../../../styles/DesignSystem.css";
-import "./TruckForm.css";
 // Sidebar import removed - using header navigation now
 import FileViewer from "../../../components/FileViewer";
 import TruckDocumentUpload from "../../../components/TruckDocumentUpload";
@@ -60,11 +57,11 @@ const TruckForm = () => {
     console.log("📋 CR Document:", uploadedFiles.crDocument?.name || "none");
     console.log(
       "📋 Insurance Document:",
-      uploadedFiles.insuranceDocument?.name || "none"
+      uploadedFiles.insuranceDocument?.name || "none",
     );
     console.log(
       "📋 License Requirement:",
-      uploadedFiles.licenseRequirement?.name || "none"
+      uploadedFiles.licenseRequirement?.name || "none",
     );
   }, [uploadedFiles]);
 
@@ -153,7 +150,7 @@ const TruckForm = () => {
         setError(
           `Failed to load truck data: ${
             err.response?.data?.message || err.message
-          }`
+          }`,
         );
         setLoading(false);
       }
@@ -428,7 +425,7 @@ const TruckForm = () => {
       console.log(
         "Form submission:",
         isEditMode ? "UPDATE" : "CREATE",
-        formData
+        formData,
       );
 
       // Validate custom brand if "Other" is selected
@@ -446,7 +443,7 @@ const TruckForm = () => {
           setError(
             `Please upload all required documents: ${missingDocs
               .map((doc) => doc.replace("Document", "").toUpperCase())
-              .join(", ")}`
+              .join(", ")}`,
           );
           return;
         }
@@ -470,7 +467,7 @@ const TruckForm = () => {
       formDataToSend.append("registrationDate", formData.registrationDate);
       formDataToSend.append(
         "registrationExpiryDate",
-        formData.registrationExpiryDate
+        formData.registrationExpiryDate,
       );
       formDataToSend.append("truckStatus", formData.TruckStatus);
       formDataToSend.append("allocationStatus", formData.AllocationStatus);
@@ -478,7 +475,7 @@ const TruckForm = () => {
       formDataToSend.append("availabilityStatus", formData.AvailabilityStatus);
       formDataToSend.append(
         "maintenanceScheduled",
-        formData.MaintenanceScheduled
+        formData.MaintenanceScheduled,
       );
       formDataToSend.append("lastStatusReason", formData.StatusReason);
 
@@ -496,7 +493,7 @@ const TruckForm = () => {
           if (doc && !uploadedFiles[key]) {
             console.log(
               `📄 Preserving existing document ${key}:`,
-              doc.filename
+              doc.filename,
             );
             // Add existing document info to preserve it
             formDataToSend.append(`existing_${key}`, JSON.stringify(doc));
@@ -510,7 +507,7 @@ const TruckForm = () => {
       for (let [key, value] of formDataToSend.entries()) {
         console.log(
           `  ${key}:`,
-          value instanceof File ? `${value.name} (${value.size} bytes)` : value
+          value instanceof File ? `${value.name} (${value.size} bytes)` : value,
         );
       }
 
@@ -534,11 +531,13 @@ const TruckForm = () => {
       const response = await axios[method](url, formDataToSend, config);
       console.log(
         isEditMode ? "Update response:" : "Create response:",
-        response
+        response,
       );
 
       setSuccessMessage(
-        isEditMode ? "Truck updated successfully!" : "Truck added successfully!"
+        isEditMode
+          ? "Truck updated successfully!"
+          : "Truck added successfully!",
       );
       setError(null);
 
@@ -601,11 +600,11 @@ const TruckForm = () => {
         setError(
           `Server error (${err.response.status}): ${
             err.response.data.sqlMessage || err.response.data.message
-          }`
+          }`,
         );
       } else if (err.request) {
         setError(
-          "No response received from server. Please check your API connection."
+          "No response received from server. Please check your API connection.",
         );
       } else {
         setError(`Request error: ${err.message}`);

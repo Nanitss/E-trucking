@@ -1,15 +1,15 @@
-import React from 'react';
-import { Box, CircularProgress, Typography } from '@mui/material';
+import React from "react";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
-const LoadingComponent = ({ message = 'Loading...' }) => {
+const LoadingComponent = ({ message = "Loading..." }) => {
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        flexDirection: 'column',
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '300px'
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "calc(100vh - 70px)",
       }}
     >
       <CircularProgress size={50} sx={{ mb: 2 }} />
@@ -20,4 +20,4 @@ const LoadingComponent = ({ message = 'Loading...' }) => {
   );
 };
 
-export default LoadingComponent; 
+export default LoadingComponent;

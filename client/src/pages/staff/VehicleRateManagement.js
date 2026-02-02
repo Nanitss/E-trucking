@@ -1,33 +1,31 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { FaTruck, FaSave, FaEdit, FaPlus, FaSignOutAlt } from 'react-icons/fa';
-import { AuthContext } from '../../context/AuthContext';
-import { useModernToast } from '../../context/ModernToastContext';
-import './VehicleRateManagement.css';
-import '../../styles/DesignSystem.css';
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { FaTruck, FaSave, FaEdit, FaPlus, FaSignOutAlt } from "react-icons/fa";
+import { AuthContext } from "../../context/AuthContext";
+import { useModernToast } from "../../context/ModernToastContext";
 
 export default function VehicleRateManagement() {
   const { currentUser } = useContext(AuthContext);
   const { showSuccess, showError } = useModernToast();
-  
+
   const [vehicleRates, setVehicleRates] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingRate, setEditingRate] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newRate, setNewRate] = useState({
-    vehicleType: '',
-    ratePerKm: '',
-    baseRate: '',
-    description: ''
+    vehicleType: "",
+    ratePerKm: "",
+    baseRate: "",
+    description: "",
   });
 
   // Available vehicle types
   const availableVehicleTypes = [
-    'mini truck',
-    '4 wheeler',
-    '6 wheeler', 
-    '8 wheeler',
-    '10 wheeler'
+    "mini truck",
+    "4 wheeler",
+    "6 wheeler",
+    "8 wheeler",
+    "10 wheeler",
   ];
 
   useEffect(() => {
@@ -35,31 +33,31 @@ export default function VehicleRateManagement() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
-    window.location.href = '/login';
+    localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
+    window.location.href = "/login";
   };
-
-
 
   const fetchVehicleRates = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get('/api/staffs/vehicle-rates', {
+      const response = await axios.get("/api/staffs/vehicle-rates", {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       });
-      
+
       if (response.data.success) {
         setVehicleRates(response.data.data || []);
       } else {
-        throw new Error(response.data.message || 'Failed to fetch vehicle rates');
+        throw new Error(
+          response.data.message || "Failed to fetch vehicle rates",
+        );
       }
     } catch (error) {
-      console.error('Error fetching vehicle rates:', error);
-      showError('Error', 'Failed to load vehicle rates');
-      
+      console.error("Error fetching vehicle rates:", error);
+      showError("Error", "Failed to load vehicle rates");
+
       // Initialize with default rates if none exist
       const defaultRates = availableVehicleTypes.map((type, index) => ({
         id: `default-${index}`,
@@ -67,7 +65,7 @@ export default function VehicleRateManagement() {
         ratePerKm: getDefaultRate(type),
         baseRate: getDefaultBaseRate(type),
         description: `Default rate for ${type}`,
-        isDefault: true
+        isDefault: true,
       }));
       setVehicleRates(defaultRates);
     } finally {
@@ -77,22 +75,22 @@ export default function VehicleRateManagement() {
 
   const getDefaultRate = (vehicleType) => {
     const rates = {
-      'mini truck': 15,
-      '4 wheeler': 20,
-      '6 wheeler': 25,
-      '8 wheeler': 30,
-      '10 wheeler': 35
+      "mini truck": 15,
+      "4 wheeler": 20,
+      "6 wheeler": 25,
+      "8 wheeler": 30,
+      "10 wheeler": 35,
     };
     return rates[vehicleType] || 20;
   };
 
   const getDefaultBaseRate = (vehicleType) => {
     const baseRates = {
-      'mini truck': 100,
-      '4 wheeler': 150,
-      '6 wheeler': 200,
-      '8 wheeler': 250,
-      '10 wheeler': 300
+      "mini truck": 100,
+      "4 wheeler": 150,
+      "6 wheeler": 200,
+      "8 wheeler": 250,
+      "10 wheeler": 300,
     };
     return baseRates[vehicleType] || 150;
   };
@@ -103,41 +101,48 @@ export default function VehicleRateManagement() {
         vehicleType: rateData.vehicleType,
         ratePerKm: parseFloat(rateData.ratePerKm),
         baseRate: parseFloat(rateData.baseRate),
-        description: rateData.description || `Rate for ${rateData.vehicleType}`
+        description: rateData.description || `Rate for ${rateData.vehicleType}`,
       };
 
       let response;
       if (rateData.id && !rateData.isDefault) {
-        response = await axios.put(`/api/staffs/vehicle-rates/${rateData.id}`, payload, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
+        response = await axios.put(
+          `/api/staffs/vehicle-rates/${rateData.id}`,
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          },
+        );
       } else {
-        response = await axios.post('/api/staffs/vehicle-rates', payload, {
+        response = await axios.post("/api/staffs/vehicle-rates", payload, {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         });
       }
 
       if (response.data.success) {
-        showSuccess('Success', 'Vehicle rate saved successfully');
+        showSuccess("Success", "Vehicle rate saved successfully");
         fetchVehicleRates();
         setEditingRate(null);
         setShowAddForm(false);
         setNewRate({
-          vehicleType: '',
-          ratePerKm: '',
-          baseRate: '',
-          description: ''
+          vehicleType: "",
+          ratePerKm: "",
+          baseRate: "",
+          description: "",
         });
       } else {
-        throw new Error(response.data.message || 'Failed to save rate');
+        throw new Error(response.data.message || "Failed to save rate");
       }
     } catch (error) {
-      console.error('Error saving vehicle rate:', error);
-      showError('Error', error.response?.data?.message || 'Failed to save vehicle rate');
+      console.error("Error saving vehicle rate:", error);
+      showError(
+        "Error",
+        error.response?.data?.message || "Failed to save vehicle rate",
+      );
     }
   };
 
@@ -156,7 +161,7 @@ export default function VehicleRateManagement() {
       <div className="page-header">
         <div className="header-content">
           <div className="header-left">
-            <h1>Welcome, {currentUser?.username || 'Staff Member'}</h1>
+            <h1>Welcome, {currentUser?.username || "Staff Member"}</h1>
             <p className="page-subtitle">Vehicle Rate Management</p>
           </div>
           <button onClick={handleLogout} className="btn btn-logout">
@@ -169,8 +174,8 @@ export default function VehicleRateManagement() {
       <div className="page-content">
         {/* Add New Rate Button */}
         <div className="actions-bar">
-          <button 
-            onClick={() => setShowAddForm(true)} 
+          <button
+            onClick={() => setShowAddForm(true)}
             className="btn btn-primary"
             disabled={showAddForm}
           >
@@ -187,16 +192,25 @@ export default function VehicleRateManagement() {
                 <label>Vehicle Type</label>
                 <select
                   value={newRate.vehicleType}
-                  onChange={(e) => setNewRate({...newRate, vehicleType: e.target.value})}
+                  onChange={(e) =>
+                    setNewRate({ ...newRate, vehicleType: e.target.value })
+                  }
                   className="form-control"
                 >
                   <option value="">Select Vehicle Type</option>
                   {availableVehicleTypes
-                    .filter(type => !vehicleRates.some(rate => rate.vehicleType === type && !rate.isDefault))
-                    .map(type => (
-                      <option key={type} value={type}>{type}</option>
-                    ))
-                  }
+                    .filter(
+                      (type) =>
+                        !vehicleRates.some(
+                          (rate) =>
+                            rate.vehicleType === type && !rate.isDefault,
+                        ),
+                    )
+                    .map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                 </select>
               </div>
               <div className="form-group">
@@ -205,7 +219,9 @@ export default function VehicleRateManagement() {
                   type="number"
                   step="0.01"
                   value={newRate.ratePerKm}
-                  onChange={(e) => setNewRate({...newRate, ratePerKm: e.target.value})}
+                  onChange={(e) =>
+                    setNewRate({ ...newRate, ratePerKm: e.target.value })
+                  }
                   className="form-control"
                   placeholder="0.00"
                 />
@@ -216,7 +232,9 @@ export default function VehicleRateManagement() {
                   type="number"
                   step="0.01"
                   value={newRate.baseRate}
-                  onChange={(e) => setNewRate({...newRate, baseRate: e.target.value})}
+                  onChange={(e) =>
+                    setNewRate({ ...newRate, baseRate: e.target.value })
+                  }
                   className="form-control"
                   placeholder="0.00"
                 />
@@ -226,25 +244,36 @@ export default function VehicleRateManagement() {
                 <input
                   type="text"
                   value={newRate.description}
-                  onChange={(e) => setNewRate({...newRate, description: e.target.value})}
+                  onChange={(e) =>
+                    setNewRate({ ...newRate, description: e.target.value })
+                  }
                   className="form-control"
                   placeholder="Optional description"
                 />
               </div>
             </div>
             <div className="form-actions">
-              <button 
-                onClick={() => handleSaveRate(newRate)} 
+              <button
+                onClick={() => handleSaveRate(newRate)}
                 className="btn btn-success"
-                disabled={!newRate.vehicleType || !newRate.ratePerKm || !newRate.baseRate}
+                disabled={
+                  !newRate.vehicleType ||
+                  !newRate.ratePerKm ||
+                  !newRate.baseRate
+                }
               >
                 <FaSave /> Save Rate
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewRate({vehicleType: '', ratePerKm: '', baseRate: '', description: ''});
-                }} 
+                  setNewRate({
+                    vehicleType: "",
+                    ratePerKm: "",
+                    baseRate: "",
+                    description: "",
+                  });
+                }}
                 className="btn btn-secondary"
               >
                 Cancel
@@ -266,13 +295,15 @@ export default function VehicleRateManagement() {
               </tr>
             </thead>
             <tbody>
-              {vehicleRates.map(rate => (
+              {vehicleRates.map((rate) => (
                 <tr key={rate.id}>
                   <td>
                     <div className="vehicle-type">
                       <FaTruck className="vehicle-icon" />
                       {rate.vehicleType}
-                      {rate.isDefault && <span className="default-badge">Default</span>}
+                      {rate.isDefault && (
+                        <span className="default-badge">Default</span>
+                      )}
                     </div>
                   </td>
                   <td>
@@ -281,7 +312,12 @@ export default function VehicleRateManagement() {
                         type="number"
                         step="0.01"
                         value={editingRate.ratePerKm}
-                        onChange={(e) => setEditingRate({...editingRate, ratePerKm: e.target.value})}
+                        onChange={(e) =>
+                          setEditingRate({
+                            ...editingRate,
+                            ratePerKm: e.target.value,
+                          })
+                        }
                         className="form-control-sm"
                       />
                     ) : (
@@ -294,7 +330,12 @@ export default function VehicleRateManagement() {
                         type="number"
                         step="0.01"
                         value={editingRate.baseRate}
-                        onChange={(e) => setEditingRate({...editingRate, baseRate: e.target.value})}
+                        onChange={(e) =>
+                          setEditingRate({
+                            ...editingRate,
+                            baseRate: e.target.value,
+                          })
+                        }
                         className="form-control-sm"
                       />
                     ) : (
@@ -306,7 +347,12 @@ export default function VehicleRateManagement() {
                       <input
                         type="text"
                         value={editingRate.description}
-                        onChange={(e) => setEditingRate({...editingRate, description: e.target.value})}
+                        onChange={(e) =>
+                          setEditingRate({
+                            ...editingRate,
+                            description: e.target.value,
+                          })
+                        }
                         className="form-control-sm"
                       />
                     ) : (
@@ -349,11 +395,14 @@ export default function VehicleRateManagement() {
             <div className="empty-state">
               <FaTruck />
               <p>No vehicle rates configured</p>
-              <p>Add vehicle rates to start managing pricing for different truck types.</p>
+              <p>
+                Add vehicle rates to start managing pricing for different truck
+                types.
+              </p>
             </div>
           )}
         </div>
       </div>
     </div>
   );
-} 
+}

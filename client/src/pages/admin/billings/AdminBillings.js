@@ -43,8 +43,6 @@ import {
 } from "@mui/icons-material";
 import { format, differenceInDays } from "date-fns";
 import AdminHeader from "../../../components/common/AdminHeader";
-import "../../../styles/DesignSystem.css";
-import "./AdminBillings.css";
 
 const AdminBillings = ({ currentUser }) => {
   const [allPayments, setAllPayments] = useState([]);

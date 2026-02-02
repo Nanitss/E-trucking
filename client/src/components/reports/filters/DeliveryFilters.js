@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const DeliveryFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -14,8 +13,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Delivery Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="pending">Pending</option>
@@ -30,8 +29,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by client"
-          value={filters.clientName || ''}
-          onChange={(e) => handleChange('clientName', e.target.value)}
+          value={filters.clientName || ""}
+          onChange={(e) => handleChange("clientName", e.target.value)}
         />
       </div>
 
@@ -40,8 +39,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by truck"
-          value={filters.truckPlate || ''}
-          onChange={(e) => handleChange('truckPlate', e.target.value)}
+          value={filters.truckPlate || ""}
+          onChange={(e) => handleChange("truckPlate", e.target.value)}
         />
       </div>
 
@@ -50,8 +49,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by driver"
-          value={filters.driverName || ''}
-          onChange={(e) => handleChange('driverName', e.target.value)}
+          value={filters.driverName || ""}
+          onChange={(e) => handleChange("driverName", e.target.value)}
         />
       </div>
 
@@ -59,8 +58,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <label>Delivery Date From</label>
         <input
           type="date"
-          value={filters.deliveryDateFrom || ''}
-          onChange={(e) => handleChange('deliveryDateFrom', e.target.value)}
+          value={filters.deliveryDateFrom || ""}
+          onChange={(e) => handleChange("deliveryDateFrom", e.target.value)}
         />
       </div>
 
@@ -68,8 +67,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <label>Delivery Date To</label>
         <input
           type="date"
-          value={filters.deliveryDateTo || ''}
-          onChange={(e) => handleChange('deliveryDateTo', e.target.value)}
+          value={filters.deliveryDateTo || ""}
+          onChange={(e) => handleChange("deliveryDateTo", e.target.value)}
         />
       </div>
 
@@ -78,8 +77,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="0"
-          value={filters.minAmount || ''}
-          onChange={(e) => handleChange('minAmount', e.target.value)}
+          value={filters.minAmount || ""}
+          onChange={(e) => handleChange("minAmount", e.target.value)}
         />
       </div>
 
@@ -88,8 +87,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="100000"
-          value={filters.maxAmount || ''}
-          onChange={(e) => handleChange('maxAmount', e.target.value)}
+          value={filters.maxAmount || ""}
+          onChange={(e) => handleChange("maxAmount", e.target.value)}
         />
       </div>
 
@@ -98,8 +97,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="0"
-          value={filters.minDistance || ''}
-          onChange={(e) => handleChange('minDistance', e.target.value)}
+          value={filters.minDistance || ""}
+          onChange={(e) => handleChange("minDistance", e.target.value)}
         />
       </div>
 
@@ -108,8 +107,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="1000"
-          value={filters.maxDistance || ''}
-          onChange={(e) => handleChange('maxDistance', e.target.value)}
+          value={filters.maxDistance || ""}
+          onChange={(e) => handleChange("maxDistance", e.target.value)}
         />
       </div>
 
@@ -118,8 +117,8 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by pickup location"
-          value={filters.pickupLocation || ''}
-          onChange={(e) => handleChange('pickupLocation', e.target.value)}
+          value={filters.pickupLocation || ""}
+          onChange={(e) => handleChange("pickupLocation", e.target.value)}
         />
       </div>
 
@@ -128,16 +127,16 @@ const DeliveryFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by delivery address"
-          value={filters.deliveryAddress || ''}
-          onChange={(e) => handleChange('deliveryAddress', e.target.value)}
+          value={filters.deliveryAddress || ""}
+          onChange={(e) => handleChange("deliveryAddress", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Payment Status</label>
         <select
-          value={filters.paymentStatus || ''}
-          onChange={(e) => handleChange('paymentStatus', e.target.value)}
+          value={filters.paymentStatus || ""}
+          onChange={(e) => handleChange("paymentStatus", e.target.value)}
         >
           <option value="">All</option>
           <option value="paid">Paid</option>
@@ -153,16 +152,16 @@ const DeliveryFilters = ({ filters, onChange }) => {
           <input
             type="number"
             placeholder="Min"
-            value={filters.minWeight || ''}
-            onChange={(e) => handleChange('minWeight', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.minWeight || ""}
+            onChange={(e) => handleChange("minWeight", e.target.value)}
+            style={{ width: "48%" }}
           />
           <input
             type="number"
             placeholder="Max"
-            value={filters.maxWeight || ''}
-            onChange={(e) => handleChange('maxWeight', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.maxWeight || ""}
+            onChange={(e) => handleChange("maxWeight", e.target.value)}
+            style={{ width: "48%" }}
           />
         </div>
       </div>

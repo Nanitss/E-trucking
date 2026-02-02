@@ -26,11 +26,9 @@ import {
   TbLayoutGrid,
   TbFilterOff,
   TbFilter,
+  TbSearch,
 } from "react-icons/tb";
 import { useTimeframe } from "../../../contexts/TimeframeContext";
-import "./TruckList.css";
-import "../../../styles/ModernForms.css";
-import "../../../styles/DesignSystem.css";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
 
@@ -575,30 +573,32 @@ const TruckList = ({ currentUser }) => {
 
   // Helper function to get status badge class
   const getStatusBadgeClass = (status) => {
+    const baseClasses =
+      "px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border";
     switch (status?.toLowerCase()) {
       case "available":
       case "active":
       case "free":
-        return "status-available";
+        return `${baseClasses} bg-emerald-100 text-emerald-700 border-emerald-200`;
       case "allocated":
       case "reserved":
-        return "status-allocated";
+        return `${baseClasses} bg-blue-100 text-blue-700 border-blue-200`;
       case "on-delivery":
       case "busy":
-        return "status-busy";
+        return `${baseClasses} bg-amber-100 text-amber-700 border-amber-200`;
       case "maintenance":
-        return "status-maintenance";
+        return `${baseClasses} bg-red-100 text-red-700 border-red-200`;
       case "out-of-service":
-        return "status-offline";
+        return `${baseClasses} bg-gray-600 text-white border-gray-600`;
       case "scheduled":
       case "standby":
-        return "status-scheduled";
+        return `${baseClasses} bg-purple-100 text-purple-700 border-purple-200`;
       case "registration-expiring":
-        return "status-registration-expiring";
+        return `${baseClasses} bg-amber-50 text-amber-600 border-amber-200`;
       case "registration-expired":
-        return "status-registration-expired";
+        return `${baseClasses} bg-red-50 text-red-600 border-red-200`;
       default:
-        return "status-unknown";
+        return `${baseClasses} bg-gray-100 text-gray-700 border-gray-200`;
     }
   };
 
@@ -610,11 +610,17 @@ const TruckList = ({ currentUser }) => {
 
   // Get summary status indicator
   const getSummaryStatusClass = (truck) => {
-    if (truck.NeedsMaintenance) return "status-maintenance";
-    if (truck.IsInUse) return "status-busy";
-    if (truck.IsAllocated) return "status-allocated";
-    if (truck.IsAvailable) return "status-available";
-    return "status-unknown";
+    const baseClasses =
+      "px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border";
+    if (truck.NeedsMaintenance)
+      return `${baseClasses} bg-red-100 text-red-700 border-red-200`;
+    if (truck.IsInUse)
+      return `${baseClasses} bg-amber-100 text-amber-700 border-amber-200`;
+    if (truck.IsAllocated)
+      return `${baseClasses} bg-blue-100 text-blue-700 border-blue-200`;
+    if (truck.IsAvailable)
+      return `${baseClasses} bg-emerald-100 text-emerald-700 border-emerald-200`;
+    return `${baseClasses} bg-gray-100 text-gray-700 border-gray-200`;
   };
 
   // Get display status (for Status column - shows Inactive when registration issues)
@@ -630,11 +636,13 @@ const TruckList = ({ currentUser }) => {
 
   // Get status badge class for display status
   const getDisplayStatusBadgeClass = (truck) => {
+    const baseClasses =
+      "px-2.5 py-0.5 rounded-full text-xs font-bold capitalize border";
     if (
       truck.OperationalStatus === "registration-expired" ||
       truck.OperationalStatus === "registration-expiring"
     ) {
-      return "status-inactive";
+      return `${baseClasses} bg-gray-100 text-gray-500 border-gray-200`;
     }
     return getStatusBadgeClass(truck.OperationalStatus);
   };
@@ -684,10 +692,10 @@ const TruckList = ({ currentUser }) => {
 
   if (loading) {
     return (
-      <div className="modern-list-container">
-        <div className="modern-loading">
-          <div className="loading-spinner"></div>
-          Loading trucks data...
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium">Loading trucks data...</p>
         </div>
       </div>
     );
@@ -695,91 +703,113 @@ const TruckList = ({ currentUser }) => {
 
   if (error) {
     return (
-      <div className="error-container">
-        <div className="error-message">
-          {error}
-          <div style={{ marginTop: "10px" }}>
-            <button onClick={() => window.location.reload()}>Retry</button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-center max-w-md w-full">
+          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-red-500">
+            <TbAlertCircle size={32} />
           </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">
+            Error Loading Data
+          </h3>
+          <p className="text-gray-500 mb-6">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-page-container">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <AdminHeader currentUser={currentUser} />
 
-      <div className="admin-content">
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
         {/* Greeting and Summary Cards */}
-        <div className="greeting-section">
-          <h2 className="greeting-text">Truck Management</h2>
-          <p className="greeting-subtitle">
-            Manage your fleet vehicles, track documents, and monitor compliance
-            status
-          </p>
-          <div className="timeframe-indicator">
-            <span className="timeframe-label">
-              Showing data for: {getFormattedDateRange()}
-            </span>
+        <div className="flex flex-col gap-1 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                Truck Management
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage your fleet vehicles, track documents, and monitor
+                compliance status
+              </p>
+            </div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-600 shadow-sm">
+              <TbCalendar size={14} className="text-gray-400" />
+              <span>Showing data for: {getFormattedDateRange()}</span>
+            </div>
           </div>
 
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="card-icon">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
                 <TbTruck size={24} />
               </div>
-              <div className="card-content">
-                <div className="card-value">{trucks.length}</div>
-                <div className="card-label">Total Trucks</div>
-                <div className="card-change positive">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {trucks.length}
+                </div>
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Total Trucks
+                </div>
+                <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 mt-1">
                   <TbArrowUp size={12} />
-                  +2.1%
+                  <span>+2.1%</span>
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600">
                 <TbCheck size={24} />
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
                   {
                     trucks.filter((t) => t.OperationalStatus === "active")
                       .length
                   }
                 </div>
-                <div className="card-label">Available</div>
-                <div className="card-change positive">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Available
+                </div>
+                <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 mt-1">
                   <TbArrowUp size={12} />
-                  +1.5%
+                  <span>+1.5%</span>
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
                 <TbClock size={24} />
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
                   {trucks.filter((t) => t.IsAllocated === true).length}
                 </div>
-                <div className="card-label">Allocated</div>
-                <div className="card-change neutral">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Allocated
+                </div>
+                <div className="flex items-center gap-1 text-xs font-medium text-gray-500 mt-1">
                   <TbActivity size={12} />
-                  0.0%
+                  <span>0.0%</span>
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-600">
                 <TbSettings size={24} />
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
                   {
                     trucks.filter(
                       (t) =>
@@ -788,10 +818,12 @@ const TruckList = ({ currentUser }) => {
                     ).length
                   }
                 </div>
-                <div className="card-label">Maintenance</div>
-                <div className="card-change negative">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Maintenance
+                </div>
+                <div className="flex items-center gap-1 text-xs font-medium text-red-600 mt-1">
                   <TbArrowDown size={12} />
-                  -0.8%
+                  <span>-0.8%</span>
                 </div>
               </div>
             </div>
@@ -799,155 +831,87 @@ const TruckList = ({ currentUser }) => {
         </div>
 
         {/* Modern Filter Bar - Popover Style */}
-        <div
-          className="modern-filter-bar"
-          style={{ position: "relative", marginBottom: "24px" }}
-        >
-          <div
-            className="search-filter-row"
-            style={{
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Search (Top Left) */}
-            <div className="search-container" style={{ flex: "0 0 350px" }}>
-              <div className="search-input-wrapper">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Search trucks..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="modern-search-input"
-                />
-              </div>
+        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 relative">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Search */}
+            <div className="relative flex-1 max-w-lg w-full">
+              <TbSearch
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <input
+                type="text"
+                placeholder="Search trucks by plate, brand, or type..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+              />
             </div>
 
-            {/* Filter Toggle Button */}
-            <button
-              className={`btn btn-secondary ${showFilters ? "active" : ""}`}
-              style={{
-                height: "42px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                position: "relative",
-                paddingRight: activeFilterCount > 0 ? "36px" : "16px",
-              }}
-              onClick={() => setShowFilters(!showFilters)}
-            >
-              <TbFilter size={18} />
-              Filters
-              {activeFilterCount > 0 && (
-                <span
-                  className="filter-count-badge"
-                  style={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                  }}
-                >
-                  {activeFilterCount}
-                </span>
-              )}
-            </button>
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Filter Button */}
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <TbFilter size={18} />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
 
-            {/* View Mode Toggle (Aligned Right) */}
-            <div className="view-mode-toggle" style={{ marginLeft: "auto" }}>
-              <button
-                onClick={() => setViewMode("table")}
-                className={`view-mode-btn ${
-                  viewMode === "table" ? "active" : ""
-                }`}
-                title="Table View"
-              >
-                <TbList size={20} />
-              </button>
-              <button
-                onClick={() => setViewMode("cards")}
-                className={`view-mode-btn ${
-                  viewMode === "cards" ? "active" : ""
-                }`}
-                title="Card View"
-              >
-                <TbLayoutGrid size={20} />
-              </button>
+              {/* View Toggle */}
+              <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`p-2 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                  title="Table View"
+                >
+                  <TbList size={18} />
+                </button>
+                <button
+                  onClick={() => setViewMode("cards")}
+                  className={`p-2 rounded-md transition-all ${viewMode === "cards" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
+                  title="Card View"
+                >
+                  <TbLayoutGrid size={18} />
+                </button>
+              </div>
             </div>
           </div>
 
-          <div
-            className="filter-summary"
-            style={{ marginTop: "12px", color: "#64748b", fontSize: "0.9rem" }}
-          >
+          <div className="mt-3 text-gray-500 text-sm font-medium">
             Showing {filteredTrucks.length} of {trucks.length} trucks
           </div>
 
           {/* Filter Popup */}
           {showFilters && (
-            <div
-              className="filter-popup-card"
-              style={{
-                position: "absolute",
-                top: "48px",
-                left: "0",
-                zIndex: 1000,
-                background: "white",
-                borderRadius: "12px",
-                boxShadow:
-                  "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                border: "1px solid #f1f5f9",
-                width: "480px",
-                maxWidth: "90vw",
-                padding: "20px",
-              }}
-            >
-              <div
-                className="popup-header"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                  alignItems: "center",
-                }}
-              >
-                <h4 style={{ margin: 0, color: "#1e293b", fontSize: "1.1rem" }}>
+            <div className="absolute top-full mt-2 right-0 md:left-0 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-[480px] max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-gray-900 text-lg">
                   Filter Options
                 </h4>
                 <button
-                  className="btn-ghost"
+                  className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "32px", padding: "0 8px", width: "auto" }}
                 >
-                  <TbX />
+                  <TbX size={20} />
                 </button>
               </div>
 
-              <div
-                className="filters-grid-popup"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "minmax(200px, 1fr) minmax(200px, 1fr)",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
+              <div className="grid grid-cols-2 gap-4 mb-6">
                 {/* Type Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Type</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Type
+                  </label>
                   <select
                     value={typeFilter}
                     onChange={(e) => setTypeFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Types</option>
                     {getUniqueValues("TruckType").map((type) => (
@@ -959,12 +923,14 @@ const TruckList = ({ currentUser }) => {
                 </div>
 
                 {/* Brand Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Brand</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Brand
+                  </label>
                   <select
                     value={brandFilter}
                     onChange={(e) => setBrandFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Brands</option>
                     {getUniqueValues("TruckBrand").map((brand) => (
@@ -976,12 +942,14 @@ const TruckList = ({ currentUser }) => {
                 </div>
 
                 {/* Compliance Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Compliance</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Compliance
+                  </label>
                   <select
                     value={complianceFilter}
                     onChange={(e) => setComplianceFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Compliance</option>
                     <option value="complete">Complete</option>
@@ -991,12 +959,14 @@ const TruckList = ({ currentUser }) => {
                 </div>
 
                 {/* Status Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Status</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Status
+                  </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Status</option>
                     <option value="available">Available</option>
@@ -1008,12 +978,14 @@ const TruckList = ({ currentUser }) => {
                 </div>
 
                 {/* Operational Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Operational</label>
+                <div className="flex flex-col gap-1.5 col-span-2">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Operational
+                  </label>
                   <select
                     value={operationalFilter}
                     onChange={(e) => setOperationalFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Operational</option>
                     <option value="active">Active</option>
@@ -1024,18 +996,9 @@ const TruckList = ({ currentUser }) => {
                 </div>
               </div>
 
-              <div
-                className="popup-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #f1f5f9",
-                }}
-              >
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
-                  className="btn-ghost"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => {
                     setStatusFilter("all");
                     setAllocationFilter("all");
@@ -1045,14 +1008,12 @@ const TruckList = ({ currentUser }) => {
                     setComplianceFilter("all");
                     setSearchQuery("");
                   }}
-                  style={{ width: "auto" }}
                 >
                   <TbFilterOff size={16} /> Reset
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "42px", padding: "0 24px" }}
                 >
                   Apply Filters
                 </button>
@@ -1063,33 +1024,35 @@ const TruckList = ({ currentUser }) => {
 
         {/* Trucks Content */}
         {filteredTrucks.length === 0 ? (
-          <div className="trucks-empty-state">
-            <div className="empty-state-icon">
-              <TbTruck />
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
+              <TbTruck size={40} />
             </div>
-            <h3 className="empty-state-title">No trucks found</h3>
-            <p className="empty-state-description">
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              No trucks found
+            </h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-8">
               No trucks match your current filters. Try adjusting your search
               criteria or add a new truck.
             </p>
             <Link
               to="/admin/trucks/add"
-              className="modern-btn modern-btn-primary"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm shadow-blue-200 transition-colors"
             >
-              <TbPlus className="btn-icon" />
+              <TbPlus size={20} />
               Add Your First Truck
             </Link>
           </div>
         ) : viewMode === "table" ? (
           // TABLE VIEW
-          <div className="trucks-table-container">
-            <div className="table-wrapper">
-              <table className="trucks-table">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
+                  <tr className="bg-gray-50 border-b border-gray-100">
                     <th
                       onClick={() => handleSort("TruckPlate")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Plate Number{" "}
                       {sortField === "TruckPlate" &&
@@ -1097,7 +1060,7 @@ const TruckList = ({ currentUser }) => {
                     </th>
                     <th
                       onClick={() => handleSort("TruckType")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Type{" "}
                       {sortField === "TruckType" &&
@@ -1105,7 +1068,7 @@ const TruckList = ({ currentUser }) => {
                     </th>
                     <th
                       onClick={() => handleSort("TruckBrand")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Brand{" "}
                       {sortField === "TruckBrand" &&
@@ -1113,7 +1076,7 @@ const TruckList = ({ currentUser }) => {
                     </th>
                     <th
                       onClick={() => handleSort("ModelYear")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Year{" "}
                       {sortField === "ModelYear" &&
@@ -1121,97 +1084,117 @@ const TruckList = ({ currentUser }) => {
                     </th>
                     <th
                       onClick={() => handleSort("OperationalStatus")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Status{" "}
                       {sortField === "OperationalStatus" &&
                         (sortDirection === "asc" ? "↑" : "↓")}
                     </th>
-                    <th className="sortable">Registration Status</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Registration Status
+                    </th>
                     <th
                       onClick={() => handleSort("documentCompliance")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Compliance{" "}
                       {sortField === "documentCompliance" &&
                         (sortDirection === "asc" ? "↑" : "↓")}
                     </th>
-                    <th>Actions</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-50 border-t border-gray-100">
                   {getSortedAndPaginatedTrucks().map((truck) => (
-                    <tr key={truck.TruckID} className="truck-row">
-                      <td className="truck-name-cell">
-                        <div className="truck-name-wrapper">
-                          <TbTruck className="truck-icon" />
-                          <span className="truck-name-text">
+                    <tr
+                      key={truck.TruckID}
+                      className="hover:bg-gray-50/50 transition-colors group"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                            <TbTruck size={16} />
+                          </div>
+                          <span className="font-medium text-gray-900 line-clamp-1">
                             {truck.TruckPlate}
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <span className="type-badge">
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700 capitalize">
                           {truck.TruckType || "N/A"}
                         </span>
                       </td>
-                      <td>{truck.TruckBrand || "Unknown"}</td>
-                      <td>{truck.ModelYear || "N/A"}</td>
-                      <td>
-                        <div className="status-cell">
-                          <span
-                            className={`status-badge ${getDisplayStatusBadgeClass(
-                              truck,
-                            )}`}
-                          >
-                            {getDisplayStatus(truck)}
-                          </span>
-                        </div>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {truck.TruckBrand || "Unknown"}
                       </td>
-                      <td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {truck.ModelYear || "N/A"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={getDisplayStatusBadgeClass(truck)}>
+                          {getDisplayStatus(truck)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
                         {/* Registration Status Column */}
                         {truck.registrationExpiryWarning ? (
                           <div
-                            className={`registration-warning-badge ${
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
                               truck.OperationalStatus === "registration-expired"
-                                ? "expired"
-                                : "expiring"
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
                             }`}
                           >
-                            {truck.OperationalStatus === "registration-expired"
-                              ? `❌ Expired`
-                              : `⚠️ Expires in ${truck.registrationExpiryDaysRemaining} days`}
+                            {truck.OperationalStatus ===
+                            "registration-expired" ? (
+                              <span>
+                                <TbAlertCircle
+                                  size={14}
+                                  className="inline mr-1"
+                                />
+                                Expired
+                              </span>
+                            ) : (
+                              <span>
+                                <TbClock size={14} className="inline mr-1" />
+                                Expires in{" "}
+                                {truck.registrationExpiryDaysRemaining} days
+                              </span>
+                            )}
                           </div>
                         ) : (
-                          <span className="status-badge status-active">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                             Active
                           </span>
                         )}
                       </td>
-                      <td>
-                        <div className="compliance-cell">
-                          <span className="compliance-icon">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
                             {getComplianceIcon(truck)}
                           </span>
-                          <span className="compliance-text">
+                          <span className="text-sm font-medium text-gray-600">
                             {truck.documentCompliance?.requiredDocumentCount ||
                               0}
                             /3
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="table-actions">
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleViewDetails(truck)}
-                            className="action-btn view-btn"
+                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <TbEye size={18} />
                           </button>
                           <Link
                             to={`/admin/trucks/edit/${truck.TruckID}`}
-                            className="action-btn edit-btn"
+                            className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                             title="Edit Truck"
                           >
                             <TbEdit size={18} />
@@ -1226,17 +1209,17 @@ const TruckList = ({ currentUser }) => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
                 <button
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(1, prev - 1))
                   }
                   disabled={currentPage === 1}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm font-medium"
                 >
                   ← Previous
                 </button>
-                <span className="pagination-info">
+                <span className="text-sm text-gray-600 font-medium">
                   Page {currentPage} of {totalPages} ({filteredTrucks.length}{" "}
                   trucks)
                 </span>
@@ -1245,7 +1228,7 @@ const TruckList = ({ currentUser }) => {
                     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm font-medium"
                 >
                   Next →
                 </button>
@@ -1254,75 +1237,80 @@ const TruckList = ({ currentUser }) => {
           </div>
         ) : (
           // CARD VIEW
-          <div className="truck-cards-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredTrucks.map((truck) => {
               const requirements = getLicenseRequirements(truck.TruckType);
               const statusClass = getSummaryStatusClass(truck);
 
               return (
-                <div key={truck.TruckID} className="truck-card">
+                <div
+                  key={truck.TruckID}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group"
+                >
                   {/* Card Header */}
-                  <div className="truck-card-header">
-                    <div className="truck-card-title">
-                      <div className="truck-card-icon">
-                        <TbTruck />
+                  <div className="p-5 border-b border-gray-50 flex justify-between items-start gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <TbTruck size={20} />
                       </div>
-                      <div className="truck-card-main">
-                        <h3 className="truck-plate">{truck.TruckPlate}</h3>
-                        <p className="truck-type">{truck.TruckType}</p>
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          {truck.TruckPlate}
+                        </h3>
+                        <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded mt-1 inline-block capitalize">
+                          {truck.TruckType}
+                        </p>
                       </div>
                     </div>
-                    <div className="truck-card-status">
-                      <span
-                        className={`truck-status-primary ${statusClass.replace(
-                          "status-",
-                          "",
-                        )}`}
-                      >
-                        {truck.OperationalStatus || "Active"}
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={getDisplayStatusBadgeClass(truck)}>
+                        {getDisplayStatus(truck)}
                       </span>
                     </div>
                   </div>
 
                   {/* Card Content */}
-                  <div className="truck-card-content">
-                    <div className="truck-card-info">
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">Brand</span>
-                        <span className="truck-info-value">
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase font-semibold block mb-1">
+                          Brand
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
                           {truck.TruckBrand || "Unknown"}
                         </span>
                       </div>
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">Year</span>
-                        <span className="truck-info-value">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase font-semibold block mb-1">
+                          Year
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
                           {truck.ModelYear || "-"}
                         </span>
                       </div>
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">Total KM</span>
-                        <span className="truck-info-value">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase font-semibold block mb-1">
+                          Total KM
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
                           {truck.TotalKilometers || 0} km
                         </span>
                       </div>
-                    </div>
-                    <div className="truck-card-info">
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">Deliveries</span>
-                        <span className="truck-info-value">
+                      <div>
+                        <span className="text-xs text-gray-500 uppercase font-semibold block mb-1">
+                          Deliveries
+                        </span>
+                        <span className="text-sm font-medium text-gray-700">
                           {truck.TotalDeliveries || 0}
                         </span>
                       </div>
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">Allocation</span>
-                        <span className="truck-info-value">
+                    </div>
+
+                    <div className="pt-4 border-t border-gray-50">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Allocation:</span>
+                        <span className="font-medium text-gray-700">
                           {formatStatus(truck.AllocationStatus)}
-                        </span>
-                      </div>
-                      <div className="truck-info-item">
-                        <span className="truck-info-label">License Req</span>
-                        <span className="truck-info-value">
-                          {requirements.driverLicense}
                         </span>
                       </div>
                     </div>
@@ -1330,71 +1318,60 @@ const TruckList = ({ currentUser }) => {
 
                   {/* Document Compliance */}
                   <div
-                    className={`truck-card-compliance ${getComplianceClass(
-                      truck,
-                    )}`}
+                    className={`px-5 py-3 border-t flex items-center justify-between ${getComplianceClass(truck).includes("complete") ? "bg-emerald-50/50 border-emerald-100" : "bg-gray-50/50 border-gray-100"}`}
                   >
-                    <div className="compliance-info">
-                      <div className="compliance-icon-large">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg">
                         {getComplianceIcon(truck)}
-                      </div>
-                      <div className="compliance-text">
-                        <div className="compliance-status">
+                      </span>
+                      <div className="text-xs">
+                        <div
+                          className={`font-medium ${getComplianceClass(truck).includes("complete") ? "text-emerald-700" : "text-gray-600"}`}
+                        >
                           {getComplianceStatus(truck)}
                         </div>
-                        <div className="compliance-details">
-                          {getComplianceDetails(truck)}
+                        <div className="text-gray-500">
+                          {truck.documentCompliance?.requiredDocumentCount || 0}
+                          /3 documents
                         </div>
                       </div>
                     </div>
-                    {/* File Counter Badge */}
-                    <div className="file-counter-badge">
-                      <span className="file-count-icon">📁</span>
-                      <span className="file-count-text">
-                        {Object.keys(truck.documents || {}).length} files
-                      </span>
-                      <div className="file-count-breakdown">
-                        <span className="required-count">
-                          {truck.documentCompliance?.requiredDocumentCount || 0}
-                          /3 required
-                        </span>
-                      </div>
+                    <div className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded border border-gray-200 shadow-sm">
+                      {Object.keys(truck.documents || {}).length} files
                     </div>
                   </div>
 
                   {/* Card Actions */}
-                  <div className="truck-card-actions">
-                    <div className="truck-card-actions-left">
-                      <Link
-                        to={`/admin/trucks/edit/${truck.TruckID}`}
-                        className="card-action-btn primary"
-                      >
-                        <TbEdit className="btn-icon" />
-                        Edit
-                      </Link>
-                      <button
-                        className={`card-action-btn ${
-                          recalculatingKm[truck.TruckID] ? "loading" : ""
-                        }`}
-                        onClick={() =>
-                          handleRecalculateKm(truck.TruckID, truck.TruckPlate)
-                        }
-                        disabled={recalculatingKm[truck.TruckID]}
-                      >
-                        {recalculatingKm[truck.TruckID] ? (
-                          <TbClock className="btn-icon" />
-                        ) : (
-                          <TbActivity className="btn-icon" />
-                        )}
-                        Recalc KM
-                      </button>
-                    </div>
+                  <div className="p-4 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-3">
+                    <Link
+                      to={`/admin/trucks/edit/${truck.TruckID}`}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm font-medium shadow-sm"
+                    >
+                      <TbEdit size={16} />
+                      Edit
+                    </Link>
                     <button
-                      className="view-details-btn"
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm font-medium shadow-sm"
                       onClick={() => handleViewDetails(truck)}
                     >
-                      <TbEye className="btn-icon" />
-                      View Details →
+                      <TbEye size={16} />
+                      Details
+                    </button>
+                    <button
+                      className={`col-span-2 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all shadow-sm ${recalculatingKm[truck.TruckID] ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-blue-600 text-white hover:bg-blue-700 shadow-blue-200"}`}
+                      onClick={() =>
+                        handleRecalculateKm(truck.TruckID, truck.TruckPlate)
+                      }
+                      disabled={recalculatingKm[truck.TruckID]}
+                    >
+                      {recalculatingKm[truck.TruckID] ? (
+                        <TbClock size={16} className="animate-spin" />
+                      ) : (
+                        <TbActivity size={16} />
+                      )}
+                      {recalculatingKm[truck.TruckID]
+                        ? "Recalculating..."
+                        : "Recalculate KM"}
                     </button>
                   </div>
                 </div>
@@ -1405,278 +1382,260 @@ const TruckList = ({ currentUser }) => {
 
         {/* Truck Details Modal */}
         {showDetailsModal && selectedTruck && (
-          <div className="modal-overlay" onClick={closeDetailsModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>🚛 {selectedTruck.TruckPlate} Details</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>
-                  ✕
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={closeDetailsModal}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <TbTruck size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {selectedTruck.TruckPlate} Details
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      View complete truck information and documents
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                  onClick={closeDetailsModal}
+                >
+                  <TbX size={24} />
                 </button>
               </div>
 
-              <div className="modal-body">
-                <div className="details-grid">
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Basic Information */}
-                  <div className="details-section">
-                    <h3>📋 Basic Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Truck ID:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TruckID}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Plate Number:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TruckPlate}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Type:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TruckType}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Brand:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TruckBrand || "Unknown"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Model Year:</span>
-                        <span className="detail-value">
-                          {selectedTruck.ModelYear || "Not specified"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Capacity:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TruckCapacity || "Not specified"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Performance Metrics */}
-                  <div className="details-section">
-                    <h3>📊 Performance Metrics</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Total Kilometers:</span>
-                        <span className="detail-value">
-                          {selectedTruck.TotalKilometers?.toLocaleString() || 0}{" "}
-                          km
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Completed Deliveries:
-                        </span>
-                        <span className="detail-value">
-                          {selectedTruck.TotalDeliveries || 0}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Average KM per Delivery:
-                        </span>
-                        <span className="detail-value">
-                          {selectedTruck.AverageKmPerDelivery || 0} km
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Status Information */}
-                  <div className="details-section">
-                    <h3>🚦 Status Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Operational Status:
-                        </span>
-                        <span
-                          className={`detail-badge ${getStatusBadgeClass(
-                            selectedTruck.OperationalStatus,
-                          )}`}
-                        >
-                          {formatStatus(selectedTruck.OperationalStatus)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Allocation Status:</span>
-                        <span
-                          className={`detail-badge ${getStatusBadgeClass(
-                            selectedTruck.AllocationStatus,
-                          )}`}
-                        >
-                          {formatStatus(selectedTruck.AllocationStatus)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Needs Maintenance:</span>
-                        <span
-                          className={`detail-badge ${
-                            selectedTruck.NeedsMaintenance
-                              ? "status-maintenance"
-                              : "status-available"
-                          }`}
-                        >
-                          {selectedTruck.NeedsMaintenance ? "Yes" : "No"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* License Requirements */}
-                  <div className="details-section">
-                    <h3>📜 License Requirements</h3>
-                    <div className="details-items">
-                      {(() => {
-                        const requirements = getLicenseRequirements(
-                          selectedTruck.TruckType,
-                        );
-                        return (
-                          <>
-                            <div className="detail-item">
-                              <span className="detail-label">
-                                Driver License Required:
-                              </span>
-                              <span className="detail-value">
-                                {requirements.driverLicense}
-                              </span>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">
-                                Helpers Required:
-                              </span>
-                              <span className="detail-value">
-                                {requirements.helpers}
-                              </span>
-                            </div>
-                            <div className="detail-item">
-                              <span className="detail-label">
-                                Helper Requirements:
-                              </span>
-                              <span className="detail-value">
-                                {requirements.helperRequirements.join(", ") ||
-                                  "None"}
-                              </span>
-                            </div>
-                          </>
-                        );
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* Document Compliance */}
-                  <div className="details-section">
-                    <h3>📄 Document Compliance</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Overall Status:</span>
-                        <span
-                          className={`detail-badge compliance-${getComplianceClass(
-                            selectedTruck,
-                          ).replace("compliance-", "")}`}
-                        >
-                          {getComplianceStatus(selectedTruck)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Documents Completed:
-                        </span>
-                        <span className="detail-value">
-                          {getComplianceDetails(selectedTruck)}
-                        </span>
-                      </div>
-
-                      {/* Document Status List */}
-                      <div className="documents-list">
-                        <div className="document-item">
-                          <span className="doc-name">
-                            OR (Original Receipt):
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📋 Basic Information
+                      </h3>
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Truck ID
                           </span>
-                          <span
-                            className={`doc-status ${
-                              selectedTruck.documents?.orDocument
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedTruck.documents?.orDocument
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TruckID}
                           </span>
                         </div>
-                        <div className="document-item">
-                          <span className="doc-name">
-                            CR (Certificate of Registration):
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Plate Number
                           </span>
-                          <span
-                            className={`doc-status ${
-                              selectedTruck.documents?.crDocument
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedTruck.documents?.crDocument
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TruckPlate}
                           </span>
                         </div>
-                        <div className="document-item">
-                          <span className="doc-name">Insurance:</span>
-                          <span
-                            className={`doc-status ${
-                              selectedTruck.documents?.insuranceDocument
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedTruck.documents?.insuranceDocument
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Type
+                          </span>
+                          <span className="text-sm font-medium text-gray-900 capitalize">
+                            {selectedTruck.TruckType}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Brand
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TruckBrand || "Unknown"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Model Year
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.ModelYear || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Capacity
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TruckCapacity || "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📊 Performance Metrics
+                      </h3>
+                      <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Total Kilometers
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TotalKilometers?.toLocaleString() ||
+                              0}{" "}
+                            km
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Completed Deliveries
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.TotalDeliveries || 0}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Avg KM/Delivery
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedTruck.AverageKmPerDelivery || 0} km
                           </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Document Viewer */}
-                  <div className="details-section">
-                    <h3>📁 Documents</h3>
-                    {selectedTruck.documents &&
-                    Object.keys(selectedTruck.documents).length > 0 ? (
-                      <div className="details-items">
-                        <FileViewer
-                          documents={selectedTruck.documents}
-                          truckPlate={selectedTruck.TruckPlate}
-                        />
+                  {/* Status & Compliance */}
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        🚦 Status Information
+                      </h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600">
+                            Operational Status
+                          </span>
+                          <span
+                            className={getStatusBadgeClass(
+                              selectedTruck.OperationalStatus,
+                            )}
+                          >
+                            {formatStatus(selectedTruck.OperationalStatus)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600">
+                            Allocation Status
+                          </span>
+                          <span
+                            className={getStatusBadgeClass(
+                              selectedTruck.AllocationStatus,
+                            )}
+                          >
+                            {formatStatus(selectedTruck.AllocationStatus)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm font-medium text-gray-600">
+                            Maintenance
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${selectedTruck.NeedsMaintenance ? "bg-red-100 text-red-700 border-red-200" : "bg-emerald-100 text-emerald-700 border-emerald-200"}`}
+                          >
+                            {selectedTruck.NeedsMaintenance ? "Yes" : "No"}
+                          </span>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="no-documents-message">
-                        <p>
-                          No documents have been uploaded for this truck yet.
-                        </p>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📄 Document Compliance
+                      </h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between mb-4">
+                          <span className="text-sm text-gray-600">
+                            Overall Status:
+                          </span>
+                          <span
+                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold capitalize ${getComplianceClass(selectedTruck).includes("complete") ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}
+                          >
+                            {getComplianceStatus(selectedTruck)}
+                          </span>
+                        </div>
+
+                        {/* Document List */}
+                        <div className="space-y-2">
+                          {[
+                            "orDocument",
+                            "crDocument",
+                            "insuranceDocument",
+                          ].map((docType) => (
+                            <div
+                              key={docType}
+                              className="flex items-center justify-between p-2 rounded hover:bg-gray-50 border border-transparent hover:border-gray-100"
+                            >
+                              <span className="text-sm text-gray-600 capitalize">
+                                {docType.replace("Document", "").toUpperCase()}
+                              </span>
+                              <span
+                                className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full ${selectedTruck.documents?.[docType] ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}
+                              >
+                                {selectedTruck.documents?.[docType] ? (
+                                  <>
+                                    <TbCheck size={12} /> Complete
+                                  </>
+                                ) : (
+                                  <>
+                                    <TbX size={12} /> Missing
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    )}
+                    </div>
                   </div>
+                </div>
+
+                {/* Documents Viewer Section */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">
+                    📁 Documents
+                  </h3>
+                  {selectedTruck.documents &&
+                  Object.keys(selectedTruck.documents).length > 0 ? (
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                      <FileViewer
+                        documents={selectedTruck.documents}
+                        truckPlate={selectedTruck.TruckPlate}
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
+                      <TbFileText
+                        size={32}
+                        className="mx-auto mb-2 opacity-50"
+                      />
+                      <p>No documents have been uploaded for this truck yet.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="modal-footer">
+              <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <Link
                   to={`/admin/trucks/edit/${selectedTruck.TruckID}`}
-                  className="modern-btn modern-btn-primary"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm shadow-blue-200 transition-colors text-sm font-medium flex items-center gap-2"
                 >
-                  ✎ Edit Truck
+                  <TbEdit size={16} /> Edit Truck
                 </Link>
                 <button
-                  className="modern-btn modern-btn-secondary"
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
                   onClick={closeDetailsModal}
                 >
                   Close

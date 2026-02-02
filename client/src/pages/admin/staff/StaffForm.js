@@ -1,22 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import '../../../styles/ModernForms.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 const StaffForm = ({ staff = null, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    position: '',
-    department: '',
-    contactNumber: '',
-    email: '',
-    address: '',
-    dateHired: '',
-    salary: '',
-    status: 'Active',
+    name: "",
+    position: "",
+    department: "",
+    contactNumber: "",
+    email: "",
+    address: "",
+    dateHired: "",
+    salary: "",
+    status: "Active",
     validId: null,
     employmentContract: null,
     medicalCertificate: null,
-    certifications: null
+    certifications: null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,51 +24,51 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
   useEffect(() => {
     if (staff) {
       setFormData({
-        name: staff.name || '',
-        position: staff.position || '',
-        department: staff.department || '',
-        contactNumber: staff.contactNumber || '',
-        email: staff.email || '',
-        address: staff.address || '',
-        dateHired: staff.dateHired || '',
-        salary: staff.salary || '',
-        status: staff.status || 'Active',
+        name: staff.name || "",
+        position: staff.position || "",
+        department: staff.department || "",
+        contactNumber: staff.contactNumber || "",
+        email: staff.email || "",
+        address: staff.address || "",
+        dateHired: staff.dateHired || "",
+        salary: staff.salary || "",
+        status: staff.status || "Active",
         validId: staff.validId || null,
         employmentContract: staff.employmentContract || null,
         medicalCertificate: staff.medicalCertificate || null,
-        certifications: staff.certifications || null
+        certifications: staff.certifications || null,
       });
     }
   }, [staff]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [fieldName]: file
+        [fieldName]: file,
       }));
-      setUploadedFiles(prev => ({
+      setUploadedFiles((prev) => ({
         ...prev,
-        [fieldName]: file.name
+        [fieldName]: file.name,
       }));
     }
   };
 
   const removeFile = (fieldName) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: null
+      [fieldName]: null,
     }));
-    setUploadedFiles(prev => {
+    setUploadedFiles((prev) => {
       const newFiles = { ...prev };
       delete newFiles[fieldName];
       return newFiles;
@@ -81,7 +80,7 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
     setIsSubmitting(true);
 
     try {
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
+      const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
       const staffData = {
         name: formData.name,
         position: formData.position,
@@ -93,42 +92,48 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
         salary: formData.salary,
         status: formData.status,
         createdAt: staff ? staff.createdAt : new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       if (staff) {
         // Update existing staff
         await axios.put(`${baseURL}/api/admin/staff/${staff.id}`, staffData);
-        alert('Staff updated successfully!');
+        alert("Staff updated successfully!");
       } else {
         // Create new staff
-        const response = await axios.post(`${baseURL}/api/admin/staff`, staffData);
+        const response = await axios.post(
+          `${baseURL}/api/admin/staff`,
+          staffData,
+        );
         staffData.id = response.data.id;
-        alert('Staff created successfully!');
+        alert("Staff created successfully!");
       }
 
       onSave(staffData);
     } catch (error) {
-      console.error('Error saving staff:', error);
-      alert('Error saving staff. Please try again.');
+      console.error("Error saving staff:", error);
+      alert("Error saving staff. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!staff || !window.confirm('Are you sure you want to delete this staff member?')) {
+    if (
+      !staff ||
+      !window.confirm("Are you sure you want to delete this staff member?")
+    ) {
       return;
     }
 
     try {
-      const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
+      const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
       await axios.delete(`${baseURL}/api/admin/staff/${staff.id}`);
-      alert('Staff deleted successfully!');
+      alert("Staff deleted successfully!");
       onClose();
     } catch (error) {
-      console.error('Error deleting staff:', error);
-      alert('Error deleting staff. Please try again.');
+      console.error("Error deleting staff:", error);
+      alert("Error deleting staff. Please try again.");
     }
   };
 
@@ -136,8 +141,10 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
     <div className="modal-overlay">
       <div className="modal-content staff-form-modal">
         <div className="modal-header">
-          <h2>{staff ? 'Edit Staff Member' : 'Add New Staff Member'}</h2>
-          <button className="close-button" onClick={onClose}>&times;</button>
+          <h2>{staff ? "Edit Staff Member" : "Add New Staff Member"}</h2>
+          <button className="close-button" onClick={onClose}>
+            &times;
+          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="modern-form">
@@ -271,13 +278,17 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
                   type="file"
                   id="validId"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, 'validId')}
+                  onChange={(e) => handleFileChange(e, "validId")}
                   required={!staff}
                 />
                 {uploadedFiles.validId && (
                   <div className="file-info">
                     <span>{uploadedFiles.validId}</span>
-                    <button type="button" onClick={() => removeFile('validId')} className="remove-file-btn">
+                    <button
+                      type="button"
+                      onClick={() => removeFile("validId")}
+                      className="remove-file-btn"
+                    >
                       Remove
                     </button>
                   </div>
@@ -285,18 +296,24 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
                 <small>Upload a valid government-issued ID</small>
               </div>
               <div className="form-group">
-                <label htmlFor="employmentContract">Employment Contract *</label>
+                <label htmlFor="employmentContract">
+                  Employment Contract *
+                </label>
                 <input
                   type="file"
                   id="employmentContract"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, 'employmentContract')}
+                  onChange={(e) => handleFileChange(e, "employmentContract")}
                   required={!staff}
                 />
                 {uploadedFiles.employmentContract && (
                   <div className="file-info">
                     <span>{uploadedFiles.employmentContract}</span>
-                    <button type="button" onClick={() => removeFile('employmentContract')} className="remove-file-btn">
+                    <button
+                      type="button"
+                      onClick={() => removeFile("employmentContract")}
+                      className="remove-file-btn"
+                    >
                       Remove
                     </button>
                   </div>
@@ -315,12 +332,16 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
                   type="file"
                   id="medicalCertificate"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, 'medicalCertificate')}
+                  onChange={(e) => handleFileChange(e, "medicalCertificate")}
                 />
                 {uploadedFiles.medicalCertificate && (
                   <div className="file-info">
                     <span>{uploadedFiles.medicalCertificate}</span>
-                    <button type="button" onClick={() => removeFile('medicalCertificate')} className="remove-file-btn">
+                    <button
+                      type="button"
+                      onClick={() => removeFile("medicalCertificate")}
+                      className="remove-file-btn"
+                    >
                       Remove
                     </button>
                   </div>
@@ -333,17 +354,23 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
                   type="file"
                   id="certifications"
                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, 'certifications')}
+                  onChange={(e) => handleFileChange(e, "certifications")}
                 />
                 {uploadedFiles.certifications && (
                   <div className="file-info">
                     <span>{uploadedFiles.certifications}</span>
-                    <button type="button" onClick={() => removeFile('certifications')} className="remove-file-btn">
+                    <button
+                      type="button"
+                      onClick={() => removeFile("certifications")}
+                      className="remove-file-btn"
+                    >
                       Remove
                     </button>
                   </div>
                 )}
-                <small>Upload relevant certifications or training documents</small>
+                <small>
+                  Upload relevant certifications or training documents
+                </small>
               </div>
             </div>
           </div>
@@ -373,7 +400,11 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
                 className="submit-button"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Saving...' : (staff ? 'Update Staff' : 'Create Staff')}
+                {isSubmitting
+                  ? "Saving..."
+                  : staff
+                    ? "Update Staff"
+                    : "Create Staff"}
               </button>
             </div>
           </div>

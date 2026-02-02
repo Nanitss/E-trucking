@@ -1,9 +1,8 @@
-import React, { useState, useContext, useEffect } from 'react';
-import axios from 'axios';
-import { AuthContext } from '../../context/AuthContext';
-import { AlertContext } from '../../context/AlertContext';
-import Loader from '../../components/common/Loader';
-import './Profile.css';
+import React, { useState, useContext, useEffect } from "react";
+import axios from "axios";
+import { AuthContext } from "../../context/AuthContext";
+import { AlertContext } from "../../context/AlertContext";
+import Loader from "../../components/common/Loader";
 
 const Profile = () => {
   const { authUser } = useContext(AuthContext);
@@ -11,9 +10,9 @@ const Profile = () => {
   const [userDetails, setUserDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,66 +25,69 @@ const Profile = () => {
       // Get appropriate endpoint based on user role
       let endpoint;
       switch (authUser.role) {
-        case 'admin':
-          endpoint = '/api/users/admin';
+        case "admin":
+          endpoint = "/api/users/admin";
           break;
-        case 'staff':
-          endpoint = '/api/staffs/profile';
+        case "staff":
+          endpoint = "/api/staffs/profile";
           break;
-        case 'client':
-          endpoint = '/api/clients/profile';
+        case "client":
+          endpoint = "/api/clients/profile";
           break;
-        case 'driver':
-          endpoint = '/api/drivers/profile';
+        case "driver":
+          endpoint = "/api/drivers/profile";
           break;
-        case 'helper':
-          endpoint = '/api/helpers/profile';
+        case "helper":
+          endpoint = "/api/helpers/profile";
           break;
-        case 'operator':
-          endpoint = '/api/operators/profile';
+        case "operator":
+          endpoint = "/api/operators/profile";
           break;
         default:
-          endpoint = '/api/auth/me';
+          endpoint = "/api/auth/me";
       }
 
       const res = await axios.get(endpoint);
       setUserDetails(res.data);
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching user details:', error);
-      showAlert('Error loading profile information', 'danger');
+      console.error("Error fetching user details:", error);
+      showAlert("Error loading profile information", "danger");
       setIsLoading(false);
     }
   };
 
-  const onChange = e => {
+  const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePasswordChange = async e => {
+  const handlePasswordChange = async (e) => {
     e.preventDefault();
-    
+
     const { currentPassword, newPassword, confirmPassword } = formData;
-    
+
     // Validate passwords
     if (newPassword !== confirmPassword) {
-      showAlert('New passwords do not match', 'danger');
+      showAlert("New passwords do not match", "danger");
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      await axios.put('/api/users/password', { currentPassword, newPassword });
-      showAlert('Password updated successfully', 'success');
+      await axios.put("/api/users/password", { currentPassword, newPassword });
+      showAlert("Password updated successfully", "success");
       setFormData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
       });
     } catch (error) {
-      console.error('Error updating password:', error);
-      showAlert(error.response?.data?.message || 'Error updating password', 'danger');
+      console.error("Error updating password:", error);
+      showAlert(
+        error.response?.data?.message || "Error updating password",
+        "danger",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -111,9 +113,12 @@ const Profile = () => {
               </div>
               <div className="info-row">
                 <div className="info-label">Role:</div>
-                <div className="info-value">{authUser.role.charAt(0).toUpperCase() + authUser.role.slice(1)}</div>
+                <div className="info-value">
+                  {authUser.role.charAt(0).toUpperCase() +
+                    authUser.role.slice(1)}
+                </div>
               </div>
-              
+
               {userDetails && (
                 <>
                   {userDetails.name && (
@@ -122,28 +127,28 @@ const Profile = () => {
                       <div className="info-value">{userDetails.name}</div>
                     </div>
                   )}
-                  
+
                   {userDetails.email && (
                     <div className="info-row">
                       <div className="info-label">Email:</div>
                       <div className="info-value">{userDetails.email}</div>
                     </div>
                   )}
-                  
+
                   {userDetails.phone && (
                     <div className="info-row">
                       <div className="info-label">Phone:</div>
                       <div className="info-value">{userDetails.phone}</div>
                     </div>
                   )}
-                  
+
                   {userDetails.address && (
                     <div className="info-row">
                       <div className="info-label">Address:</div>
                       <div className="info-value">{userDetails.address}</div>
                     </div>
                   )}
-                  
+
                   {userDetails.joinDate && (
                     <div className="info-row">
                       <div className="info-label">Join Date:</div>
@@ -156,14 +161,16 @@ const Profile = () => {
               )}
             </div>
           </div>
-          
+
           <hr />
-          
+
           <div className="profile-password">
             <h3>Change Password</h3>
             <form onSubmit={handlePasswordChange}>
               <div className="form-group">
-                <label className="form-label" htmlFor="currentPassword">Current Password</label>
+                <label className="form-label" htmlFor="currentPassword">
+                  Current Password
+                </label>
                 <input
                   type="password"
                   id="currentPassword"
@@ -174,10 +181,12 @@ const Profile = () => {
                   required
                 />
               </div>
-              
+
               <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label" htmlFor="newPassword">New Password</label>
+                  <label className="form-label" htmlFor="newPassword">
+                    New Password
+                  </label>
                   <input
                     type="password"
                     id="newPassword"
@@ -189,9 +198,11 @@ const Profile = () => {
                     required
                   />
                 </div>
-                
+
                 <div className="form-group">
-                  <label className="form-label" htmlFor="confirmPassword">Confirm New Password</label>
+                  <label className="form-label" htmlFor="confirmPassword">
+                    Confirm New Password
+                  </label>
                   <input
                     type="password"
                     id="confirmPassword"
@@ -204,14 +215,14 @@ const Profile = () => {
                   />
                 </div>
               </div>
-              
+
               <div className="form-actions">
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="btn btn-primary"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? 'Updating...' : 'Update Password'}
+                  {isSubmitting ? "Updating..." : "Update Password"}
                 </button>
               </div>
             </form>

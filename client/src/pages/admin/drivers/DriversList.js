@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import "./DriversTableView.css";
 import {
   TbUser,
   TbEye,
@@ -25,15 +24,14 @@ import {
   TbArrowDown,
   TbFilter,
   TbFilterOff,
+  TbSearch,
 } from "react-icons/tb";
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import { useExportData } from "../../../contexts/ExportDataContext";
-import "../../../styles/ModernForms.css";
-import "../../../styles/DesignSystem.css";
-import "./DriversList.css";
 import DriverForm from "./DriverForm";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
 
 const DriversList = ({ currentUser }) => {
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
@@ -154,7 +152,7 @@ const DriversList = ({ currentUser }) => {
         const driversData = await response.json();
         console.log(
           "✅ Fetched drivers from admin endpoint:",
-          driversData.length
+          driversData.length,
         );
         console.log("📋 First driver data:", driversData[0]);
         console.log("🔍 Raw emergency contact from API:", {
@@ -181,7 +179,7 @@ const DriversList = ({ currentUser }) => {
             emergencyContactRelationship: driver.emergencyContactRelationship,
             documents: driver.documents || {},
             documentCompliance: calculateDocumentCompliance(
-              driver.documents || {}
+              driver.documents || {},
             ),
           };
 
@@ -302,7 +300,7 @@ const DriversList = ({ currentUser }) => {
       // Fetch fresh driver data with scanned documents
       const response = await fetch(
         `${baseURL}/api/admin/drivers/${driver.id}`,
-        { headers }
+        { headers },
       );
       if (response.ok) {
         const freshDriver = await response.json();
@@ -331,7 +329,7 @@ const DriversList = ({ currentUser }) => {
             freshDriver.emergencyContactRelationship,
           documents: freshDriver.documents || {},
           documentCompliance: calculateDocumentCompliance(
-            freshDriver.documents || {}
+            freshDriver.documents || {},
           ),
         };
 
@@ -383,7 +381,7 @@ const DriversList = ({ currentUser }) => {
       filtered = filtered.filter((driver) => {
         if (driver.employmentDate || driver.createdAt || driver.CreatedAt) {
           return isWithinTimeframe(
-            driver.employmentDate || driver.createdAt || driver.CreatedAt
+            driver.employmentDate || driver.createdAt || driver.CreatedAt,
           );
         }
         // If no creation date, include the driver (don't exclude it)
@@ -412,7 +410,7 @@ const DriversList = ({ currentUser }) => {
           driver.name?.toLowerCase().includes(query) ||
           driver.contactNumber?.includes(query) ||
           driver.licenseType?.toLowerCase().includes(query) ||
-          driver.address?.toLowerCase().includes(query)
+          driver.address?.toLowerCase().includes(query),
       );
     }
 
@@ -438,7 +436,7 @@ const DriversList = ({ currentUser }) => {
       onLeave: filteredDrivers.filter((driver) => driver.status === "On Leave")
         .length,
       terminated: filteredDrivers.filter(
-        (driver) => driver.status === "Terminated"
+        (driver) => driver.status === "Terminated",
       ).length,
     };
 
@@ -453,61 +451,62 @@ const DriversList = ({ currentUser }) => {
 
   // Helper function to get status badge class
   const getStatusBadgeClass = (status) => {
+    const baseClass =
+      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border";
     switch (status?.toLowerCase()) {
       case "active":
-        return "status-active";
       case "available":
-        return "status-active"; // Available should display same as active
+        return `${baseClass} bg-emerald-100 text-emerald-700 border-emerald-200`;
       case "inactive":
-        return "status-inactive";
+        return `${baseClass} bg-gray-100 text-gray-700 border-gray-200`;
       case "on leave":
-        return "status-on-leave";
+        return `${baseClass} bg-amber-100 text-amber-700 border-amber-200`;
       case "on-delivery":
       case "on_delivery":
       case "on delivery":
-        return "status-on-delivery";
+        return `${baseClass} bg-blue-100 text-blue-700 border-blue-200`;
       case "terminated":
-        return "status-terminated";
+        return `${baseClass} bg-red-100 text-red-700 border-red-200`;
       case "license-expiring":
-        return "status-license-expiring";
+        return `${baseClass} bg-orange-100 text-orange-700 border-orange-200`;
       case "license-expired":
-        return "status-license-expired";
+        return `${baseClass} bg-red-100 text-red-700 border-red-200`;
       default:
-        return "status-default";
+        return `${baseClass} bg-gray-100 text-gray-700 border-gray-200`;
     }
   };
 
   const getComplianceClass = (driver) => {
     // License expiry takes priority over document compliance
     if (driver.status === "license-expired") {
-      return "compliance-license-expired";
+      return "bg-red-50 border-red-200 text-red-700";
     } else if (driver.status === "license-expiring") {
-      return "compliance-license-expiring";
+      return "bg-amber-50 border-amber-200 text-amber-700";
     }
 
     if (driver.documentCompliance?.overallStatus === "complete") {
-      return "compliance-complete";
+      return "bg-emerald-50 border-emerald-200 text-emerald-700";
     } else if (driver.documentCompliance?.overallStatus === "incomplete") {
-      return "compliance-incomplete";
+      return "bg-amber-50 border-amber-200 text-amber-700";
     } else {
-      return "compliance-pending";
+      return "bg-gray-50 border-gray-200 text-gray-700";
     }
   };
 
   const getComplianceIcon = (driver) => {
     // License expiry takes priority over document compliance
     if (driver.status === "license-expired") {
-      return "❌";
+      return <TbX className="text-red-600" size={16} />;
     } else if (driver.status === "license-expiring") {
-      return "⚠️";
+      return <TbAlertCircle className="text-amber-600" size={16} />;
     }
 
     if (driver.documentCompliance?.overallStatus === "complete") {
-      return "✅";
+      return <TbCheck className="text-emerald-600" size={16} />;
     } else if (driver.documentCompliance?.overallStatus === "incomplete") {
-      return "⚠️";
+      return <TbAlertCircle className="text-amber-600" size={16} />;
     } else {
-      return "⚙️";
+      return <TbActivity className="text-gray-400" size={16} />;
     }
   };
 
@@ -554,14 +553,23 @@ const DriversList = ({ currentUser }) => {
   // Get license expiry warning text (for License Status column - only license info)
   const getLicenseExpiryWarning = (driver) => {
     if (driver.status === "license-expired") {
-      return "❌ License Expired";
+      return (
+        <span className="flex items-center gap-1 text-red-600 font-medium">
+          <TbX size={14} /> License Expired
+        </span>
+      );
     }
     if (
       driver.status === "license-expiring" &&
       driver.licenseExpiryDaysRemaining !== undefined
     ) {
       const days = driver.licenseExpiryDaysRemaining;
-      return `⚠️ Expires in ${days} day${days !== 1 ? "s" : ""}`;
+      return (
+        <span className="flex items-center gap-1 text-amber-600 font-medium">
+          <TbAlertCircle size={14} /> Expires in {days} day
+          {days !== 1 ? "s" : ""}
+        </span>
+      );
     }
     return null;
   };
@@ -583,77 +591,100 @@ const DriversList = ({ currentUser }) => {
       driver.status === "license-expired" ||
       driver.status === "license-expiring"
     ) {
-      return "status-on-leave";
+      return getStatusBadgeClass("on leave");
     }
     return getStatusBadgeClass(driver.status);
   };
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="loading-spinner"></div>
-        <p>Loading drivers...</p>
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading drivers...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-page-container">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <AdminHeader currentUser={currentUser} />
+      <PersonnelSubNav activeTab="drivers" />
 
-      <div className="admin-content">
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
         {/* Greeting and Summary Cards */}
-        <div className="greeting-section">
-          <h2 className="greeting-text">Drivers Management</h2>
-          <p className="greeting-subtitle">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Drivers Management
+          </h2>
+          <p className="text-gray-500 mt-1">
             Manage drivers, licenses, and driving credentials
           </p>
-          <div className="timeframe-indicator">
-            <span className="timeframe-label">
-              Showing data for: {getFormattedDateRange()}
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 shadow-sm">
+            <TbCalendar size={16} className="text-gray-400" />
+            <span>
+              Showing data for:{" "}
+              <span className="font-medium text-gray-900">
+                {getFormattedDateRange()}
+              </span>
             </span>
           </div>
 
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbUser size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{drivers.length}</div>
-                <div className="card-label">Total Drivers</div>
-                <div className="card-change positive">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <TbUser size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                   <TbArrowUp size={12} />
                   +3.2%
                 </div>
               </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {drivers.length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Total Drivers
+                </div>
+              </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbCheck size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <TbCheck size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                  <TbArrowUp size={12} />
+                  +2.1%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     drivers.filter((d) => d.status?.toLowerCase() === "active")
                       .length
                   }
                 </div>
-                <div className="card-label">Active</div>
-                <div className="card-change positive">
-                  <TbArrowUp size={12} />
-                  +2.1%
-                </div>
+                <div className="text-sm text-gray-500 font-medium">Active</div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbTruck size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                  <TbTruck size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                  <TbActivity size={12} />
+                  0.0%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     drivers.filter((d) => {
                       const status = d.status
@@ -663,32 +694,34 @@ const DriversList = ({ currentUser }) => {
                     }).length
                   }
                 </div>
-                <div className="card-label">On Delivery</div>
-                <div className="card-change neutral">
-                  <TbActivity size={12} />
-                  0.0%
+                <div className="text-sm text-gray-500 font-medium">
+                  On Delivery
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbFileText size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
+                  <TbFileText size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">
+                  <TbArrowDown size={12} />
+                  -1.2%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     drivers.filter(
                       (d) =>
                         d.licenseExpiryDate &&
-                        new Date(d.licenseExpiryDate) < new Date()
+                        new Date(d.licenseExpiryDate) < new Date(),
                     ).length
                   }
                 </div>
-                <div className="card-label">Expired Licenses</div>
-                <div className="card-change negative">
-                  <TbArrowDown size={12} />
-                  -1.2%
+                <div className="text-sm text-gray-500 font-medium">
+                  Expired Licenses
                 </div>
               </div>
             </div>
@@ -696,156 +729,86 @@ const DriversList = ({ currentUser }) => {
         </div>
 
         {/* Modern Filter Bar - Drivers List */}
-        <div
-          className="modern-filter-bar"
-          style={{ position: "relative", marginBottom: "24px" }}
-        >
-          <div
-            className="search-filter-row"
-            style={{
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Search (Top Left) */}
-            <div className="search-container" style={{ flex: "0 0 350px" }}>
-              <div className="search-input-wrapper">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Search by name, contact, license..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="modern-search-input"
-                />
-              </div>
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+          {/* Search (Top Left) */}
+          <div className="relative flex-1 max-w-lg w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <TbSearch size={20} />
             </div>
+            <input
+              type="text"
+              placeholder="Search by name, contact, license..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+            />
+          </div>
 
+          <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Filter Toggle Button */}
             <button
-              className={`btn btn-secondary ${showFilters ? "active" : ""}`}
-              style={{
-                height: "42px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                position: "relative",
-                paddingRight: activeFilterCount > 0 ? "36px" : "16px",
-              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <TbFilter size={18} />
               Filters
               {activeFilterCount > 0 && (
-                <span
-                  className="filter-count-badge"
-                  style={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                  }}
-                >
+                <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
                   {activeFilterCount}
                 </span>
               )}
             </button>
 
             {/* View Mode Toggle (Aligned Right) */}
-            <div className="view-mode-toggle" style={{ marginLeft: "auto" }}>
+            <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
               <button
                 onClick={() => setViewMode("table")}
-                className={`view-mode-btn ${
-                  viewMode === "table" ? "active" : ""
-                }`}
+                className={`p-2 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Table View"
               >
-                <TbList size={20} />
+                <TbList size={18} />
               </button>
               <button
                 onClick={() => setViewMode("cards")}
-                className={`view-mode-btn ${
-                  viewMode === "cards" ? "active" : ""
-                }`}
+                className={`p-2 rounded-md transition-all ${viewMode === "cards" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Card View"
               >
-                <TbLayoutGrid size={20} />
+                <TbLayoutGrid size={18} />
               </button>
             </div>
           </div>
+        </div>
 
-          <div
-            className="filter-summary"
-            style={{ marginTop: "12px", color: "#64748b", fontSize: "0.9rem" }}
-          >
-            Showing {filteredDrivers.length} of {drivers.length} drivers
-          </div>
+        <div className="mt-3 text-gray-500 text-sm font-medium mb-6">
+          Showing {filteredDrivers.length} of {drivers.length} drivers
+        </div>
 
+        <div className="relative mb-6">
           {/* Filter Popup */}
           {showFilters && (
-            <div
-              className="filter-popup-card"
-              style={{
-                position: "absolute",
-                top: "48px",
-                left: "0",
-                zIndex: 100,
-                background: "white",
-                borderRadius: "12px",
-                boxShadow:
-                  "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                border: "1px solid #f1f5f9",
-                width: "320px",
-                maxWidth: "90vw",
-                padding: "20px",
-              }}
-            >
-              <div
-                className="popup-header"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                  alignItems: "center",
-                }}
-              >
-                <h4 style={{ margin: 0, color: "#1e293b", fontSize: "1.1rem" }}>
+            <div className="absolute top-0 right-0 md:left-0 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-80 max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-gray-900 text-lg">
                   Filter Options
                 </h4>
                 <button
-                  className="btn-ghost"
+                  className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "32px", padding: "0 8px", width: "auto" }}
                 >
-                  <TbX />
+                  <TbX size={20} />
                 </button>
               </div>
 
-              <div
-                className="filters-grid-popup"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
+              <div className="space-y-4 mb-6">
                 {/* Status Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Status</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Status
+                  </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
-                    style={{ width: "100%" }}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Status</option>
                     <option value="Active">Active</option>
@@ -857,30 +820,19 @@ const DriversList = ({ currentUser }) => {
                 </div>
               </div>
 
-              <div
-                className="popup-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #f1f5f9",
-                }}
-              >
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
-                  className="btn-ghost"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => {
                     setStatusFilter("all");
                     setSearchQuery("");
                   }}
-                  style={{ width: "auto" }}
                 >
                   <TbFilterOff size={16} /> Reset
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "42px", padding: "0 24px" }}
                 >
                   Apply Filters
                 </button>
@@ -891,144 +843,194 @@ const DriversList = ({ currentUser }) => {
 
         {/* Drivers Content */}
         {filteredDrivers.length === 0 ? (
-          <div className="drivers-empty-state">
-            <div className="empty-state-icon">👤</div>
-            <h3 className="empty-state-title">No drivers found</h3>
-            <p className="empty-state-description">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
+              <TbUser size={40} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              No drivers found
+            </h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-8">
               No drivers match your current filters. Try adjusting your search
               criteria or add a new driver.
             </p>
-            <Link to="/admin/drivers/add" className="btn btn-primary">
-              ➕ Add Your First Driver
+            <Link
+              to="/admin/drivers/add"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm shadow-blue-200 transition-colors"
+            >
+              <TbPlus size={20} /> Add Your First Driver
             </Link>
           </div>
         ) : viewMode === "table" ? (
           // TABLE VIEW
-          <div className="drivers-table-container">
-            <div className="table-wrapper">
-              <table className="drivers-table">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
-                    <th onClick={() => handleSort("name")} className="sortable">
-                      Driver Name{" "}
-                      {sortField === "name" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        Driver Name{" "}
+                        {sortField === "name" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("contactNumber")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      Contact{" "}
-                      {sortField === "contactNumber" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Contact{" "}
+                        {sortField === "contactNumber" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("licenseType")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      License Type{" "}
-                      {sortField === "licenseType" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        License Type{" "}
+                        {sortField === "licenseType" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("licenseNumber")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      License #{" "}
-                      {sortField === "licenseNumber" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        License #{" "}
+                        {sortField === "licenseNumber" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("status")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      Status{" "}
-                      {sortField === "status" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Status{" "}
+                        {sortField === "status" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
-                    <th className="sortable">License Status</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      License Status
+                    </th>
                     <th
                       onClick={() => handleSort("documentCompliance")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Compliance{" "}
                       {sortField === "documentCompliance" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                        (sortDirection === "asc" ? (
+                          <TbArrowUp size={14} />
+                        ) : (
+                          <TbArrowDown size={14} />
+                        ))}
                     </th>
-                    <th>Actions</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {getSortedAndPaginatedDrivers().map((driver) => (
-                    <tr key={driver.id} className="driver-row">
-                      <td className="driver-name-cell">
-                        <div className="driver-name-wrapper">
-                          <TbUser className="driver-icon" />
-                          <span className="driver-name-text">
-                            {driver.name}
-                          </span>
+                    <tr
+                      key={driver.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0">
+                            {driver.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {driver.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {driver.id}
+                            </div>
+                          </div>
                         </div>
                       </td>
-                      <td>{driver.contactNumber || "N/A"}</td>
-                      <td>
-                        <span className="license-badge">
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {driver.contactNumber || "N/A"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-200">
                           {driver.licenseType || "N/A"}
                         </span>
                       </td>
-                      <td>{driver.licenseNumber || "N/A"}</td>
-                      <td>
-                        <div className="status-cell">
-                          <span
-                            className={`status-badge ${getDisplayStatusBadgeClass(
-                              driver
-                            )}`}
-                          >
-                            {getDisplayStatus(driver)}
-                          </span>
-                        </div>
+                      <td className="px-6 py-4 text-sm font-mono text-gray-600">
+                        {driver.licenseNumber || "N/A"}
                       </td>
-                      <td>
+                      <td className="px-6 py-4">
+                        <span className={getDisplayStatusBadgeClass(driver)}>
+                          {getDisplayStatus(driver)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
                         {/* License Status Column */}
                         {getLicenseExpiryWarning(driver) ? (
-                          <div
-                            className={`license-status-badge ${
-                              driver.status === "license-expired"
-                                ? "expired"
-                                : "expiring"
-                            }`}
-                          >
-                            {getLicenseExpiryWarning(driver)}
-                          </div>
+                          getLicenseExpiryWarning(driver)
                         ) : (
-                          <span className="status-badge status-active">
-                            Active
+                          <span className="flex items-center gap-1 text-emerald-600 font-medium text-xs">
+                            <TbCheck size={14} /> Valid
                           </span>
                         )}
                       </td>
-                      <td>
-                        <div className="compliance-cell">
-                          <span className="compliance-icon">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
                             {getComplianceIcon(driver)}
                           </span>
-                          <span className="compliance-text">
-                            {driver.documentCompliance?.requiredDocumentCount ||
-                              0}
-                            /3
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-900">
+                              {driver.documentCompliance
+                                ?.requiredDocumentCount || 0}
+                              /3
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td>
-                        <div className="table-actions">
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewDetails(driver)}
-                            className="action-btn view-btn"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <TbEye size={18} />
                           </button>
                           <Link
                             to={`/admin/drivers/edit/${driver.id}`}
-                            className="action-btn edit-btn"
+                            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Edit Driver"
                           >
                             <TbEdit size={18} />
@@ -1043,17 +1045,17 @@ const DriversList = ({ currentUser }) => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
                 <button
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(1, prev - 1))
                   }
                   disabled={currentPage === 1}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
                 >
                   ← Previous
                 </button>
-                <span className="pagination-info">
+                <span className="text-sm text-gray-600 font-medium">
                   Page {currentPage} of {totalPages} ({filteredDrivers.length}{" "}
                   drivers)
                 </span>
@@ -1062,7 +1064,7 @@ const DriversList = ({ currentUser }) => {
                     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
                 >
                   Next →
                 </button>
@@ -1071,152 +1073,143 @@ const DriversList = ({ currentUser }) => {
           </div>
         ) : (
           // CARD VIEW
-          <div className="driver-cards-grid">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredDrivers.map((driver) => {
               const statusClass = getStatusBadgeClass(driver.status);
 
               return (
-                <div key={driver.id} className="driver-card">
+                <div
+                  key={driver.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group"
+                >
                   {/* Card Header */}
-                  <div className="driver-card-header">
-                    <div className="driver-card-title">
-                      <div className="driver-card-icon">
-                        <TbUser />
+                  <div className="p-5 border-b border-gray-50 flex justify-between items-start gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                        <TbUser size={20} />
                       </div>
-                      <div className="driver-card-main">
-                        <h3 className="driver-name">{driver.name}</h3>
-                        <p className="driver-type">
+                      <div>
+                        <h3 className="font-bold text-gray-900">
+                          {driver.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded mt-1 inline-block capitalize">
                           {driver.licenseType || "No License"}
                         </p>
                       </div>
                     </div>
-                    <div className="driver-card-status">
-                      <span
-                        className={`driver-status-primary ${statusClass.replace(
-                          "status-",
-                          ""
-                        )}`}
-                      >
-                        {driver.status || "Active"}
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={getDisplayStatusBadgeClass(driver)}>
+                        {getDisplayStatus(driver)}
                       </span>
                     </div>
                   </div>
 
                   {/* Card Content */}
-                  <div className="driver-card-content">
-                    <div className="driver-card-info">
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">Contact</span>
-                        <span className="driver-info-value">
+                  <div className="p-5 space-y-4">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="block text-xs text-gray-500 mb-1">
+                          Contact
+                        </span>
+                        <span
+                          className="font-medium text-gray-900 truncate block text-sm"
+                          title={driver.contactNumber}
+                        >
                           {driver.contactNumber || "N/A"}
                         </span>
                       </div>
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">Address</span>
-                        <span className="driver-info-value">
-                          {driver.address || "N/A"}
+                      <div>
+                        <span className="block text-xs text-gray-500 mb-1">
+                          License #
                         </span>
-                      </div>
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">License #</span>
-                        <span className="driver-info-value">
+                        <span className="font-mono text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block w-fit">
                           {driver.licenseNumber || "N/A"}
                         </span>
                       </div>
-                    </div>
-                    <div className="driver-card-info">
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">License Type</span>
-                        <span className="driver-info-value">
-                          {driver.licenseType || "N/A"}
+                      <div>
+                        <span className="block text-xs text-gray-500 mb-1">
+                          Expiry
                         </span>
-                      </div>
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">Expiry</span>
-                        <span className="driver-info-value">
+                        <span className="font-medium text-gray-900 text-sm">
                           {driver.licenseExpiryDate
                             ? new Date(
-                                driver.licenseExpiryDate
+                                driver.licenseExpiryDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
-                      <div className="driver-info-item">
-                        <span className="driver-info-label">Hired</span>
-                        <span className="driver-info-value">
+                      <div>
+                        <span className="block text-xs text-gray-500 mb-1">
+                          Hired
+                        </span>
+                        <span className="font-medium text-gray-900 text-sm">
                           {driver.employmentDate
                             ? new Date(
-                                driver.employmentDate
+                                driver.employmentDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Document Compliance */}
-                  <div
-                    className={`driver-card-compliance ${getComplianceClass(
-                      driver
-                    )}`}
-                  >
-                    <div className="compliance-info">
-                      <div className="compliance-icon-large">
-                        {getComplianceIcon(driver)}
-                      </div>
-                      <div className="compliance-text">
-                        <div className="compliance-status">
-                          {getComplianceStatus(driver)}
+                    {/* Compliance Section */}
+                    <div
+                      className={`p-3 rounded-xl border ${getComplianceClass(driver)}`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 shrink-0">
+                          {getComplianceIcon(driver)}
                         </div>
-                        <div className="compliance-details">
-                          {getComplianceDetails(driver)}
+                        <div className="flex-1">
+                          <div className="text-sm font-bold opacity-90 mb-0.5">
+                            {getComplianceStatus(driver)}
+                          </div>
+                          <div className="text-xs opacity-75">
+                            {getComplianceDetails(driver)}
+                          </div>
+
+                          <div className="mt-2 text-xs flex items-center justify-between border-t border-black/5 pt-2">
+                            <span className="font-medium flex items-center gap-1 opacity-80">
+                              <TbFileText size={12} />
+                              {Object.keys(driver.documents || {}).length} files
+                            </span>
+                            <span className="font-medium opacity-80">
+                              {driver.documentCompliance
+                                ?.requiredDocumentCount || 0}
+                              /3 required
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                    {/* File Counter Badge */}
-                    <div className="file-counter-badge">
-                      <span className="file-count-icon">📁</span>
-                      <span className="file-count-text">
-                        {Object.keys(driver.documents || {}).length} files
-                      </span>
-                      <div className="file-count-breakdown">
-                        <span className="required-count">
-                          {driver.documentCompliance?.requiredDocumentCount ||
-                            0}
-                          /3 required
-                        </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Card Actions */}
-                  <div className="driver-card-actions">
-                    <div className="driver-card-actions-left">
-                      {driver.id ? (
-                        <Link
-                          to={`/admin/drivers/edit/${driver.id}`}
-                          className="card-action-btn primary"
-                        >
-                          <TbEdit className="btn-icon" />
-                          Edit
-                        </Link>
-                      ) : (
-                        <button
-                          className="card-action-btn primary disabled"
-                          disabled
-                          title="Driver ID missing"
-                        >
-                          <TbEdit className="btn-icon" />
-                          Edit (No ID)
-                        </button>
-                      )}
-                    </div>
+                  <div className="p-4 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-3">
+                    {driver.id ? (
+                      <Link
+                        to={`/admin/drivers/edit/${driver.id}`}
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm font-medium shadow-sm"
+                      >
+                        <TbEdit size={16} />
+                        Edit
+                      </Link>
+                    ) : (
+                      <button
+                        className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-sm font-medium shadow-sm"
+                        disabled
+                        title="Driver ID missing"
+                      >
+                        <TbEdit size={16} />
+                        Edit
+                      </button>
+                    )}
                     <button
-                      className="view-details-btn"
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm shadow-blue-200"
                       onClick={() => handleViewDetails(driver)}
                     >
-                      <TbEye className="btn-icon" />
-                      View Details →
+                      <TbEye size={16} />
+                      Details
                     </button>
                   </div>
                 </div>
@@ -1226,239 +1219,283 @@ const DriversList = ({ currentUser }) => {
         )}
 
         {/* Driver Details Modal */}
+        {/* Driver Details Modal */}
         {showDetailsModal && selectedDriver && (
-          <div className="modal-overlay" onClick={closeDetailsModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Driver Details - {selectedDriver.name}</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>
-                  ✕
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={closeDetailsModal}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <TbUser size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {selectedDriver.name} Details
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      View complete driver information and documents
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                  onClick={closeDetailsModal}
+                >
+                  <TbX size={24} />
                 </button>
               </div>
 
-              <div className="modal-body">
-                <div className="details-grid">
-                  {/* Personal Information */}
-                  <div className="details-section">
-                    <h3>👤 Personal Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Full Name:</span>
-                        <span className="detail-value">
-                          {selectedDriver.name}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Contact Number:</span>
-                        <span className="detail-value">
-                          {selectedDriver.contactNumber || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Address:</span>
-                        <span className="detail-value">
-                          {selectedDriver.address || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Status:</span>
-                        <span
-                          className={`detail-badge ${getStatusBadgeClass(
-                            selectedDriver.status
-                          )}`}
-                        >
-                          {selectedDriver.status}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Employment Information */}
-                  <div className="details-section">
-                    <h3>💼 Employment Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Employment Date:</span>
-                        <span className="detail-value">
-                          {selectedDriver.employmentDate
-                            ? new Date(
-                                selectedDriver.employmentDate
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* License Information */}
-                  <div className="details-section">
-                    <h3>📜 License Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">License Type:</span>
-                        <span className="detail-value">
-                          {selectedDriver.licenseType || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">License Number:</span>
-                        <span className="detail-value">
-                          {selectedDriver.licenseNumber || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">License Expiry:</span>
-                        <span className="detail-value">
-                          {selectedDriver.licenseExpiryDate
-                            ? new Date(
-                                selectedDriver.licenseExpiryDate
-                              ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Emergency Contact Information */}
-                  <div className="details-section">
-                    <h3>🚨 Emergency Contact</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Contact Name:</span>
-                        <span className="detail-value">
-                          {selectedDriver.emergencyContactName || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Contact Phone:</span>
-                        <span className="detail-value">
-                          {selectedDriver.emergencyContactPhone || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Relationship:</span>
-                        <span className="detail-value">
-                          {selectedDriver.emergencyContactRelationship || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Document Compliance */}
-                  <div className="details-section">
-                    <h3>📄 Document Compliance</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Overall Status:</span>
-                        <span
-                          className={`detail-badge compliance-${getComplianceClass(
-                            selectedDriver
-                          ).replace("compliance-", "")}`}
-                        >
-                          {getComplianceStatus(selectedDriver)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Documents Completed:
-                        </span>
-                        <span className="detail-value">
-                          {getComplianceDetails(selectedDriver)}
-                        </span>
-                      </div>
-
-                      {/* Document Status List */}
-                      <div className="documents-list">
-                        <div key="licenseDocument" className="document-item">
-                          <span className="doc-name">License Document:</span>
-                          <span
-                            className={`doc-status ${
-                              selectedDriver.documents?.licenseDocument
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedDriver.documents?.licenseDocument
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Personal & Employment Information */}
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        👤 Personal Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Full Name
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedDriver.name}
                           </span>
                         </div>
-                        <div key="medicalCertificate" className="document-item">
-                          <span className="doc-name">Medical Certificate:</span>
-                          <span
-                            className={`doc-status ${
-                              selectedDriver.documents?.medicalCertificate
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedDriver.documents?.medicalCertificate
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Contact Number
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedDriver.contactNumber || "N/A"}
                           </span>
                         </div>
-                        <div key="idPhoto" className="document-item">
-                          <span className="doc-name">ID Photo:</span>
-                          <span
-                            className={`doc-status ${
-                              selectedDriver.documents?.idPhoto
-                                ? "complete"
-                                : "missing"
-                            }`}
-                          >
-                            {selectedDriver.documents?.idPhoto
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                        <div className="sm:col-span-2">
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Address
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedDriver.address || "N/A"}
                           </span>
                         </div>
-                        <div key="nbiClearance" className="document-item">
-                          <span className="doc-name">NBI Clearance:</span>
-                          <span
-                            className={`doc-status ${
-                              selectedDriver.documents?.nbiClearance
-                                ? "complete"
-                                : "optional"
-                            }`}
-                          >
-                            {selectedDriver.documents?.nbiClearance
-                              ? "✓ Complete"
-                              : "○ Optional"}
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Current Status
                           </span>
+                          <span
+                            className={getStatusBadgeClass(
+                              selectedDriver.status,
+                            )}
+                          >
+                            {selectedDriver.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        💼 Employment Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Employment Date
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedDriver.employmentDate
+                              ? new Date(
+                                  selectedDriver.employmentDate,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        🚨 Emergency Contact
+                      </h3>
+                      <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                          <div>
+                            <span className="text-xs text-red-500 block mb-1 font-medium">
+                              Contact Name
+                            </span>
+                            <span className="text-sm font-bold text-red-900">
+                              {selectedDriver.emergencyContactName || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-red-500 block mb-1 font-medium">
+                              Relationship
+                            </span>
+                            <span className="text-sm font-bold text-red-900">
+                              {selectedDriver.emergencyContactRelationship ||
+                                "N/A"}
+                            </span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-xs text-red-500 block mb-1 font-medium">
+                              Contact Phone
+                            </span>
+                            <span className="text-sm font-bold text-red-900">
+                              {selectedDriver.emergencyContactPhone || "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* License & Documents */}
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📜 License Information
+                      </h3>
+                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                          <div>
+                            <span className="text-xs text-gray-500 block mb-1">
+                              License Type
+                            </span>
+                            <span className="text-sm font-bold text-gray-900">
+                              {selectedDriver.licenseType || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500 block mb-1">
+                              License Number
+                            </span>
+                            <span className="text-sm font-mono font-bold text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 inline-block">
+                              {selectedDriver.licenseNumber || "N/A"}
+                            </span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-xs text-gray-500 block mb-1">
+                              Expiry Date
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-medium text-gray-900">
+                                {selectedDriver.licenseExpiryDate
+                                  ? new Date(
+                                      selectedDriver.licenseExpiryDate,
+                                    ).toLocaleDateString()
+                                  : "N/A"}
+                              </span>
+                              {getLicenseExpiryWarning(selectedDriver)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📄 Compliance Status
+                      </h3>
+
+                      <div
+                        className={`p-4 rounded-xl border mb-6 ${getComplianceClass(selectedDriver)}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            {getComplianceIcon(selectedDriver)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm mb-1">
+                              {getComplianceStatus(selectedDriver)}
+                            </div>
+                            <div className="text-xs opacity-80">
+                              {getComplianceDetails(selectedDriver)}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            License Document
+                          </span>
+                          {selectedDriver.documents?.licenseDocument ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                              <TbX size={12} /> Missing
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            Medical Certificate
+                          </span>
+                          {selectedDriver.documents?.medicalCertificate ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                              <TbX size={12} /> Missing
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            ID Photo
+                          </span>
+                          {selectedDriver.documents?.idPhoto ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                              <TbX size={12} /> Missing
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            NBI Clearance
+                          </span>
+                          {selectedDriver.documents?.nbiClearance ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+                              Optional
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Document Viewer */}
-                <div className="details-section">
-                  <h3>📁 Uploaded Documents</h3>
-                  <div className="document-summary">
-                    <div className="document-count-badge">
-                      <span className="count-icon">📁</span>
-                      <span className="count-text">
-                        {selectedDriver.documentCompliance?.documentCount || 0}{" "}
-                        files uploaded
-                      </span>
-                    </div>
-                    <div className="document-breakdown">
-                      <span className="required-docs">
-                        Required:{" "}
-                        {selectedDriver.documentCompliance
-                          ?.requiredDocumentCount || 0}
-                        /3
-                      </span>
-                      <span className="optional-docs">
-                        Optional:{" "}
-                        {selectedDriver.documentCompliance
-                          ?.optionalDocumentCount || 0}
-                        /1
-                      </span>
-                    </div>
-                  </div>
+                {/* Documents Viewer Section */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center justify-between">
+                    <span>📁 Uploaded Documents</span>
+                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                      {selectedDriver.documentCompliance?.documentCount || 0}{" "}
+                      files uploaded
+                    </span>
+                  </h3>
+
                   {selectedDriver.documents &&
                   Object.keys(selectedDriver.documents).length > 0 ? (
-                    <div className="details-items">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <FileViewer
                         documents={selectedDriver.documents}
                         entityType="driver"
@@ -1466,20 +1503,38 @@ const DriversList = ({ currentUser }) => {
                       />
                     </div>
                   ) : (
-                    <div className="no-documents-message">
-                      <div className="no-docs-icon">📄</div>
-                      <p>
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
+                      <TbFileText
+                        size={32}
+                        className="mx-auto mb-2 opacity-50"
+                      />
+                      <p className="mb-4">
                         No documents have been uploaded for this driver yet.
                       </p>
                       <Link
                         to={`/admin/drivers/edit/${selectedDriver.id}`}
-                        className="btn btn-primary btn-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
                       >
-                        Upload Documents
+                        <TbEdit size={16} /> Upload Documents
                       </Link>
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+                <Link
+                  to={`/admin/drivers/edit/${selectedDriver.id}`}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm shadow-blue-200 transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <TbEdit size={16} /> Edit Driver
+                </Link>
+                <button
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
+                  onClick={closeDetailsModal}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

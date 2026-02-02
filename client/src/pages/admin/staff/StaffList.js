@@ -1,32 +1,26 @@
 // src/pages/admin/staff/StaffList.js - Staff Management Dashboard
 
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  TbUser, 
-  TbEye, 
-  TbEdit
-} from 'react-icons/tb';
-import './StaffList.css';
-import '../../../styles/ModernForms.css';
-import FileViewer from '../../../components/FileViewer';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { TbUser, TbEye, TbEdit } from "react-icons/tb";
+import FileViewer from "../../../components/FileViewer";
 
 const StaffList = () => {
   // Define baseURL for API calls
-  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
-  
+  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+
   const [staff, setStaff] = useState([]);
   const [filteredStaff, setFilteredStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [sortField, setSortField] = useState('name');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const staffPerPage = 20;
 
@@ -45,33 +39,33 @@ const StaffList = () => {
   // Sorting function
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   // Get sorted and paginated staff
   const getSortedAndPaginatedStaff = () => {
     let sorted = [...filteredStaff];
-    
+
     // Sort
     sorted.sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
-      
+
       // Handle special cases
-      if (sortField === 'documentCompliance') {
+      if (sortField === "documentCompliance") {
         aVal = a.documentCompliance?.requiredDocumentCount || 0;
         bVal = b.documentCompliance?.requiredDocumentCount || 0;
       }
-      
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-    
+
     // Paginate
     const startIndex = (currentPage - 1) * staffPerPage;
     const endIndex = startIndex + staffPerPage;
@@ -85,40 +79,56 @@ const StaffList = () => {
     const fetchStaff = async () => {
       try {
         setLoading(true);
-        
+
         // Get staff with actual documents from file system (all in one call)
-        const response = await axios.get(`${baseURL}/api/simple-files/staff-with-documents`);
-        console.log('Raw API response (staff with actual documents):', response.data);
-        
+        const response = await axios.get(
+          `${baseURL}/api/simple-files/staff-with-documents`,
+        );
+        console.log(
+          "Raw API response (staff with actual documents):",
+          response.data,
+        );
+
         // Handle both array response and object with staff property
-        const staffData = Array.isArray(response.data) ? response.data : response.data.staff;
-        
+        const staffData = Array.isArray(response.data)
+          ? response.data
+          : response.data.staff;
+
         if (staffData && staffData.length > 0) {
-          const formattedStaff = staffData.map(staffMember => {
-            console.log('Processing staff data:', staffMember);
+          const formattedStaff = staffData.map((staffMember) => {
+            console.log("Processing staff data:", staffMember);
             return {
               id: staffMember.id || staffMember.StaffID,
               name: staffMember.name || staffMember.StaffName,
-              username: staffMember.username || `@${staffMember.name?.replace(/\s+/g, '')}` || '',
-              contactNumber: staffMember.contactNumber || staffMember.StaffNumber,
+              username:
+                staffMember.username ||
+                `@${staffMember.name?.replace(/\s+/g, "")}` ||
+                "",
+              contactNumber:
+                staffMember.contactNumber || staffMember.StaffNumber,
               address: staffMember.address || staffMember.StaffAddress,
-              status: staffMember.status || staffMember.StaffStatus || 'Active',
-              employmentDate: staffMember.employmentDate || staffMember.StaffEmploymentDate,
-              position: staffMember.position || staffMember.StaffPosition || 'Staff',
-              department: staffMember.department || staffMember.StaffDepartment || 'General',
-              rate: staffMember.rate || staffMember.StaffRate || '',
+              status: staffMember.status || staffMember.StaffStatus || "Active",
+              employmentDate:
+                staffMember.employmentDate || staffMember.StaffEmploymentDate,
+              position:
+                staffMember.position || staffMember.StaffPosition || "Staff",
+              department:
+                staffMember.department ||
+                staffMember.StaffDepartment ||
+                "General",
+              rate: staffMember.rate || staffMember.StaffRate || "",
               documents: staffMember.documents || {},
-              documentCompliance: staffMember.documentCompliance || null
+              documentCompliance: staffMember.documentCompliance || null,
             };
           });
-          
+
           setStaff(formattedStaff);
         } else {
-          console.log('No staff data received, setting empty array');
+          console.log("No staff data received, setting empty array");
           setStaff([]);
         }
       } catch (err) {
-        console.error('Error fetching staff:', err);
+        console.error("Error fetching staff:", err);
         setError(`Failed to fetch staff: ${err.message}`);
         setStaff([]);
       } finally {
@@ -132,14 +142,17 @@ const StaffList = () => {
   // Calculate status counts and get unique departments
   const statusCounts = {
     total: staff.length,
-    active: staff.filter(staffMember => staffMember.status === 'Active').length,
-    inactive: staff.filter(staffMember => staffMember.status === 'Inactive').length,
-    departments: [...new Set(staff.map(s => s.department).filter(Boolean))].length
+    active: staff.filter((staffMember) => staffMember.status === "Active")
+      .length,
+    inactive: staff.filter((staffMember) => staffMember.status === "Inactive")
+      .length,
+    departments: [...new Set(staff.map((s) => s.department).filter(Boolean))]
+      .length,
   };
 
   // Get unique departments for filter
   const getUniqueDepartments = () => {
-    return [...new Set(staff.map(s => s.department).filter(Boolean))].sort();
+    return [...new Set(staff.map((s) => s.department).filter(Boolean))].sort();
   };
 
   // Apply filters
@@ -147,24 +160,29 @@ const StaffList = () => {
     let filtered = [...staff];
 
     // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(staffMember => staffMember.status === statusFilter);
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(
+        (staffMember) => staffMember.status === statusFilter,
+      );
     }
 
     // Apply department filter
-    if (departmentFilter !== 'all') {
-      filtered = filtered.filter(staffMember => staffMember.department === departmentFilter);
+    if (departmentFilter !== "all") {
+      filtered = filtered.filter(
+        (staffMember) => staffMember.department === departmentFilter,
+      );
     }
 
     // Apply search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(staffMember => 
-        staffMember.name?.toLowerCase().includes(query) ||
-        staffMember.username?.toLowerCase().includes(query) ||
-        staffMember.department?.toLowerCase().includes(query) ||
-        staffMember.contactNumber?.includes(query) ||
-        staffMember.address?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (staffMember) =>
+          staffMember.name?.toLowerCase().includes(query) ||
+          staffMember.username?.toLowerCase().includes(query) ||
+          staffMember.department?.toLowerCase().includes(query) ||
+          staffMember.contactNumber?.includes(query) ||
+          staffMember.address?.toLowerCase().includes(query),
       );
     }
 
@@ -173,48 +191,52 @@ const StaffList = () => {
 
   // Helper function to get status badge class
   const getStatusBadgeClass = (status) => {
-    switch(status?.toLowerCase()) {
-      case 'active':
-        return 'status-active';
-      case 'inactive':
-        return 'status-inactive';
-      case 'on leave':
-        return 'status-on-leave';
-      case 'terminated':
-        return 'status-terminated';
+    switch (status?.toLowerCase()) {
+      case "active":
+        return "status-active";
+      case "inactive":
+        return "status-inactive";
+      case "on leave":
+        return "status-on-leave";
+      case "terminated":
+        return "status-terminated";
       default:
-        return 'status-default';
+        return "status-default";
     }
   };
 
   // Helper functions for compliance
   const getComplianceClass = (staffMember) => {
-    if (!staffMember.documentCompliance) return 'compliance-pending';
+    if (!staffMember.documentCompliance) return "compliance-pending";
     const status = staffMember.documentCompliance.overallStatus;
-    if (status === 'complete') return 'compliance-complete';
-    if (status === 'incomplete') return 'compliance-incomplete';
-    return 'compliance-pending';
+    if (status === "complete") return "compliance-complete";
+    if (status === "incomplete") return "compliance-incomplete";
+    return "compliance-pending";
   };
 
   const getComplianceIcon = (staffMember) => {
-    if (!staffMember.documentCompliance) return '⚙️';
+    if (!staffMember.documentCompliance) return "⚙️";
     const status = staffMember.documentCompliance.overallStatus;
-    if (status === 'complete') return '✅';
-    if (status === 'incomplete') return '⚠️';
-    return '⚙️';
+    if (status === "complete") return "✅";
+    if (status === "incomplete") return "⚠️";
+    return "⚙️";
   };
 
   const getComplianceStatus = (staffMember) => {
-    if (!staffMember.documentCompliance) return 'Compliance Pending';
+    if (!staffMember.documentCompliance) return "Compliance Pending";
     const status = staffMember.documentCompliance.overallStatus;
-    if (status === 'complete') return 'Compliance Complete';
-    if (status === 'incomplete') return 'Compliance Incomplete';
-    return 'Compliance Pending';
+    if (status === "complete") return "Compliance Complete";
+    if (status === "incomplete") return "Compliance Incomplete";
+    return "Compliance Pending";
   };
 
   const getComplianceDetails = (staffMember) => {
-    if (!staffMember.documentCompliance) return 'No compliance data';
-    const { requiredDocumentCount = 0, optionalDocumentCount = 0, overallStatus = 'pending' } = staffMember.documentCompliance;
+    if (!staffMember.documentCompliance) return "No compliance data";
+    const {
+      requiredDocumentCount = 0,
+      optionalDocumentCount = 0,
+      overallStatus = "pending",
+    } = staffMember.documentCompliance;
     return `${requiredDocumentCount} required, ${optionalDocumentCount} optional - ${overallStatus}`;
   };
 
@@ -235,7 +257,10 @@ const StaffList = () => {
         <div className="error-container">
           <h2>Error Loading Staff</h2>
           <p>{error}</p>
-          <button onClick={() => window.location.reload()} className="btn btn-primary">
+          <button
+            onClick={() => window.location.reload()}
+            className="btn btn-primary"
+          >
             Retry
           </button>
         </div>
@@ -295,10 +320,12 @@ const StaffList = () => {
         <div className="filters-header">
           <h3>🔍 Filter & Search Staff</h3>
           <div className="filters-toggle">
-            <span className="filters-count">Showing {filteredStaff.length} of {staff.length} staff members</span>
+            <span className="filters-count">
+              Showing {filteredStaff.length} of {staff.length} staff members
+            </span>
           </div>
         </div>
-        
+
         <div className="filters-content">
           {/* Search */}
           <div className="filter-group">
@@ -337,8 +364,10 @@ const StaffList = () => {
               className="modern-filter-select"
             >
               <option value="all">All Departments</option>
-              {getUniqueDepartments().map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
+              {getUniqueDepartments().map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
               ))}
             </select>
           </div>
@@ -348,14 +377,14 @@ const StaffList = () => {
           <button
             className="btn btn-secondary"
             onClick={() => {
-              setStatusFilter('all');
-              setDepartmentFilter('all');
-              setSearchQuery('');
+              setStatusFilter("all");
+              setDepartmentFilter("all");
+              setSearchQuery("");
             }}
           >
             Clear All Filters
           </button>
-          
+
           <div className="filter-summary">
             Showing {filteredStaff.length} of {staff.length} staff members
           </div>
@@ -368,7 +397,8 @@ const StaffList = () => {
           <div className="empty-state-icon">👤</div>
           <h3 className="empty-state-title">No staff found</h3>
           <p className="empty-state-description">
-            No staff match your current filters. Try adjusting your search criteria or add a new staff member.
+            No staff match your current filters. Try adjusting your search
+            criteria or add a new staff member.
           </p>
           <Link to="/admin/staff/add" className="btn btn-primary">
             ➕ Add Your First Staff
@@ -380,52 +410,92 @@ const StaffList = () => {
             <table className="staff-table">
               <thead>
                 <tr>
-                  <th onClick={() => handleSort('name')} className="sortable">
-                    Staff Name {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th onClick={() => handleSort("name")} className="sortable">
+                    Staff Name{" "}
+                    {sortField === "name" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort('department')} className="sortable">
-                    Department {sortField === 'department' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th
+                    onClick={() => handleSort("department")}
+                    className="sortable"
+                  >
+                    Department{" "}
+                    {sortField === "department" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort('contactNumber')} className="sortable">
-                    Contact {sortField === 'contactNumber' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th
+                    onClick={() => handleSort("contactNumber")}
+                    className="sortable"
+                  >
+                    Contact{" "}
+                    {sortField === "contactNumber" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort('employmentDate')} className="sortable">
-                    Employment Date {sortField === 'employmentDate' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th
+                    onClick={() => handleSort("employmentDate")}
+                    className="sortable"
+                  >
+                    Employment Date{" "}
+                    {sortField === "employmentDate" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort('status')} className="sortable">
-                    Status {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th onClick={() => handleSort("status")} className="sortable">
+                    Status{" "}
+                    {sortField === "status" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
-                  <th onClick={() => handleSort('documentCompliance')} className="sortable">
-                    Compliance {sortField === 'documentCompliance' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th
+                    onClick={() => handleSort("documentCompliance")}
+                    className="sortable"
+                  >
+                    Compliance{" "}
+                    {sortField === "documentCompliance" &&
+                      (sortDirection === "asc" ? "↑" : "↓")}
                   </th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {getSortedAndPaginatedStaff().map(staffMember => (
+                {getSortedAndPaginatedStaff().map((staffMember) => (
                   <tr key={staffMember.id} className="staff-row">
                     <td className="staff-name-cell">
                       <div className="staff-name-wrapper">
                         <TbUser className="staff-icon" />
-                        <span className="staff-name-text">{staffMember.name}</span>
+                        <span className="staff-name-text">
+                          {staffMember.name}
+                        </span>
                       </div>
                     </td>
                     <td>
-                      <span className="department-badge">{staffMember.department || 'N/A'}</span>
+                      <span className="department-badge">
+                        {staffMember.department || "N/A"}
+                      </span>
                     </td>
-                    <td>{staffMember.contactNumber || 'N/A'}</td>
+                    <td>{staffMember.contactNumber || "N/A"}</td>
                     <td>
-                      {staffMember.employmentDate ? new Date(staffMember.employmentDate).toLocaleDateString() : 'N/A'}
+                      {staffMember.employmentDate
+                        ? new Date(
+                            staffMember.employmentDate,
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </td>
                     <td>
-                      <span className={`status-badge ${getStatusBadgeClass(staffMember.status)}`}>
-                        {staffMember.status || 'Active'}
+                      <span
+                        className={`status-badge ${getStatusBadgeClass(staffMember.status)}`}
+                      >
+                        {staffMember.status || "Active"}
                       </span>
                     </td>
                     <td>
                       <div className="compliance-cell">
-                        <span className="compliance-icon">{getComplianceIcon(staffMember)}</span>
-                        <span className="compliance-text">{staffMember.documentCompliance?.requiredDocumentCount || 0}/3</span>
+                        <span className="compliance-icon">
+                          {getComplianceIcon(staffMember)}
+                        </span>
+                        <span className="compliance-text">
+                          {staffMember.documentCompliance
+                            ?.requiredDocumentCount || 0}
+                          /3
+                        </span>
                       </div>
                     </td>
                     <td>
@@ -456,17 +526,20 @@ const StaffList = () => {
           {totalPages > 1 && (
             <div className="pagination">
               <button
-                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 className="pagination-btn"
               >
                 ← Previous
               </button>
               <span className="pagination-info">
-                Page {currentPage} of {totalPages} ({filteredStaff.length} staff)
+                Page {currentPage} of {totalPages} ({filteredStaff.length}{" "}
+                staff)
               </span>
               <button
-                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                onClick={() =>
+                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                }
                 disabled={currentPage === totalPages}
                 className="pagination-btn"
               >
@@ -500,15 +573,21 @@ const StaffList = () => {
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Username:</span>
-                      <span className="detail-value">{selectedStaff.username}</span>
+                      <span className="detail-value">
+                        {selectedStaff.username}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Contact Number:</span>
-                      <span className="detail-value">{selectedStaff.contactNumber || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.contactNumber || "N/A"}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Status:</span>
-                      <span className={`detail-badge ${getStatusBadgeClass(selectedStaff.status)}`}>
+                      <span
+                        className={`detail-badge ${getStatusBadgeClass(selectedStaff.status)}`}
+                      >
                         {selectedStaff.status}
                       </span>
                     </div>
@@ -521,25 +600,37 @@ const StaffList = () => {
                   <div className="details-items">
                     <div className="detail-item">
                       <span className="detail-label">Position:</span>
-                      <span className="detail-value">{selectedStaff.position || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.position || "N/A"}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Department:</span>
-                      <span className="detail-value">{selectedStaff.department || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.department || "N/A"}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Rate:</span>
-                      <span className="detail-value">{selectedStaff.rate || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.rate || "N/A"}
+                      </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Employment Date:</span>
                       <span className="detail-value">
-                        {selectedStaff.employmentDate ? new Date(selectedStaff.employmentDate).toLocaleDateString() : 'N/A'}
+                        {selectedStaff.employmentDate
+                          ? new Date(
+                              selectedStaff.employmentDate,
+                            ).toLocaleDateString()
+                          : "N/A"}
                       </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Staff ID:</span>
-                      <span className="detail-value">{selectedStaff.id || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.id || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -550,7 +641,9 @@ const StaffList = () => {
                   <div className="details-items">
                     <div className="detail-item">
                       <span className="detail-label">Address:</span>
-                      <span className="detail-value">{selectedStaff.address || 'N/A'}</span>
+                      <span className="detail-value">
+                        {selectedStaff.address || "N/A"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -561,33 +654,49 @@ const StaffList = () => {
                   <div className="details-items">
                     <div className="detail-item">
                       <span className="detail-label">Overall Status:</span>
-                      <span className={`detail-badge compliance-${getComplianceClass(selectedStaff).replace('compliance-', '')}`}>
+                      <span
+                        className={`detail-badge compliance-${getComplianceClass(selectedStaff).replace("compliance-", "")}`}
+                      >
                         {getComplianceStatus(selectedStaff)}
                       </span>
                     </div>
                     <div className="detail-item">
                       <span className="detail-label">Documents Completed:</span>
-                      <span className="detail-value">{getComplianceDetails(selectedStaff)}</span>
+                      <span className="detail-value">
+                        {getComplianceDetails(selectedStaff)}
+                      </span>
                     </div>
-                    
+
                     {/* Document Status List */}
                     <div className="documents-list">
                       <div className="document-item">
                         <span className="doc-name">Valid ID:</span>
-                        <span className={`doc-status ${selectedStaff.documents?.validId ? 'complete' : 'missing'}`}>
-                          {selectedStaff.documents?.validId ? '✓ Complete' : '✗ Missing'}
+                        <span
+                          className={`doc-status ${selectedStaff.documents?.validId ? "complete" : "missing"}`}
+                        >
+                          {selectedStaff.documents?.validId
+                            ? "✓ Complete"
+                            : "✗ Missing"}
                         </span>
                       </div>
                       <div className="document-item">
                         <span className="doc-name">Medical Certificate:</span>
-                        <span className={`doc-status ${selectedStaff.documents?.medicalCertificate ? 'complete' : 'missing'}`}>
-                          {selectedStaff.documents?.medicalCertificate ? '✓ Complete' : '✗ Missing'}
+                        <span
+                          className={`doc-status ${selectedStaff.documents?.medicalCertificate ? "complete" : "missing"}`}
+                        >
+                          {selectedStaff.documents?.medicalCertificate
+                            ? "✓ Complete"
+                            : "✗ Missing"}
                         </span>
                       </div>
                       <div className="document-item">
                         <span className="doc-name">NBI Clearance:</span>
-                        <span className={`doc-status ${selectedStaff.documents?.nbiClearance ? 'complete' : 'missing'}`}>
-                          {selectedStaff.documents?.nbiClearance ? '✓ Complete' : '✗ Missing'}
+                        <span
+                          className={`doc-status ${selectedStaff.documents?.nbiClearance ? "complete" : "missing"}`}
+                        >
+                          {selectedStaff.documents?.nbiClearance
+                            ? "✓ Complete"
+                            : "✗ Missing"}
                         </span>
                       </div>
                     </div>
@@ -602,22 +711,30 @@ const StaffList = () => {
                   <div className="document-count-badge">
                     <span className="count-icon">📁</span>
                     <span className="count-text">
-                      {selectedStaff.documentCompliance?.documentCount || 0} files uploaded
+                      {selectedStaff.documentCompliance?.documentCount || 0}{" "}
+                      files uploaded
                     </span>
                   </div>
                   <div className="document-breakdown">
                     <span className="required-docs">
-                      Required: {selectedStaff.documentCompliance?.requiredDocumentCount || 0}/3
+                      Required:{" "}
+                      {selectedStaff.documentCompliance
+                        ?.requiredDocumentCount || 0}
+                      /3
                     </span>
                     <span className="optional-docs">
-                      Optional: {selectedStaff.documentCompliance?.optionalDocumentCount || 0}/0
+                      Optional:{" "}
+                      {selectedStaff.documentCompliance
+                        ?.optionalDocumentCount || 0}
+                      /0
                     </span>
                   </div>
                 </div>
-                {selectedStaff.documents && Object.keys(selectedStaff.documents).length > 0 ? (
+                {selectedStaff.documents &&
+                Object.keys(selectedStaff.documents).length > 0 ? (
                   <div className="details-items">
-                    <FileViewer 
-                      documents={selectedStaff.documents} 
+                    <FileViewer
+                      documents={selectedStaff.documents}
                       entityType="staff"
                       entityName={selectedStaff.name}
                     />
@@ -625,8 +742,13 @@ const StaffList = () => {
                 ) : (
                   <div className="no-documents-message">
                     <div className="no-docs-icon">📄</div>
-                    <p>No documents have been uploaded for this staff member yet.</p>
-                    <Link to={`/admin/staff/edit/${selectedStaff.id}`} className="btn btn-primary btn-sm">
+                    <p>
+                      No documents have been uploaded for this staff member yet.
+                    </p>
+                    <Link
+                      to={`/admin/staff/edit/${selectedStaff.id}`}
+                      className="btn btn-primary btn-sm"
+                    >
                       Upload Documents
                     </Link>
                   </div>

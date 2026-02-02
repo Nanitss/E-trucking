@@ -1,39 +1,36 @@
 // src/pages/admin/clients/ClientForm.js - Updated for Firebase
 
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { useParams, useHistory, Link } from 'react-router-dom';
-import '../../../styles/ModernForms.css';
-import '../../../styles/DesignSystem.css';
-import './ClientForm.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { useParams, useHistory, Link } from "react-router-dom";
 
 const ClientForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
   const [formData, setFormData] = useState({
-    businessName: '',
-    contactPerson: '',
-    contactNumber: '',
-    email: '',
-    address: '',
-    businessType: '',
-    registrationDate: '',
-    status: 'Active',
-    username: '',
-    password: '',
+    businessName: "",
+    contactPerson: "",
+    contactNumber: "",
+    email: "",
+    address: "",
+    businessType: "",
+    registrationDate: "",
+    status: "Active",
+    username: "",
+    password: "",
     businessPermit: null,
     validId: null,
     serviceContract: null,
-    taxCertificate: null
+    taxCertificate: null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(isEditMode);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState({});
-  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
+  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
 
   // Fetch client data when editing
   useEffect(() => {
@@ -46,29 +43,30 @@ const ClientForm = () => {
       try {
         console.log(`Fetching client data for ID: ${id}`);
         const response = await axios.get(`${baseURL}/api/clients/${id}`);
-        console.log('Client data fetched:', response.data);
-        
+        console.log("Client data fetched:", response.data);
+
         const client = response.data;
         setFormData({
-          businessName: client.businessName || client.ClientName || '',
-          contactPerson: client.contactPerson || client.ContactPerson || '',
-          contactNumber: client.contactNumber || client.ContactNumber || '',
-          email: client.email || client.Email || '',
-          address: client.address || client.Address || '',
-          businessType: client.businessType || client.BusinessType || '',
-          registrationDate: client.registrationDate || client.RegistrationDate || '',
-          status: client.status || client.Status || 'Active',
-          username: client.ClientUserName || client.username || '',
-          password: '', // Never populate password on edit
+          businessName: client.businessName || client.ClientName || "",
+          contactPerson: client.contactPerson || client.ContactPerson || "",
+          contactNumber: client.contactNumber || client.ContactNumber || "",
+          email: client.email || client.Email || "",
+          address: client.address || client.Address || "",
+          businessType: client.businessType || client.BusinessType || "",
+          registrationDate:
+            client.registrationDate || client.RegistrationDate || "",
+          status: client.status || client.Status || "Active",
+          username: client.ClientUserName || client.username || "",
+          password: "", // Never populate password on edit
           businessPermit: null,
           validId: null,
           serviceContract: null,
-          taxCertificate: null
+          taxCertificate: null,
         });
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching client:', err);
-        setError('Failed to load client data');
+        console.error("Error fetching client:", err);
+        setError("Failed to load client data");
         setLoading(false);
       }
     };
@@ -78,32 +76,32 @@ const ClientForm = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleFileChange = (e, fieldName) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        [fieldName]: file
+        [fieldName]: file,
       }));
-      setUploadedFiles(prev => ({
+      setUploadedFiles((prev) => ({
         ...prev,
-        [fieldName]: file.name
+        [fieldName]: file.name,
       }));
     }
   };
 
   const removeFile = (fieldName) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [fieldName]: null
+      [fieldName]: null,
     }));
-    setUploadedFiles(prev => {
+    setUploadedFiles((prev) => {
       const newFiles = { ...prev };
       delete newFiles[fieldName];
       return newFiles;
@@ -121,11 +119,13 @@ const ClientForm = () => {
         clientNumber: formData.contactNumber,
         clientEmail: formData.email,
         clientStatus: formData.status,
-        clientCreationDate: isEditMode ? undefined : new Date().toISOString().split('T')[0],
+        clientCreationDate: isEditMode
+          ? undefined
+          : new Date().toISOString().split("T")[0],
         // Add username for both create and update
-        username: formData.username
+        username: formData.username,
       };
-      
+
       // Only include password when creating new client
       if (!isEditMode) {
         clientData.password = formData.password;
@@ -134,39 +134,42 @@ const ClientForm = () => {
       if (isEditMode) {
         // Update existing client
         await axios.put(`${baseURL}/api/clients/${id}`, clientData);
-        setSuccessMessage('Client updated successfully!');
+        setSuccessMessage("Client updated successfully!");
       } else {
         // Create new client
         await axios.post(`${baseURL}/api/clients`, clientData);
-        setSuccessMessage('Client created successfully!');
+        setSuccessMessage("Client created successfully!");
       }
 
       // Redirect after short delay
       setTimeout(() => {
-        history.push('/admin/clients');
+        history.push("/admin/clients");
       }, 1500);
     } catch (error) {
-      console.error('Error saving client:', error);
-      setError('Error saving client. Please try again.');
+      console.error("Error saving client:", error);
+      setError("Error saving client. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!isEditMode || !window.confirm('Are you sure you want to delete this client?')) {
+    if (
+      !isEditMode ||
+      !window.confirm("Are you sure you want to delete this client?")
+    ) {
       return;
     }
 
     try {
       await axios.delete(`${baseURL}/api/clients/${id}`);
-      setSuccessMessage('Client deleted successfully!');
+      setSuccessMessage("Client deleted successfully!");
       setTimeout(() => {
-        history.push('/admin/clients');
+        history.push("/admin/clients");
       }, 1500);
     } catch (error) {
-      console.error('Error deleting client:', error);
-      setError('Error deleting client. Please try again.');
+      console.error("Error deleting client:", error);
+      setError("Error deleting client. Please try again.");
     }
   };
 
@@ -182,24 +185,20 @@ const ClientForm = () => {
     <div className="form-container">
       <div className="form-header">
         <div>
-          <h1>{isEditMode ? 'Edit Client' : 'Add New Client'}</h1>
-          <p className="form-subtitle">Manage client information and documents</p>
+          <h1>{isEditMode ? "Edit Client" : "Add New Client"}</h1>
+          <p className="form-subtitle">
+            Manage client information and documents
+          </p>
         </div>
         <Link to="/admin/clients" className="btn btn-secondary">
           ← Back to Clients
         </Link>
       </div>
 
-      {error && (
-        <div className="alert alert-danger">
-          {error}
-        </div>
-      )}
+      {error && <div className="alert alert-danger">{error}</div>}
 
       {successMessage && (
-        <div className="alert alert-success">
-          {successMessage}
-        </div>
+        <div className="alert alert-success">{successMessage}</div>
       )}
 
       <form onSubmit={handleSubmit} className="modern-form">
@@ -208,35 +207,37 @@ const ClientForm = () => {
             <div className="section-number">01</div>
             <div>
               <h3 className="form-section-title">Business Information</h3>
-              <p className="form-section-description">Enter the basic business and contact information</p>
+              <p className="form-section-description">
+                Enter the basic business and contact information
+              </p>
             </div>
           </div>
-          
+
           <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="businessName">Business Name *</label>
-                <input
-                  type="text"
-                  id="businessName"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="Enter business name"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="businessType">Business Type</label>
-                <input
-                  type="text"
-                  id="businessType"
-                  name="businessType"
-                  value={formData.businessType}
-                  onChange={handleInputChange}
-                  placeholder="Enter business type"
-                />
-              </div>
+            <div className="form-group">
+              <label htmlFor="businessName">Business Name *</label>
+              <input
+                type="text"
+                id="businessName"
+                name="businessName"
+                value={formData.businessName}
+                onChange={handleInputChange}
+                required
+                placeholder="Enter business name"
+              />
             </div>
+            <div className="form-group">
+              <label htmlFor="businessType">Business Type</label>
+              <input
+                type="text"
+                id="businessType"
+                name="businessType"
+                value={formData.businessType}
+                onChange={handleInputChange}
+                placeholder="Enter business type"
+              />
+            </div>
+          </div>
 
           <div className="form-row">
             <div className="form-group">
@@ -324,13 +325,13 @@ const ClientForm = () => {
             <div>
               <h3 className="form-section-title">Account Credentials</h3>
               <p className="form-section-description">
-                {isEditMode 
-                  ? 'Username for client login access' 
-                  : 'Create login credentials for the client'}
+                {isEditMode
+                  ? "Username for client login access"
+                  : "Create login credentials for the client"}
               </p>
             </div>
           </div>
-          
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="username">Username *</label>
@@ -344,9 +345,11 @@ const ClientForm = () => {
                 placeholder="Enter username for login"
                 autoComplete="username"
               />
-              <small>Client will use this username to log into the system</small>
+              <small>
+                Client will use this username to log into the system
+              </small>
             </div>
-            
+
             {!isEditMode && (
               <div className="form-group">
                 <label htmlFor="password">Password *</label>
@@ -361,10 +364,12 @@ const ClientForm = () => {
                   placeholder="Enter secure password"
                   autoComplete="new-password"
                 />
-                <small>Minimum 6 characters. Client can change this later.</small>
+                <small>
+                  Minimum 6 characters. Client can change this later.
+                </small>
               </div>
             )}
-            
+
             {isEditMode && (
               <div className="form-group">
                 <label>Password</label>
@@ -372,7 +377,10 @@ const ClientForm = () => {
                   <div className="notice-icon">🔒</div>
                   <div>
                     <strong>Password cannot be changed by admin</strong>
-                    <p>For security reasons, clients must change their own password through their account settings.</p>
+                    <p>
+                      For security reasons, clients must change their own
+                      password through their account settings.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -385,10 +393,12 @@ const ClientForm = () => {
             <div className="section-number">03</div>
             <div>
               <h3 className="form-section-title">Required Documents</h3>
-              <p className="form-section-description">Upload required business documents for verification</p>
+              <p className="form-section-description">
+                Upload required business documents for verification
+              </p>
             </div>
           </div>
-          
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="businessPermit">Business Permit *</label>
@@ -396,13 +406,17 @@ const ClientForm = () => {
                 type="file"
                 id="businessPermit"
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => handleFileChange(e, 'businessPermit')}
+                onChange={(e) => handleFileChange(e, "businessPermit")}
                 required={!isEditMode}
               />
               {uploadedFiles.businessPermit && (
                 <div className="file-info">
                   <span>{uploadedFiles.businessPermit}</span>
-                  <button type="button" onClick={() => removeFile('businessPermit')} className="remove-file-btn">
+                  <button
+                    type="button"
+                    onClick={() => removeFile("businessPermit")}
+                    className="remove-file-btn"
+                  >
                     Remove
                   </button>
                 </div>
@@ -415,18 +429,24 @@ const ClientForm = () => {
                 type="file"
                 id="validId"
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => handleFileChange(e, 'validId')}
+                onChange={(e) => handleFileChange(e, "validId")}
                 required={!isEditMode}
               />
               {uploadedFiles.validId && (
                 <div className="file-info">
                   <span>{uploadedFiles.validId}</span>
-                  <button type="button" onClick={() => removeFile('validId')} className="remove-file-btn">
+                  <button
+                    type="button"
+                    onClick={() => removeFile("validId")}
+                    className="remove-file-btn"
+                  >
                     Remove
                   </button>
                 </div>
               )}
-              <small>Upload a valid government-issued ID of contact person</small>
+              <small>
+                Upload a valid government-issued ID of contact person
+              </small>
             </div>
           </div>
         </div>
@@ -436,10 +456,12 @@ const ClientForm = () => {
             <div className="section-number">04</div>
             <div>
               <h3 className="form-section-title">Optional Documents</h3>
-              <p className="form-section-description">Additional documents that may be helpful</p>
+              <p className="form-section-description">
+                Additional documents that may be helpful
+              </p>
             </div>
           </div>
-          
+
           <div className="form-row">
             <div className="form-group">
               <label htmlFor="serviceContract">Service Contract</label>
@@ -447,12 +469,16 @@ const ClientForm = () => {
                 type="file"
                 id="serviceContract"
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => handleFileChange(e, 'serviceContract')}
+                onChange={(e) => handleFileChange(e, "serviceContract")}
               />
               {uploadedFiles.serviceContract && (
                 <div className="file-info">
                   <span>{uploadedFiles.serviceContract}</span>
-                  <button type="button" onClick={() => removeFile('serviceContract')} className="remove-file-btn">
+                  <button
+                    type="button"
+                    onClick={() => removeFile("serviceContract")}
+                    className="remove-file-btn"
+                  >
                     Remove
                   </button>
                 </div>
@@ -465,12 +491,16 @@ const ClientForm = () => {
                 type="file"
                 id="taxCertificate"
                 accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                onChange={(e) => handleFileChange(e, 'taxCertificate')}
+                onChange={(e) => handleFileChange(e, "taxCertificate")}
               />
               {uploadedFiles.taxCertificate && (
                 <div className="file-info">
                   <span>{uploadedFiles.taxCertificate}</span>
-                  <button type="button" onClick={() => removeFile('taxCertificate')} className="remove-file-btn">
+                  <button
+                    type="button"
+                    onClick={() => removeFile("taxCertificate")}
+                    className="remove-file-btn"
+                  >
                     Remove
                   </button>
                 </div>
@@ -492,10 +522,7 @@ const ClientForm = () => {
             </button>
           )}
           <div className="action-buttons">
-            <Link
-              to="/admin/clients"
-              className="btn btn-secondary"
-            >
+            <Link to="/admin/clients" className="btn btn-secondary">
               Cancel
             </Link>
             <button
@@ -503,13 +530,17 @@ const ClientForm = () => {
               className="btn btn-primary"
               disabled={isSubmitting}
             >
-              {isSubmitting ? 'Saving...' : (isEditMode ? '💾 Update Client' : '✓ Create Client')}
+              {isSubmitting
+                ? "Saving..."
+                : isEditMode
+                  ? "💾 Update Client"
+                  : "✓ Create Client"}
             </button>
           </div>
         </div>
       </form>
     </div>
-    );
+  );
 };
 
 export default ClientForm;

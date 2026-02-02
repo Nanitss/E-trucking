@@ -1,70 +1,69 @@
-import React from 'react';
-import './StatusBadge.css';
-import { 
-  FaCheck, 
-  FaHourglass, 
-  FaSpinner, 
-  FaTimes, 
-  FaExclamationTriangle 
-} from 'react-icons/fa';
+import React from "react";
+import {
+  FaCheck,
+  FaHourglass,
+  FaSpinner,
+  FaTimes,
+  FaExclamationTriangle,
+} from "react-icons/fa";
 
 const StatusBadge = ({ status }) => {
-  const normalizedStatus = status ? status.toLowerCase() : 'unknown';
-  
+  const normalizedStatus = status ? status.toLowerCase() : "unknown";
+
   const getStatusConfig = () => {
     switch (normalizedStatus) {
-      case 'completed':
+      case "completed":
         return {
-          className: 'status-badge-success',
-          label: 'Completed',
-          icon: <FaCheck />
+          className: "status-badge-success",
+          label: "Completed",
+          icon: <FaCheck />,
         };
-      case 'delivered':
+      case "delivered":
         return {
-          className: 'status-badge-success',
-          label: 'Delivered',
-          icon: <FaCheck />
+          className: "status-badge-success",
+          label: "Delivered",
+          icon: <FaCheck />,
         };
-      case 'pending':
+      case "pending":
         return {
-          className: 'status-badge-warning',
-          label: 'Pending',
-          icon: <FaHourglass />
+          className: "status-badge-warning",
+          label: "Pending",
+          icon: <FaHourglass />,
         };
-      case 'accepted':
+      case "accepted":
         return {
-          className: 'status-badge-info',
-          label: 'Accepted',
-          icon: <FaCheck />
+          className: "status-badge-info",
+          label: "Accepted",
+          icon: <FaCheck />,
         };
-      case 'in-progress':
-      case 'in progress':
-      case 'in_progress':
-      case 'started':
+      case "in-progress":
+      case "in progress":
+      case "in_progress":
+      case "started":
         return {
-          className: 'status-badge-info',
-          label: 'In Progress',
-          icon: <FaSpinner className="spinning-icon" />
+          className: "status-badge-info",
+          label: "In Progress",
+          icon: <FaSpinner className="spinning-icon" />,
         };
-      case 'picked-up':
-      case 'picked_up':
-      case 'picked up':
+      case "picked-up":
+      case "picked_up":
+      case "picked up":
         return {
-          className: 'status-badge-info',
-          label: 'Picked Up',
-          icon: <FaSpinner className="spinning-icon" />
+          className: "status-badge-info",
+          label: "Picked Up",
+          icon: <FaSpinner className="spinning-icon" />,
         };
-      case 'cancelled':
+      case "cancelled":
         return {
-          className: 'status-badge-danger',
-          label: 'Cancelled',
-          icon: <FaTimes />
+          className: "status-badge-danger",
+          label: "Cancelled",
+          icon: <FaTimes />,
         };
       default:
         return {
-          className: 'status-badge-secondary',
-          label: 'Unknown',
-          icon: <FaExclamationTriangle />
+          className: "status-badge-secondary",
+          label: "Unknown",
+          icon: <FaExclamationTriangle />,
         };
     }
   };

@@ -1,27 +1,28 @@
-import React from 'react';
-import { Box, Typography, Paper, Alert } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import React from "react";
+import { Box, Typography, Paper, Alert } from "@mui/material";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 
-const ErrorComponent = ({ message = 'An error occurred' }) => {
+const ErrorComponent = ({ message = "An error occurred" }) => {
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        py: 4 
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "calc(100vh - 70px)",
+        py: 4,
       }}
     >
-      <Paper 
-        elevation={3} 
-        sx={{ 
-          p: 3, 
-          maxWidth: '600px',
-          width: '100%',
-          borderRadius: 2
+      <Paper
+        elevation={3}
+        sx={{
+          p: 3,
+          maxWidth: "600px",
+          width: "100%",
+          borderRadius: 2,
         }}
       >
-        <Alert 
+        <Alert
           severity="error"
           icon={<ErrorOutlineIcon fontSize="inherit" />}
           sx={{ mb: 2 }}
@@ -36,4 +37,4 @@ const ErrorComponent = ({ message = 'An error occurred' }) => {
   );
 };
 
-export default ErrorComponent; 
+export default ErrorComponent;

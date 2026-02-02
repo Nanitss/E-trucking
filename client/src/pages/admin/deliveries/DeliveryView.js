@@ -9,7 +9,6 @@ import StatusBadge from "../../../components/common/StatusBadge";
 import { formatCurrency, formatDistance } from "../../../utils/formatUtils";
 import { formatDateLocale } from "../../../utils/dateUtils";
 import RouteMap from "../../../components/maps/RouteMap";
-import "./DeliveryView.css";
 
 const DeliveryView = ({ currentUser }) => {
   const { id } = useParams();
@@ -106,7 +105,7 @@ const DeliveryView = ({ currentUser }) => {
       case "in-progress":
         if (
           ["in-progress", "in_progress", "on-delivery", "on_delivery"].includes(
-            status
+            status,
           )
         )
           return "active";

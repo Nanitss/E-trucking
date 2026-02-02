@@ -1,24 +1,22 @@
 // src/pages/staff/Reports.js
-import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
-import axios from 'axios';
-import { FaArrowLeft, FaDownload, FaChartBar, FaClock } from 'react-icons/fa';
-import Loader from '../../components/common/Loader';
-import { AlertContext } from '../../context/AlertContext';
-import './Reports.css';
-import '../../styles/DesignSystem.css';
+import React, { useState, useEffect, useContext } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { FaArrowLeft, FaDownload, FaChartBar, FaClock } from "react-icons/fa";
+import Loader from "../../components/common/Loader";
+import { AlertContext } from "../../context/AlertContext";
 
 const Reports = () => {
   const { showAlert } = useContext(AlertContext);
-  const [reportType, setReportType] = useState('client');
-  const [dateRange, setDateRange]   = useState({ startDate: '', endDate: '' });
+  const [reportType, setReportType] = useState("client");
+  const [dateRange, setDateRange] = useState({ startDate: "", endDate: "" });
   const [reportData, setReportData] = useState(null);
-  const [isLoading, setIsLoading]   = useState(false);
-  const [summary, setSummary]       = useState({
+  const [isLoading, setIsLoading] = useState(false);
+  const [summary, setSummary] = useState({
     totalDeliveries: 0,
-    totalDistance:   0,
-    totalRevenue:    0,
-    activeClients:   0
+    totalDistance: 0,
+    totalRevenue: 0,
+    activeClients: 0,
   });
 
   // initialize last 30 days
@@ -27,8 +25,8 @@ const Reports = () => {
     const ago30 = new Date();
     ago30.setDate(today.getDate() - 30);
     setDateRange({
-      startDate: ago30.toISOString().split('T')[0],
-      endDate:   today.toISOString().split('T')[0]
+      startDate: ago30.toISOString().split("T")[0],
+      endDate: today.toISOString().split("T")[0],
     });
   }, []);
 
@@ -39,24 +37,24 @@ const Reports = () => {
 
   const handleDateChange = (e) => {
     const { name, value } = e.target;
-    setDateRange(dr => ({ ...dr, [name]: value }));
+    setDateRange((dr) => ({ ...dr, [name]: value }));
   };
 
   const generateReport = async () => {
     if (!dateRange.startDate || !dateRange.endDate) {
-      showAlert('Please select both start and end dates', 'warning');
+      showAlert("Please select both start and end dates", "warning");
       return;
     }
     setIsLoading(true);
     try {
       const res = await axios.get(`/api/staffs/reports/${reportType}`, {
-        params: dateRange
+        params: dateRange,
       });
       setReportData(res.data.data);
       setSummary(res.data.summary);
     } catch (error) {
-      console.error('Error generating report:', error);
-      showAlert('Error generating report', 'danger');
+      console.error("Error generating report:", error);
+      showAlert("Error generating report", "danger");
     } finally {
       setIsLoading(false);
     }
@@ -64,40 +62,42 @@ const Reports = () => {
 
   const downloadReport = () => {
     if (!reportData) {
-      showAlert('No report data to download', 'warning');
+      showAlert("No report data to download", "warning");
       return;
     }
-    let csvContent = '';
+    let csvContent = "";
 
     // Build CSV headers & rows per report type
-    if (reportType === 'client') {
-      csvContent = 'Client ID,Client Name,Deliveries,Total Distance,Total Revenue\n';
-      reportData.forEach(c => {
+    if (reportType === "client") {
+      csvContent =
+        "Client ID,Client Name,Deliveries,Total Distance,Total Revenue\n";
+      reportData.forEach((c) => {
         csvContent += `${c.ClientID},${c.ClientName},${c.DeliveryCount},${c.TotalDistance.toFixed(2)},${c.TotalRevenue.toFixed(2)}\n`;
       });
-    } else if (reportType === 'delivery') {
-      csvContent = 'Delivery ID,Client,Driver,Date,Status,Distance,Rate\n';
-      reportData.forEach(d => {
+    } else if (reportType === "delivery") {
+      csvContent = "Delivery ID,Client,Driver,Date,Status,Distance,Rate\n";
+      reportData.forEach((d) => {
         const date = new Date(d.DeliveryDate).toLocaleDateString();
         csvContent += `${d.DeliveryID},${d.ClientName},${d.DriverName},${date},${d.DeliveryStatus},${d.DeliveryDistance},${d.DeliveryRate}\n`;
       });
-    } else if (reportType === 'truck') {
-      csvContent = 'Truck ID,Plate,Type,Deliveries,Total Distance,Utilization (%)\n';
-      reportData.forEach(t => {
+    } else if (reportType === "truck") {
+      csvContent =
+        "Truck ID,Plate,Type,Deliveries,Total Distance,Utilization (%)\n";
+      reportData.forEach((t) => {
         csvContent += `${t.TruckID},${t.TruckPlate},${t.TruckType},${t.DeliveryCount},${t.TotalDistance.toFixed(2)},${t.Utilization}\n`;
       });
     }
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url  = window.URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
     a.download = `${reportType}_report_${dateRange.startDate}_to_${dateRange.endDate}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
 
-    showAlert('Report downloaded successfully', 'success');
+    showAlert("Report downloaded successfully", "success");
   };
 
   const renderReport = () => {
@@ -111,26 +111,32 @@ const Reports = () => {
     }
 
     // CLIENT REPORT
-    if (reportType === 'client') {
+    if (reportType === "client") {
       return (
         <div className="report-container">
           <div className="report-summary">
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{summary.activeClients}</h3>
                 <p>Active Clients</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{summary.totalDeliveries}</h3>
                 <p>Total Deliveries</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaClock /></div>
+              <div className="summary-icon">
+                <FaClock />
+              </div>
               <div className="summary-data">
                 <h3>${summary.totalRevenue.toFixed(2)}</h3>
                 <p>Total Revenue</p>
@@ -149,7 +155,7 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map(c => (
+                {reportData.map((c) => (
                   <tr key={c.ClientID}>
                     <td>{c.ClientID}</td>
                     <td>{c.ClientName}</td>
@@ -166,26 +172,32 @@ const Reports = () => {
     }
 
     // DELIVERY REPORT
-    if (reportType === 'delivery') {
+    if (reportType === "delivery") {
       return (
         <div className="report-container">
           <div className="report-summary">
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{reportData.length}</h3>
                 <p>Total Deliveries</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{summary.totalDistance.toFixed(2)} km</h3>
                 <p>Total Distance</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaClock /></div>
+              <div className="summary-icon">
+                <FaClock />
+              </div>
               <div className="summary-data">
                 <h3>${summary.totalRevenue.toFixed(2)}</h3>
                 <p>Total Revenue</p>
@@ -206,7 +218,7 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map(d => (
+                {reportData.map((d) => (
                   <tr key={d.DeliveryID}>
                     <td>{d.DeliveryID}</td>
                     <td>{d.ClientName}</td>
@@ -225,26 +237,32 @@ const Reports = () => {
     }
 
     // TRUCK UTILIZATION
-    if (reportType === 'truck') {
+    if (reportType === "truck") {
       return (
         <div className="report-container">
           <div className="report-summary">
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{reportData.length}</h3>
                 <p>Active Trucks</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaChartBar /></div>
+              <div className="summary-icon">
+                <FaChartBar />
+              </div>
               <div className="summary-data">
                 <h3>{summary.totalDeliveries}</h3>
                 <p>Total Deliveries</p>
               </div>
             </div>
             <div className="summary-card">
-              <div className="summary-icon"><FaClock /></div>
+              <div className="summary-icon">
+                <FaClock />
+              </div>
               <div className="summary-data">
                 <h3>{summary.totalDistance.toFixed(2)} km</h3>
                 <p>Total Distance</p>
@@ -264,7 +282,7 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody>
-                {reportData.map(t => (
+                {reportData.map((t) => (
                   <tr key={t.TruckID}>
                     <td>{t.TruckID}</td>
                     <td>{t.TruckPlate}</td>
@@ -300,20 +318,20 @@ const Reports = () => {
               <h3>Report Type</h3>
               <div className="report-types">
                 <button
-                  className={`btn ${reportType === 'client' ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => handleReportTypeChange('client')}
+                  className={`btn ${reportType === "client" ? "btn-primary" : "btn-outline-primary"}`}
+                  onClick={() => handleReportTypeChange("client")}
                 >
                   Client Report
                 </button>
                 <button
-                  className={`btn ${reportType === 'delivery' ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => handleReportTypeChange('delivery')}
+                  className={`btn ${reportType === "delivery" ? "btn-primary" : "btn-outline-primary"}`}
+                  onClick={() => handleReportTypeChange("delivery")}
                 >
                   Delivery Report
                 </button>
                 <button
-                  className={`btn ${reportType === 'truck' ? 'btn-primary' : 'btn-outline-primary'}`}
-                  onClick={() => handleReportTypeChange('truck')}
+                  className={`btn ${reportType === "truck" ? "btn-primary" : "btn-outline-primary"}`}
+                  onClick={() => handleReportTypeChange("truck")}
                 >
                   Truck Utilization
                 </button>
@@ -351,13 +369,10 @@ const Reports = () => {
                   onClick={generateReport}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Generating...' : 'Generate Report'}
+                  {isLoading ? "Generating..." : "Generate Report"}
                 </button>
                 {reportData && (
-                  <button
-                    className="btn btn-success"
-                    onClick={downloadReport}
-                  >
+                  <button className="btn btn-success" onClick={downloadReport}>
                     <FaDownload /> Download Report
                   </button>
                 )}

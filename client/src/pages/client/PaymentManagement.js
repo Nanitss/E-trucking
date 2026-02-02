@@ -2,56 +2,22 @@ import React, { useState, useEffect, useContext } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
 import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip,
-  Grid,
-  Divider,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Stepper,
-  Step,
-  StepLabel,
-  LinearProgress,
-} from "@mui/material";
-import {
-  Payment as PaymentIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Receipt as ReceiptIcon,
-  Launch as LaunchIcon,
-  CreditCard as CreditCardIcon,
-  AccountBalanceWallet as WalletIcon,
-  Close as CloseIcon,
-  Refresh as RefreshIcon,
-  ArrowBack as ArrowBackIcon,
-} from "@mui/icons-material";
+  FaCreditCard,
+  FaWallet,
+  FaCheckCircle,
+  FaClock,
+  FaExclamationTriangle,
+  FaMoneyBillWave,
+  FaArrowLeft,
+  FaTimes,
+  FaCalendarAlt,
+  FaReceipt,
+  FaExternalLinkAlt,
+  FaHistory,
+} from "react-icons/fa";
 import { format, differenceInDays } from "date-fns";
 import { AuthContext } from "../../context/AuthContext";
 import Loader from "../../components/common/Loader";
-import "../../styles/ClientPage.css";
 
 const PaymentManagement = () => {
   const history = useHistory();
@@ -60,11 +26,9 @@ const PaymentManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPayment, setSelectedPayment] = useState(null);
-  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
-  const [paymentFormOpen, setPaymentFormOpen] = useState(false);
-  const [creatingPaymentLink, setCreatingPaymentLink] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
-  const [paymentStep, setPaymentStep] = useState(0);
+  const [paymentStep, setPaymentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("");
   const [alert, setAlert] = useState({
     show: false,
@@ -87,103 +51,8 @@ const PaymentManagement = () => {
     name: "",
   });
 
-  const paymentSteps = [
-    "Select Payment Method",
-    "Enter Payment Details",
-    "Process Payment",
-  ];
-
-  // Helper function to get user data from multiple sources
-  const getUserData = () => {
-    // Try to get from AuthContext first
-    if (authUser) {
-      return {
-        id: authUser.id || authUser.clientId,
-        clientId: authUser.clientId || authUser.id,
-        email: authUser.email,
-        phone: authUser.phone,
-        name: authUser.clientName || authUser.username || authUser.name,
-        clientName: authUser.clientName || authUser.username || authUser.name,
-      };
-    }
-
-    // Fallback to localStorage with storage availability check
-    try {
-      // Check if storage is available before trying to access it
-      if (
-        typeof Storage !== "undefined" &&
-        typeof localStorage !== "undefined"
-      ) {
-        const userDataString = localStorage.getItem("userData");
-        if (userDataString) {
-          const userData = JSON.parse(userDataString);
-          return {
-            id: userData.id || userData.clientId,
-            clientId: userData.clientId || userData.id,
-            email: userData.email,
-            phone: userData.phone,
-            name: userData.clientName || userData.username || userData.name,
-            clientName:
-              userData.clientName || userData.username || userData.name,
-          };
-        }
-
-        // Also try 'currentUser' key as fallback
-        const currentUserString = localStorage.getItem("currentUser");
-        if (currentUserString) {
-          const currentUser = JSON.parse(currentUserString);
-          return {
-            id: currentUser.id || currentUser.clientId,
-            clientId: currentUser.clientId || currentUser.id,
-            email: currentUser.email,
-            phone: currentUser.phone,
-            name:
-              currentUser.clientName ||
-              currentUser.username ||
-              currentUser.name,
-            clientName:
-              currentUser.clientName ||
-              currentUser.username ||
-              currentUser.name,
-          };
-        }
-
-        // Try to get from token payload (if JWT)
-        const token = localStorage.getItem("token");
-        if (token) {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          return {
-            id: payload.id || payload.clientId || payload.sub,
-            clientId: payload.clientId || payload.id || payload.sub,
-            email: payload.email,
-            phone: payload.phone,
-            name: payload.clientName || payload.username || payload.name,
-            clientName: payload.clientName || payload.username || payload.name,
-          };
-        }
-      } else {
-        console.warn("LocalStorage is not available in this browser context");
-      }
-    } catch (e) {
-      console.warn("Error accessing localStorage:", e);
-    }
-
-    // Return a default user if all else fails (for testing)
-    console.warn("Unable to get user data from any source, using fallback");
-    return {
-      id: "j412kdTjjvNNXWdLTHAc",
-      clientId: "j412kdTjjvNNXWdLTHAc",
-      email: "test@example.com",
-      phone: "+639123456789",
-      name: "Test Client",
-      clientName: "Test Client",
-    };
-  };
-
   useEffect(() => {
     fetchPaymentSummary();
-
-    // Load user billing info from available sources
     const userData = getUserData();
     if (userData) {
       setBillingInfo({
@@ -194,66 +63,55 @@ const PaymentManagement = () => {
     }
   }, [authUser]);
 
+  const getUserData = () => {
+    if (authUser) {
+      return {
+        id: authUser.id || authUser.clientId,
+        email: authUser.email,
+        phone: authUser.phone,
+        name: authUser.clientName || authUser.username || authUser.name,
+      };
+    }
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return {
+          id: payload.id || payload.clientId || payload.sub,
+          email: payload.email,
+          phone: payload.phone,
+          name: payload.clientName || payload.username || payload.name,
+        };
+      } catch (e) {
+        console.error("Error parsing token:", e);
+      }
+    }
+    return null;
+  };
+
   const fetchPaymentSummary = async () => {
     try {
       setLoading(true);
-
-      // Safely get token with storage availability check
-      let token = null;
-      try {
-        if (
-          typeof Storage !== "undefined" &&
-          typeof localStorage !== "undefined"
-        ) {
-          token = localStorage.getItem("token");
-        }
-      } catch (storageError) {
-        console.warn("Cannot access localStorage for token:", storageError);
-      }
-
+      const token = localStorage.getItem("token");
       if (!token) {
         setError("Authentication token missing. Please login again.");
         return;
       }
 
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      // Get client ID from available user data sources
       const userData = getUserData();
       if (!userData || !userData.id) {
-        setError(
-          "Unable to identify client. Please refresh the page or login again.",
-        );
+        setError("Unable to identify client. Please login again.");
         return;
       }
 
-      // Use the user's login ID directly as clientId (since we fixed the delivery records)
-      const clientId = userData.id;
-
-      console.log("Fetching payments for user ID:", clientId);
-
-      // Use the main server endpoint for payments
-      const response = await axios.get(`/api/payments/client/${clientId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "x-client-id": clientId,
-        },
-      });
-
+      const response = await axios.get(`/api/payments/client/${userData.id}`);
       setPaymentSummary(response.data.data);
     } catch (error) {
       console.error("Error fetching payment summary:", error);
-      if (error.response?.status === 403) {
-        setError(
-          "Access denied. Please check your permissions or login again.",
-        );
-      } else {
-        setError(
-          error.response?.data?.error ||
-            error.response?.data?.message ||
-            "Failed to load payment information",
-        );
-      }
+      setError(
+        error.response?.data?.message || "Failed to load payment information",
+      );
     } finally {
       setLoading(false);
     }
@@ -261,51 +119,44 @@ const PaymentManagement = () => {
 
   const handlePayNow = (payment) => {
     setSelectedPayment(payment);
-    setPaymentFormOpen(true);
-    setPaymentStep(0);
+    setPaymentModalOpen(true);
+    setPaymentStep(1);
     setPaymentMethod("");
   };
 
   const handlePaymentMethodSelect = (method) => {
     setPaymentMethod(method);
-    setPaymentStep(1);
+    setPaymentStep(2);
   };
 
   const handleCardInputChange = (field, value) => {
-    // Format card number input
+    let formattedValue = value;
     if (field === "cardNumber") {
-      value = value
+      formattedValue = value
         .replace(/\s/g, "")
         .replace(/(.{4})/g, "$1 ")
         .trim();
-      if (value.length > 19) return; // Limit to 16 digits + spaces
+      if (formattedValue.length > 19) return;
     }
-
-    // Format expiry inputs
     if (field === "expiryMonth" || field === "expiryYear") {
-      value = value.replace(/\D/g, "");
-      if (field === "expiryMonth" && value.length > 2) return;
-      if (field === "expiryYear" && value.length > 4) return;
+      formattedValue = value.replace(/\D/g, "");
+      if (field === "expiryMonth" && formattedValue.length > 2) return;
+      if (field === "expiryYear" && formattedValue.length > 4) return;
     }
-
-    // Format CVC
     if (field === "cvc") {
-      value = value.replace(/\D/g, "");
-      if (value.length > 4) return;
+      formattedValue = value.replace(/\D/g, "");
+      if (formattedValue.length > 4) return;
     }
 
     setCardForm((prev) => ({
       ...prev,
-      [field]: value,
+      [field]: formattedValue,
     }));
   };
 
   const processCardPayment = async () => {
     try {
       setProcessingPayment(true);
-      setPaymentStep(2);
-
-      // Validate card form
       const { cardNumber, expiryMonth, expiryYear, cvc, cardholderName } =
         cardForm;
       if (
@@ -318,33 +169,9 @@ const PaymentManagement = () => {
         throw new Error("Please fill in all card details");
       }
 
-      // Get JWT token from localStorage
-      let token = localStorage.getItem("token");
+      const token = localStorage.getItem("token");
+      const userData = getUserData();
 
-      // Enhanced token validation
-      if (!token) {
-        setError(
-          "Please log in to make payments. Redirecting to login page...",
-        );
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 2000);
-        return;
-      }
-
-      // Check if token is valid format (basic validation)
-      if (!token.includes(".") || token.length < 50) {
-        setError("Invalid session. Please log out and log in again.");
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-        }, 2000);
-        return;
-      }
-
-      console.log("Making card payment request with valid token");
-
-      // Process payment through main server
       const response = await axios.post(
         "/api/payments/process-card",
         {
@@ -357,75 +184,27 @@ const PaymentManagement = () => {
           },
           billingDetails: {
             name: cardholderName,
-            email: billingInfo.email || userData?.email || "test@example.com",
-            phone: billingInfo.phone || userData?.phone || "+639123456789",
+            email: billingInfo.email || userData?.email,
+            phone: billingInfo.phone || userData?.phone,
           },
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success) {
-        setPaymentDialogOpen(true);
-        setPaymentFormOpen(false);
-        await fetchPaymentSummary(); // Refresh payment data
-
-        // Show success message
-        setAlert({
-          show: true,
-          message:
-            "Card payment processed successfully! Your delivery has been paid.",
-          severity: "success",
-        });
+        setPaymentStep(3); // Success step
+        await fetchPaymentSummary();
       } else {
         throw new Error(response.data.error || "Payment failed");
       }
     } catch (error) {
-      console.error("Error processing card payment:", error);
-
-      // Enhanced error handling with specific messages
-      if (error.response?.status === 401) {
-        setError(
-          "Your session has expired. Please log out and log in again to continue with payment.",
-        );
-      } else if (error.response?.status === 403) {
-        setError(
-          "Access denied. Please ensure you are logged in with the correct account.",
-        );
-      } else if (error.response?.status === 404) {
-        setError(
-          "Payment service is currently unavailable. Please try again later or contact support.",
-        );
-      } else if (error.response?.status === 500) {
-        setError(
-          "Server error occurred while processing your card payment. Please try again later or contact support.",
-        );
-      } else if (
-        error.code === "ECONNREFUSED" ||
-        error.message.includes("Network Error")
-      ) {
-        setError(
-          "Unable to connect to payment service. Please check your internet connection and try again.",
-        );
-      } else if (error.response?.data?.message === "Invalid token") {
-        setError(
-          "Your session is invalid. Please log out and log in again to continue with payment.",
-        );
-        setTimeout(() => {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-        }, 3000);
-      } else {
-        setError(
-          error.response?.data?.message ||
-            error.message ||
-            "Card payment processing failed. Please try again.",
-        );
-      }
+      console.error("Payment error:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          error.response?.data?.message || error.message || "Payment failed",
+      });
     } finally {
       setProcessingPayment(false);
     }
@@ -434,65 +213,24 @@ const PaymentManagement = () => {
   const processEWalletPayment = async () => {
     try {
       setProcessingPayment(true);
-      setPaymentStep(2);
-
-      // Get user data for the request
+      const token = localStorage.getItem("token");
       const userData = getUserData();
-      if (!userData) {
-        throw new Error(
-          "Unable to identify user. Please refresh and try again.",
-        );
-      }
 
-      // Get JWT token from localStorage
-      let token = localStorage.getItem("token");
-
-      // If no token, try to get from other sources or show helpful error
-      if (!token) {
-        // Check if user is logged in via AuthContext
-        if (authUser) {
-          setError(
-            "Session expired. Please log out and log in again to continue with payment.",
-          );
-          return;
-        } else {
-          setError(
-            "Please log in to make payments. Redirecting to login page...",
-          );
-          setTimeout(() => {
-            window.location.href = "/login";
-          }, 2000);
-          return;
-        }
-      }
-
-      console.log(
-        "Making payment request with token:",
-        token.substring(0, 20) + "...",
-      );
-
-      // Process e-wallet payment through main server
       const response = await axios.post(
         "/api/payments/process-ewallet",
         {
-          deliveryId: selectedPayment.id, // Use deliveryId as expected by real PayMongo route
+          deliveryId: selectedPayment.id,
           paymentMethod: paymentMethod,
           billingDetails: {
-            name: billingInfo.name || userData.clientName || "Test Client",
-            email: billingInfo.email || userData.email || "test@example.com",
-            phone: billingInfo.phone || userData.phone || "+639123456789",
+            name: billingInfo.name || userData?.name,
+            email: billingInfo.email || userData?.email,
+            phone: billingInfo.phone || userData?.phone,
           },
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
       if (response.data.success && response.data.data.checkoutUrl) {
-        // Redirect to PayMongo checkout page
         window.location.href = response.data.data.checkoutUrl;
       } else {
         throw new Error(
@@ -500,36 +238,15 @@ const PaymentManagement = () => {
         );
       }
     } catch (error) {
-      console.error("Error processing e-wallet payment:", error);
-
-      // Handle different types of errors
-      if (error.response?.status === 401) {
-        setError(
-          "Session expired. Please log out and log in again to continue with payment.",
-        );
-      } else if (error.response?.status === 404) {
-        setError(
-          "Payment service is currently unavailable. Please try again later or contact support.",
-        );
-      } else if (error.response?.status === 500) {
-        setError(
-          "Server error occurred. Please try again later or contact support.",
-        );
-      } else if (
-        error.code === "ECONNREFUSED" ||
-        error.message.includes("Network Error")
-      ) {
-        setError(
-          "Unable to connect to payment service. Please check your internet connection and try again.",
-        );
-      } else {
-        setError(
+      console.error("E-Wallet error:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
           error.response?.data?.message ||
-            error.message ||
-            "E-wallet payment failed. Please try again.",
-        );
-      }
-
+          error.message ||
+          "E-wallet payment failed",
+      });
       setProcessingPayment(false);
     }
   };
@@ -542,94 +259,6 @@ const PaymentManagement = () => {
     }
   };
 
-  const createPaymentLink = async (payment) => {
-    try {
-      setProcessingPayment(true);
-      const response = await axios.post(
-        `http://localhost:5010/api/payments/${payment.id}/create-link`,
-      );
-
-      if (response.data.success) {
-        // Open payment link in new tab
-        window.open(response.data.data.paymentLinkUrl, "_blank");
-        setAlert({
-          show: true,
-          type: "success",
-          message:
-            "Payment link created! Check the new tab to complete payment.",
-        });
-      }
-    } catch (error) {
-      console.error("Error creating payment link:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message: "Failed to create payment link. Please try again.",
-      });
-    } finally {
-      setProcessingPayment(false);
-    }
-  };
-
-  // Generate payment records from existing deliveries
-  const generatePaymentsFromDeliveries = async () => {
-    try {
-      setLoading(true);
-      setAlert({ show: false });
-
-      const response = await axios.post(
-        "http://localhost:5010/api/payments/generate-from-deliveries",
-      );
-
-      if (response.data.success) {
-        setAlert({
-          show: true,
-          type: "success",
-          message: response.data.message,
-        });
-
-        // Refresh payment data
-        await fetchPaymentSummary();
-      }
-    } catch (error) {
-      console.error("Error generating payments from deliveries:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message:
-          "Failed to generate payments from deliveries. Please try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getPaymentStatusColor = (status, dueDate) => {
-    if (status === "paid") return "success";
-    if (status === "overdue") return "error";
-    if (status === "failed") return "error";
-
-    // Check if pending payment is approaching due date
-    if (status === "pending" && dueDate) {
-      const daysUntilDue = differenceInDays(new Date(dueDate), new Date());
-      if (daysUntilDue <= 5) return "warning";
-    }
-
-    return "default";
-  };
-
-  const getPaymentStatusIcon = (status, dueDate) => {
-    if (status === "paid") return <CheckCircleIcon />;
-    if (status === "overdue" || status === "failed") return <WarningIcon />;
-
-    if (status === "pending" && dueDate) {
-      const daysUntilDue = differenceInDays(new Date(dueDate), new Date());
-      if (daysUntilDue <= 5) return <ScheduleIcon />;
-    }
-
-    return <PaymentIcon />;
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
@@ -637,646 +266,402 @@ const PaymentManagement = () => {
     }).format(amount);
   };
 
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    return format(new Date(date), "MMM dd, yyyy");
-  };
+  const getStatusBadge = (status) => {
+    let colors = "bg-gray-100 text-gray-600";
+    if (status === "paid") colors = "bg-emerald-100 text-emerald-700";
+    if (status === "pending") colors = "bg-amber-100 text-amber-700";
+    if (status === "overdue") colors = "bg-red-100 text-red-700";
 
-  const getDaysUntilDue = (dueDate) => {
-    if (!dueDate) return null;
-    const days = differenceInDays(new Date(dueDate), new Date());
-    return days;
-  };
-
-  const renderPaymentMethodSelection = () => (
-    <Box>
-      <Typography variant="h6" gutterBottom>
-        Choose Payment Method
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              cursor: "pointer",
-              border:
-                paymentMethod === "card"
-                  ? "2px solid #1976d2"
-                  : "1px solid #ddd",
-              "&:hover": { boxShadow: 3 },
-            }}
-            onClick={() => handlePaymentMethodSelect("card")}
-          >
-            <CardContent sx={{ textAlign: "center" }}>
-              <CreditCardIcon sx={{ fontSize: 40, color: "#1976d2", mb: 1 }} />
-              <Typography variant="h6">Credit/Debit Card</Typography>
-              <Typography variant="body2" color="textSecondary">
-                Visa, Mastercard
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              cursor: "pointer",
-              border:
-                paymentMethod === "gcash"
-                  ? "2px solid #1976d2"
-                  : "1px solid #ddd",
-              "&:hover": { boxShadow: 3 },
-            }}
-            onClick={() => handlePaymentMethodSelect("gcash")}
-          >
-            <CardContent sx={{ textAlign: "center" }}>
-              <WalletIcon sx={{ fontSize: 40, color: "#007dff", mb: 1 }} />
-              <Typography variant="h6">GCash</Typography>
-              <Typography variant="body2" color="textSecondary">
-                Pay with GCash wallet
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              cursor: "pointer",
-              border:
-                paymentMethod === "grab_pay"
-                  ? "2px solid #1976d2"
-                  : "1px solid #ddd",
-              "&:hover": { boxShadow: 3 },
-            }}
-            onClick={() => handlePaymentMethodSelect("grab_pay")}
-          >
-            <CardContent sx={{ textAlign: "center" }}>
-              <WalletIcon sx={{ fontSize: 40, color: "#00b14f", mb: 1 }} />
-              <Typography variant="h6">GrabPay</Typography>
-              <Typography variant="body2" color="textSecondary">
-                Pay with GrabPay wallet
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6}>
-          <Card
-            sx={{
-              cursor: "pointer",
-              border:
-                paymentMethod === "paymaya"
-                  ? "2px solid #1976d2"
-                  : "1px solid #ddd",
-              "&:hover": { boxShadow: 3 },
-            }}
-            onClick={() => handlePaymentMethodSelect("paymaya")}
-          >
-            <CardContent sx={{ textAlign: "center" }}>
-              <WalletIcon sx={{ fontSize: 40, color: "#5bc500", mb: 1 }} />
-              <Typography variant="h6">PayMaya</Typography>
-              <Typography variant="body2" color="textSecondary">
-                Pay with PayMaya wallet
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
-  );
-
-  const renderPaymentForm = () => {
-    if (paymentMethod === "card") {
-      return (
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            Enter Card Details
-          </Typography>
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Cardholder Name"
-                value={cardForm.cardholderName}
-                onChange={(e) =>
-                  handleCardInputChange("cardholderName", e.target.value)
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Card Number"
-                value={cardForm.cardNumber}
-                onChange={(e) =>
-                  handleCardInputChange("cardNumber", e.target.value)
-                }
-                placeholder="1234 5678 9012 3456"
-                required
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                fullWidth
-                label="Month"
-                value={cardForm.expiryMonth}
-                onChange={(e) =>
-                  handleCardInputChange("expiryMonth", e.target.value)
-                }
-                placeholder="MM"
-                required
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                fullWidth
-                label="Year"
-                value={cardForm.expiryYear}
-                onChange={(e) =>
-                  handleCardInputChange("expiryYear", e.target.value)
-                }
-                placeholder="YYYY"
-                required
-              />
-            </Grid>
-            <Grid item xs={4}>
-              <TextField
-                fullWidth
-                label="CVC"
-                value={cardForm.cvc}
-                onChange={(e) => handleCardInputChange("cvc", e.target.value)}
-                placeholder="123"
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom>
-                Billing Information
-              </Typography>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={billingInfo.email}
-                onChange={(e) =>
-                  setBillingInfo((prev) => ({ ...prev, email: e.target.value }))
-                }
-                required
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Phone"
-                value={billingInfo.phone}
-                onChange={(e) =>
-                  setBillingInfo((prev) => ({ ...prev, phone: e.target.value }))
-                }
-                required
-              />
-            </Grid>
-          </Grid>
-        </Box>
-      );
-    } else {
-      return (
-        <Box textAlign="center">
-          <WalletIcon sx={{ fontSize: 60, color: "#1976d2", mb: 2 }} />
-          <Typography variant="h6" gutterBottom>
-            {paymentMethod === "gcash" && "GCash Payment"}
-            {paymentMethod === "grab_pay" && "GrabPay Payment"}
-            {paymentMethod === "paymaya" && "PayMaya Payment"}
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            You will be redirected to{" "}
-            {paymentMethod === "gcash"
-              ? "GCash"
-              : paymentMethod === "grab_pay"
-                ? "GrabPay"
-                : "PayMaya"}{" "}
-            to complete your payment.
-          </Typography>
-          <Typography variant="body2" sx={{ mt: 2 }}>
-            Amount to pay:{" "}
-            <strong>{formatCurrency(selectedPayment?.amount || 0)}</strong>
-          </Typography>
-        </Box>
-      );
-    }
-  };
-
-  if (loading) {
     return (
-      <div className="client-page-container">
-        <Loader message="Loading payment history..." />
-      </div>
+      <span
+        className={`px-2 py-1 rounded text-xs font-bold uppercase ${colors}`}
+      >
+        {status}
+      </span>
     );
-  }
+  };
 
-  if (error) {
-    return (
-      <div className="client-page-container">
-        <Alert severity="error" sx={{ mt: 3, mb: 3 }}>
-          {error}
-        </Alert>
-        <Button
-          variant="contained"
-          onClick={fetchPaymentSummary}
-          startIcon={<RefreshIcon />}
-        >
-          Retry
-        </Button>
-      </div>
-    );
-  }
+  if (loading) return <Loader />;
 
   return (
-    <div className="client-page-container">
-      {/* Header with Back Button */}
-      <div className="client-page-header">
-        <h1>
-          <PaymentIcon /> Payment Management
-        </h1>
-        <div className="header-actions">
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={() => history.push("/client/dashboard")}
-            variant="outlined"
-            sx={{ borderColor: "var(--gray-300)", color: "var(--gray-700)" }}
-          >
-            Back to Dashboard
-          </Button>
+    <div className="w-full max-w-[1400px] mx-auto p-4 md:p-8 bg-slate-50 min-h-screen">
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={() => history.push("/client/dashboard")}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+        >
+          <FaArrowLeft className="text-gray-500" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <FaMoneyBillWave className="text-blue-600" /> Payment Management
+          </h1>
+          <p className="text-gray-500 text-sm">
+            Manage your billing and payments
+          </p>
         </div>
       </div>
 
-      {/* Alert Messages */}
-      {alert.show && (
-        <Alert
-          severity={alert.type}
-          onClose={() => setAlert({ show: false })}
-          sx={{ mb: 3 }}
-        >
-          {alert.message}
-        </Alert>
+      {error && (
+        <div className="bg-red-50 text-red-700 p-4 rounded-xl border border-red-200 mb-6 flex items-center gap-3">
+          <FaExclamationTriangle />
+          {error}
+        </div>
       )}
 
-      {/* Payment Summary Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Outstanding
-              </Typography>
-              <Typography variant="h5" component="h2" color="error">
-                {formatCurrency(paymentSummary?.totalAmountDue || 0)}
-              </Typography>
-              <Typography variant="body2">
-                {(paymentSummary?.pendingPayments || 0) +
-                  (paymentSummary?.overduePayments || 0)}{" "}
-                payments
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+          <div className="absolute right-0 top-0 p-4 opacity-10">
+            <FaMoneyBillWave size={100} />
+          </div>
+          <p className="text-gray-500 font-medium mb-1">Total Outstanding</p>
+          <h2 className="text-3xl font-bold text-gray-800">
+            {formatCurrency(paymentSummary?.totalOutstanding || 0)}
+          </h2>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+          <div className="absolute right-0 top-0 p-4 opacity-10">
+            <FaCheckCircle size={100} className="text-emerald-500" />
+          </div>
+          <p className="text-gray-500 font-medium mb-1">Total Paid</p>
+          <h2 className="text-3xl font-bold text-gray-800">
+            {formatCurrency(paymentSummary?.totalPaid || 0)}
+          </h2>
+        </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
+          <div className="absolute right-0 top-0 p-4 opacity-10">
+            <FaHistory size={100} className="text-blue-500" />
+          </div>
+          <p className="text-gray-500 font-medium mb-1">Last Payment</p>
+          <h2 className="text-xl font-bold text-gray-800">
+            {paymentSummary?.lastPaymentDate
+              ? format(new Date(paymentSummary.lastPaymentDate), "MMM dd, yyyy")
+              : "No payments yet"}
+          </h2>
+        </div>
+      </div>
 
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Overdue Payments
-              </Typography>
-              <Typography variant="h5" component="h2" color="error">
-                {paymentSummary?.overduePayments || 0}
-              </Typography>
-              <Typography variant="body2" color="error">
-                {paymentSummary?.overduePayments > 0
-                  ? "Action required"
-                  : "All current"}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Pending Payments Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
+        <div className="p-6 border-b border-gray-100 bg-amber-50">
+          <h3 className="font-bold text-amber-800 flex items-center gap-2">
+            <FaClock className="text-amber-600" /> Pending Payments
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold">
+              <tr>
+                <th className="p-4">Delivery ID</th>
+                <th className="p-4">Due Date</th>
+                <th className="p-4">Amount</th>
+                <th className="p-4">Status</th>
+                <th className="p-4 text-center">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {paymentSummary?.pendingPayments?.length > 0 ? (
+                paymentSummary.pendingPayments.map((payment) => (
+                  <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="p-4 font-mono text-sm">
+                      #{payment.id.substring(0, 8)}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {payment.dueDate
+                        ? format(new Date(payment.dueDate), "MMM dd, yyyy")
+                        : "N/A"}
+                    </td>
+                    <td className="p-4 font-bold text-gray-800">
+                      {formatCurrency(payment.amount)}
+                    </td>
+                    <td className="p-4">{getStatusBadge(payment.status)}</td>
+                    <td className="p-4 text-center">
+                      <button
+                        onClick={() => handlePayNow(payment)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                      >
+                        Pay Now
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-gray-500">
+                    No pending payments. You're all caught up!
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Paid This Month
-              </Typography>
-              <Typography variant="h5" component="h2" color="success.main">
-                {formatCurrency(paymentSummary?.totalAmountPaid || 0)}
-              </Typography>
-              <Typography variant="body2">
-                {paymentSummary?.paidPayments || 0} payments
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
+      {/* Payment History Section */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <FaHistory className="text-gray-400" /> Payment History
+          </h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold">
+              <tr>
+                <th className="p-4">Transaction ID</th>
+                <th className="p-4">Date</th>
+                <th className="p-4">Method</th>
+                <th className="p-4">Amount</th>
+                <th className="p-4">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {paymentSummary?.recentTransactions?.length > 0 ? (
+                paymentSummary.recentTransactions.map((transaction) => (
+                  <tr key={transaction.id} className="hover:bg-gray-50">
+                    <td className="p-4 font-mono text-sm">
+                      #{transaction.id.substring(0, 8)}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600">
+                      {format(
+                        new Date(transaction.createdAt),
+                        "MMM dd, yyyy HH:mm",
+                      )}
+                    </td>
+                    <td className="p-4 text-sm text-gray-600 capitalize">
+                      {transaction.method.replace("_", " ")}
+                    </td>
+                    <td className="p-4 font-bold text-gray-800">
+                      {formatCurrency(transaction.amount)}
+                    </td>
+                    <td className="p-4">
+                      {getStatusBadge(transaction.status)}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-gray-500">
+                    No payment history found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-        <Grid item xs={12} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Account Status
-              </Typography>
-              <Chip
-                label={
-                  paymentSummary?.canBookTrucks
-                    ? "Good Standing"
-                    : "Payment Required"
-                }
-                color={paymentSummary?.canBookTrucks ? "success" : "error"}
-                variant="outlined"
-              />
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                {paymentSummary?.canBookTrucks
-                  ? "Can book trucks"
-                  : "Cannot book trucks"}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      {/* Payment Modal */}
+      {paymentModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-800">Complete Payment</h3>
+              <button
+                onClick={() => setPaymentModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes />
+              </button>
+            </div>
 
-      {/* Warning for overdue payments */}
-      {!paymentSummary?.canBookTrucks && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          <Typography variant="h6">Account Suspended</Typography>
-          You have overdue payments. Please settle all outstanding payments to
-          resume booking services.
-        </Alert>
-      )}
+            <div className="p-6">
+              {paymentStep === 1 && (
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    onClick={() => handlePaymentMethodSelect("card")}
+                    className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 group"
+                  >
+                    <FaCreditCard className="text-2xl text-gray-400 group-hover:text-blue-500" />
+                    <span className="font-bold text-gray-700 group-hover:text-blue-700">
+                      Credit Card
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handlePaymentMethodSelect("gcash")}
+                    className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 group"
+                  >
+                    <FaWallet className="text-2xl text-gray-400 group-hover:text-blue-500" />
+                    <span className="font-bold text-gray-700 group-hover:text-blue-700">
+                      GCash
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handlePaymentMethodSelect("grab_pay")}
+                    className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 group"
+                  >
+                    <FaWallet className="text-2xl text-gray-400 group-hover:text-blue-500" />
+                    <span className="font-bold text-gray-700 group-hover:text-blue-700">
+                      GrabPay
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handlePaymentMethodSelect("paymaya")}
+                    className="p-4 border rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all flex flex-col items-center gap-2 group"
+                  >
+                    <FaWallet className="text-2xl text-gray-400 group-hover:text-blue-500" />
+                    <span className="font-bold text-gray-700 group-hover:text-blue-700">
+                      Maya
+                    </span>
+                  </button>
+                </div>
+              )}
 
-      {/* Payments Table */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Payment History
-          </Typography>
+              {paymentStep === 2 && paymentMethod === "card" && (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                      Cardholder Name
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      value={cardForm.cardholderName}
+                      onChange={(e) =>
+                        handleCardInputChange("cardholderName", e.target.value)
+                      }
+                      placeholder="John Doe"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-1">
+                      Card Number
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                      value={cardForm.cardNumber}
+                      onChange={(e) =>
+                        handleCardInputChange("cardNumber", e.target.value)
+                      }
+                      placeholder="0000 0000 0000 0000"
+                    />
+                  </div>
+                  <div className="flex gap-4">
+                    <div className="flex-1">
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        Expiry Date
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                          value={cardForm.expiryMonth}
+                          onChange={(e) =>
+                            handleCardInputChange("expiryMonth", e.target.value)
+                          }
+                          placeholder="MM"
+                        />
+                        <input
+                          type="text"
+                          className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                          value={cardForm.expiryYear}
+                          onChange={(e) =>
+                            handleCardInputChange("expiryYear", e.target.value)
+                          }
+                          placeholder="YYYY"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-1/3">
+                      <label className="block text-sm font-bold text-gray-700 mb-1">
+                        CVC
+                      </label>
+                      <input
+                        type="text"
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+                        value={cardForm.cvc}
+                        onChange={(e) =>
+                          handleCardInputChange("cvc", e.target.value)
+                        }
+                        placeholder="123"
+                      />
+                    </div>
+                  </div>
 
-          {paymentSummary?.payments?.length === 0 ? (
-            <Alert
-              severity="info"
-              action={
-                <Button
-                  color="primary"
-                  size="small"
-                  onClick={generatePaymentsFromDeliveries}
-                  disabled={loading}
-                  startIcon={
-                    loading ? <CircularProgress size={16} /> : <PaymentIcon />
-                  }
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => setPaymentStep(1)}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handlePaymentSubmit}
+                      disabled={processingPayment}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg shadow-md disabled:opacity-50"
+                    >
+                      {processingPayment
+                        ? "Processing..."
+                        : `Pay ${formatCurrency(selectedPayment?.amount || 0)}`}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {paymentStep === 2 && paymentMethod !== "card" && (
+                <div className="text-center py-6">
+                  <p className="text-gray-600 mb-6">
+                    You will be redirected to{" "}
+                    {paymentMethod === "gcash"
+                      ? "GCash"
+                      : paymentMethod === "grab_pay"
+                        ? "GrabPay"
+                        : "Maya"}{" "}
+                    to complete your payment securely.
+                  </p>
+                  <div className="flex gap-3 justify-center">
+                    <button
+                      onClick={() => setPaymentStep(1)}
+                      className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                    >
+                      Back
+                    </button>
+                    <button
+                      onClick={handlePaymentSubmit}
+                      disabled={processingPayment}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-md disabled:opacity-50"
+                    >
+                      {processingPayment
+                        ? "Redirecting..."
+                        : "Proceed to Payment"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {paymentStep === 3 && (
+                <div className="text-center py-6">
+                  <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FaCheckCircle className="text-3xl text-emerald-500" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-800 mb-2">
+                    Payment Successful!
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    Your payment has been processed successfully.
+                  </p>
+                  <button
+                    onClick={() => setPaymentModalOpen(false)}
+                    className="bg-gray-800 text-white px-6 py-2 rounded-lg font-bold hover:bg-gray-900"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+
+              {alert.show && (
+                <div
+                  className={`mt-4 p-3 rounded-lg text-sm ${alert.type === "error" ? "bg-red-50 text-red-700" : "bg-blue-50 text-blue-700"}`}
                 >
-                  {loading ? "Generating..." : "Generate Payments"}
-                </Button>
-              }
-            >
-              <Typography variant="body1" sx={{ mb: 1 }}>
-                {paymentSummary?.hasDeliveriesWithoutPayments
-                  ? `Found ${paymentSummary.deliveriesFound} deliveries without payment records.`
-                  : "No payment records found for your account."}
-              </Typography>
-              <Typography variant="body2">
-                {paymentSummary?.hasDeliveriesWithoutPayments
-                  ? "Click the button to generate payment records from your existing deliveries."
-                  : "If you have existing deliveries, click the button to generate payment records from them."}
-              </Typography>
-            </Alert>
-          ) : (
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell>Delivery ID</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Due Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Days Until Due</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {paymentSummary?.payments?.map((payment) => {
-                    const daysUntilDue = getDaysUntilDue(payment.dueDate);
-                    return (
-                      <TableRow key={payment.id}>
-                        <TableCell>
-                          <Typography variant="body2" fontWeight="bold">
-                            {payment.deliveryId}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            {payment.metadata?.pickupLocation || "N/A"} →{" "}
-                            {payment.metadata?.deliveryAddress || "N/A"}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body1" fontWeight="bold">
-                            {formatCurrency(payment.amount)}
-                          </Typography>
-                          {payment.transactionFee > 0 && (
-                            <Typography variant="caption" color="textSecondary">
-                              Fee: {formatCurrency(payment.transactionFee)}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <Typography variant="body2">
-                            {formatDate(payment.dueDate)}
-                          </Typography>
-                          <Typography variant="caption" color="textSecondary">
-                            Delivery: {formatDate(payment.deliveryDate)}
-                          </Typography>
-                        </TableCell>
-                        <TableCell>
-                          <Chip
-                            icon={getPaymentStatusIcon(
-                              payment.status,
-                              payment.dueDate,
-                            )}
-                            label={
-                              payment.status.charAt(0).toUpperCase() +
-                              payment.status.slice(1)
-                            }
-                            color={getPaymentStatusColor(
-                              payment.status,
-                              payment.dueDate,
-                            )}
-                            size="small"
-                          />
-                        </TableCell>
-                        <TableCell>
-                          {payment.status === "pending" &&
-                            daysUntilDue !== null && (
-                              <Typography
-                                variant="body2"
-                                color={
-                                  daysUntilDue <= 5
-                                    ? "error"
-                                    : daysUntilDue <= 10
-                                      ? "warning.main"
-                                      : "textSecondary"
-                                }
-                              >
-                                {daysUntilDue > 0
-                                  ? `${daysUntilDue} days`
-                                  : `${Math.abs(daysUntilDue)} days overdue`}
-                              </Typography>
-                            )}
-                          {payment.status === "paid" && payment.paidAt && (
-                            <Typography variant="body2" color="success.main">
-                              Paid {formatDate(payment.paidAt)}
-                            </Typography>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          {payment.status === "pending" ||
-                          payment.status === "overdue" ? (
-                            <Box>
-                              <Button
-                                variant="contained"
-                                color="primary"
-                                size="small"
-                                startIcon={<PaymentIcon />}
-                                onClick={() => handlePayNow(payment)}
-                                disabled={processingPayment}
-                                sx={{ mb: 1, mr: 1 }}
-                              >
-                                Pay Now
-                              </Button>
-                              <Button
-                                variant="outlined"
-                                size="small"
-                                startIcon={<LaunchIcon />}
-                                onClick={() => createPaymentLink(payment)}
-                                disabled={processingPayment}
-                              >
-                                Payment Link
-                              </Button>
-                            </Box>
-                          ) : payment.status === "paid" ? (
-                            <Tooltip title="Payment completed">
-                              <IconButton color="success">
-                                <ReceiptIcon />
-                              </IconButton>
-                            </Tooltip>
-                          ) : null}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog
-        open={paymentFormOpen}
-        onClose={() => !processingPayment && setPaymentFormOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Box
-            display="flex"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            {paymentSteps[paymentStep]}
-            <IconButton
-              onClick={() => !processingPayment && setPaymentFormOpen(false)}
-            >
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent dividers>
-          <Box sx={{ mb: 3 }}>
-            <Stepper activeStep={paymentStep} alternativeLabel>
-              {paymentSteps.map((label) => (
-                <Step key={label}>
-                  <StepLabel>{label}</StepLabel>
-                </Step>
-              ))}
-            </Stepper>
-          </Box>
-
-          {processingPayment && (
-            <Box sx={{ mb: 2 }}>
-              <LinearProgress />
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Processing payment...
-              </Typography>
-            </Box>
-          )}
-
-          {paymentStep === 0 && renderPaymentMethodSelection()}
-          {paymentStep === 1 && renderPaymentForm()}
-          {paymentStep === 2 && (
-            <Box textAlign="center" py={3}>
-              <CircularProgress size={60} thickness={4} />
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                Processing secure payment...
-              </Typography>
-              <Typography variant="body2" color="textSecondary">
-                Please do not close this window
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        {paymentStep === 1 && (
-          <DialogActions>
-            <Button
-              onClick={() => {
-                setPaymentStep(0);
-                setPaymentMethod("");
-              }}
-              disabled={processingPayment}
-            >
-              Back
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handlePaymentSubmit}
-              disabled={processingPayment}
-              sx={{ bgcolor: "#27ae60", "&:hover": { bgcolor: "#219150" } }}
-            >
-              Proceed to Pay {formatCurrency(selectedPayment?.amount || 0)}
-            </Button>
-          </DialogActions>
-        )}
-      </Dialog>
-
-      {/* Success Dialog */}
-      <Dialog
-        open={paymentDialogOpen}
-        onClose={() => setPaymentDialogOpen(false)}
-      >
-        <DialogTitle sx={{ textAlign: "center", pt: 3 }}>
-          <CheckCircleIcon
-            sx={{ fontSize: 60, color: "success.main", mb: 1 }}
-          />
-          <Typography variant="h5">Payment Successful!</Typography>
-        </DialogTitle>
-        <DialogContent>
-          <Typography align="center">
-            Your payment has been processed successfully. The receipt has been
-            sent to your email.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
-          <Button
-            variant="contained"
-            onClick={() => setPaymentDialogOpen(false)}
-            sx={{ minWidth: 120 }}
-          >
-            Done
-          </Button>
-        </DialogActions>
-      </Dialog>
+                  {alert.message}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const StaffFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -16,16 +15,16 @@ const StaffFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by name"
-          value={filters.name || ''}
-          onChange={(e) => handleChange('name', e.target.value)}
+          value={filters.name || ""}
+          onChange={(e) => handleChange("name", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="active">Active</option>
@@ -38,8 +37,8 @@ const StaffFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Role/Position</label>
         <select
-          value={filters.role || ''}
-          onChange={(e) => handleChange('role', e.target.value)}
+          value={filters.role || ""}
+          onChange={(e) => handleChange("role", e.target.value)}
         >
           <option value="">All Roles</option>
           <option value="Admin">Admin</option>
@@ -55,8 +54,8 @@ const StaffFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Department</label>
         <select
-          value={filters.department || ''}
-          onChange={(e) => handleChange('department', e.target.value)}
+          value={filters.department || ""}
+          onChange={(e) => handleChange("department", e.target.value)}
         >
           <option value="">All Departments</option>
           <option value="Operations">Operations</option>
@@ -73,8 +72,8 @@ const StaffFilters = ({ filters, onChange }) => {
         <label>Join Date From</label>
         <input
           type="date"
-          value={filters.joinDateFrom || ''}
-          onChange={(e) => handleChange('joinDateFrom', e.target.value)}
+          value={filters.joinDateFrom || ""}
+          onChange={(e) => handleChange("joinDateFrom", e.target.value)}
         />
       </div>
 
@@ -82,16 +81,16 @@ const StaffFilters = ({ filters, onChange }) => {
         <label>Join Date To</label>
         <input
           type="date"
-          value={filters.joinDateTo || ''}
-          onChange={(e) => handleChange('joinDateTo', e.target.value)}
+          value={filters.joinDateTo || ""}
+          onChange={(e) => handleChange("joinDateTo", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Employment Type</label>
         <select
-          value={filters.employmentType || ''}
-          onChange={(e) => handleChange('employmentType', e.target.value)}
+          value={filters.employmentType || ""}
+          onChange={(e) => handleChange("employmentType", e.target.value)}
         >
           <option value="">All Types</option>
           <option value="Full-time">Full-time</option>
@@ -106,8 +105,8 @@ const StaffFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by email"
-          value={filters.email || ''}
-          onChange={(e) => handleChange('email', e.target.value)}
+          value={filters.email || ""}
+          onChange={(e) => handleChange("email", e.target.value)}
         />
       </div>
 
@@ -116,8 +115,8 @@ const StaffFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by contact"
-          value={filters.contact || ''}
-          onChange={(e) => handleChange('contact', e.target.value)}
+          value={filters.contact || ""}
+          onChange={(e) => handleChange("contact", e.target.value)}
         />
       </div>
 
@@ -127,16 +126,16 @@ const StaffFilters = ({ filters, onChange }) => {
           <input
             type="number"
             placeholder="Min"
-            value={filters.minSalary || ''}
-            onChange={(e) => handleChange('minSalary', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.minSalary || ""}
+            onChange={(e) => handleChange("minSalary", e.target.value)}
+            style={{ width: "48%" }}
           />
           <input
             type="number"
             placeholder="Max"
-            value={filters.maxSalary || ''}
-            onChange={(e) => handleChange('maxSalary', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.maxSalary || ""}
+            onChange={(e) => handleChange("maxSalary", e.target.value)}
+            style={{ width: "48%" }}
           />
         </div>
       </div>

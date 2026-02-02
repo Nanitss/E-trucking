@@ -1,21 +1,27 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { Link } from 'react-router-dom';
-import { FaUsers, FaTruck, FaShippingFast, FaFileAlt, FaDollarSign, FaChartBar, FaSignOutAlt } from 'react-icons/fa';
-import { AuthContext } from '../../context/AuthContext';
-import Loader from '../../components/common/Loader';
-import './Dashboard.css';
-import '../../styles/DesignSystem.css';
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { Link } from "react-router-dom";
+import {
+  FaUsers,
+  FaTruck,
+  FaShippingFast,
+  FaFileAlt,
+  FaDollarSign,
+  FaChartBar,
+  FaSignOutAlt,
+} from "react-icons/fa";
+import { AuthContext } from "../../context/AuthContext";
+import Loader from "../../components/common/Loader";
 
 const Dashboard = () => {
-  // Fix: Change authUser to currentUser 
+  // Fix: Change authUser to currentUser
   const { currentUser } = useContext(AuthContext);
   const [staffData, setStaffData] = useState(null);
   const [stats, setStats] = useState({
     clients: 0,
     trucks: 0,
     deliveries: 0,
-    pendingDeliveries: 0
+    pendingDeliveries: 0,
   });
   const [recentClients, setRecentClients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,37 +30,37 @@ const Dashboard = () => {
     const fetchStaffData = async () => {
       try {
         setIsLoading(true);
-        
+
         const [staffRes, statsRes, clientsRes] = await Promise.all([
-          axios.get('/api/staffs/profile'),
-          axios.get('/api/staffs/stats'),
-          axios.get('/api/staffs/recent-clients')
+          axios.get("/api/staffs/profile"),
+          axios.get("/api/staffs/stats"),
+          axios.get("/api/staffs/recent-clients"),
         ]);
 
         setStaffData(staffRes.data);
         setStats(statsRes.data);
         setRecentClients(clientsRes.data);
-        
+
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching dashboard data:', error);
+        console.error("Error fetching dashboard data:", error);
         setIsLoading(false);
-        
+
         // Show error message instead of using mock data
         setStaffData({
-          StaffName: currentUser?.username || 'Staff Member',
-          StaffDepartment: 'Customer Service',
-          StaffStatus: 'Active',
-          StaffEmploymentDate: new Date().toISOString()
+          StaffName: currentUser?.username || "Staff Member",
+          StaffDepartment: "Customer Service",
+          StaffStatus: "Active",
+          StaffEmploymentDate: new Date().toISOString(),
         });
-        
+
         setStats({
           clients: 0,
           trucks: 0,
           deliveries: 0,
-          pendingDeliveries: 0
+          pendingDeliveries: 0,
         });
-        
+
         setRecentClients([]);
       }
     };
@@ -63,9 +69,9 @@ const Dashboard = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('currentUser');
-    window.location.href = '/login';
+    localStorage.removeItem("token");
+    localStorage.removeItem("currentUser");
+    window.location.href = "/login";
   };
 
   if (isLoading) {
@@ -82,8 +88,16 @@ const Dashboard = () => {
               <FaUsers />
             </div>
             <div className="staff-details">
-              <h1>Welcome, {staffData?.StaffName && staffData.StaffName !== 'Staff Member' ? staffData.StaffName : (currentUser?.username || 'John Smith')}</h1>
-              <p className="staff-role">Staff Dashboard - {staffData?.StaffDepartment || 'Customer Service'}</p>
+              <h1>
+                Welcome,{" "}
+                {staffData?.StaffName && staffData.StaffName !== "Staff Member"
+                  ? staffData.StaffName
+                  : currentUser?.username || "John Smith"}
+              </h1>
+              <p className="staff-role">
+                Staff Dashboard -{" "}
+                {staffData?.StaffDepartment || "Customer Service"}
+              </p>
             </div>
           </div>
           <div className="header-actions">
@@ -108,7 +122,7 @@ const Dashboard = () => {
                 <p>Total Clients</p>
               </div>
             </div>
-            
+
             <div className="stat-card">
               <div className="stat-icon bg-green">
                 <FaTruck />
@@ -118,7 +132,7 @@ const Dashboard = () => {
                 <p>Total Trucks</p>
               </div>
             </div>
-            
+
             <div className="stat-card">
               <div className="stat-icon bg-purple">
                 <FaShippingFast />
@@ -128,7 +142,7 @@ const Dashboard = () => {
                 <p>Total Deliveries</p>
               </div>
             </div>
-            
+
             <div className="stat-card">
               <div className="stat-icon bg-orange">
                 <FaShippingFast />
@@ -147,7 +161,7 @@ const Dashboard = () => {
             <h2>Staff Management Tools</h2>
             <p>Access your management tools and resources</p>
           </div>
-          
+
           <div className="tools-grid">
             <Link to="/staff/vehicle-rates" className="tool-card">
               <div className="tool-icon">
@@ -155,17 +169,23 @@ const Dashboard = () => {
               </div>
               <div className="tool-content">
                 <h3>Vehicle Rate Management</h3>
-                <p>Manage per-kilometer rates for different vehicle types used in booking calculations</p>
+                <p>
+                  Manage per-kilometer rates for different vehicle types used in
+                  booking calculations
+                </p>
               </div>
             </Link>
-            
+
             <Link to="/staff/reports" className="tool-card">
               <div className="tool-icon">
                 <FaChartBar />
               </div>
               <div className="tool-content">
                 <h3>Reports & Analytics</h3>
-                <p>Generate detailed reports on deliveries, truck utilization, and operational statistics</p>
+                <p>
+                  Generate detailed reports on deliveries, truck utilization,
+                  and operational statistics
+                </p>
               </div>
             </Link>
           </div>
@@ -194,12 +214,16 @@ const Dashboard = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {recentClients.map(client => (
+                      {recentClients.map((client) => (
                         <tr key={client.ClientID}>
                           <td>{client.ClientName}</td>
                           <td>{client.ClientNumber}</td>
                           <td>{client.ClientEmail}</td>
-                          <td>{new Date(client.ClientCreationDate).toLocaleDateString()}</td>
+                          <td>
+                            {new Date(
+                              client.ClientCreationDate,
+                            ).toLocaleDateString()}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -223,28 +247,40 @@ const Dashboard = () => {
               <div className="info-grid">
                 <div className="info-item">
                   <div className="info-label">Department:</div>
-                  <div className="info-value">{staffData?.StaffDepartment || 'Not assigned'}</div>
+                  <div className="info-value">
+                    {staffData?.StaffDepartment || "Not assigned"}
+                  </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Status:</div>
                   <div className="info-value">
-                    <span className="status-badge active">{staffData?.StaffStatus || 'Active'}</span>
+                    <span className="status-badge active">
+                      {staffData?.StaffStatus || "Active"}
+                    </span>
                   </div>
                 </div>
                 <div className="info-item">
                   <div className="info-label">Employment Date:</div>
                   <div className="info-value">
-                    {staffData?.StaffEmploymentDate 
-                      ? new Date(staffData.StaffEmploymentDate).toLocaleDateString()
-                      : 'Not available'}
+                    {staffData?.StaffEmploymentDate
+                      ? new Date(
+                          staffData.StaffEmploymentDate,
+                        ).toLocaleDateString()
+                      : "Not available"}
                   </div>
                 </div>
               </div>
-              
+
               <div className="department-message">
                 <h4>Welcome to E-Trucking Staff Dashboard</h4>
-                <p>Here you can view client data, manage vehicle rates, generate reports, and access your management tools.</p>
-                <p>If you have any questions or need assistance, please contact your supervisor.</p>
+                <p>
+                  Here you can view client data, manage vehicle rates, generate
+                  reports, and access your management tools.
+                </p>
+                <p>
+                  If you have any questions or need assistance, please contact
+                  your supervisor.
+                </p>
               </div>
             </div>
           </div>

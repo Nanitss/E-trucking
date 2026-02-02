@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import "./FileViewer.css";
 
 const FileViewer = ({ documents, truckPlate }) => {
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -127,13 +126,13 @@ const FileViewer = ({ documents, truckPlate }) => {
         // Try to open the folder containing the file
         const folderPath = document.fullPath.substring(
           0,
-          document.fullPath.lastIndexOf("\\")
+          document.fullPath.lastIndexOf("\\"),
         );
         // Use Windows shell command to open folder
         if (navigator.platform.includes("Win")) {
           // For Windows, we can try to open the folder
           alert(
-            `Opening folder: ${folderPath}\n\nIf the folder doesn't open automatically, please:\n1. Press Win + R\n2. Type: explorer "${folderPath}"\n3. Press Enter`
+            `Opening folder: ${folderPath}\n\nIf the folder doesn't open automatically, please:\n1. Press Win + R\n2. Type: explorer "${folderPath}"\n3. Press Enter`,
           );
         } else {
           alert(`File location: ${document.fullPath}`);
@@ -211,7 +210,8 @@ const FileViewer = ({ documents, truckPlate }) => {
         return docType
           .split("-")
           .map(
-            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+            (word) =>
+              word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
           )
           .join(" ");
     }
@@ -371,7 +371,7 @@ const FileViewer = ({ documents, truckPlate }) => {
                       <span className="detail-label">Upload Date:</span>
                       <span className="detail-value">
                         {new Date(
-                          selectedDoc.document.uploadDate
+                          selectedDoc.document.uploadDate,
                         ).toLocaleString()}
                       </span>
                     </div>
@@ -379,7 +379,7 @@ const FileViewer = ({ documents, truckPlate }) => {
                       <span className="detail-label">Last Modified:</span>
                       <span className="detail-value">
                         {new Date(
-                          selectedDoc.document.lastModified
+                          selectedDoc.document.lastModified,
                         ).toLocaleString()}
                       </span>
                     </div>

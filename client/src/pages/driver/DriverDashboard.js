@@ -1,13 +1,12 @@
-import React, { useState, useContext, useEffect } from 'react';
-import { AuthContext } from '../../context/AuthContext';
-import GPSTracker from '../../components/driver/GPSTracker';
-import gpsTrackingService from '../../services/GPSTrackingService';
-import axios from 'axios';
-import './DriverDashboard.css';
+import React, { useState, useContext, useEffect } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import GPSTracker from "../../components/driver/GPSTracker";
+import gpsTrackingService from "../../services/GPSTrackingService";
+import axios from "axios";
 
 const DriverDashboard = () => {
   const { authUser, logout } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState("overview");
   const [driverInfo, setDriverInfo] = useState(null);
   const [deliveries, setDeliveries] = useState([]);
   const [truckInfo, setTruckInfo] = useState(null);
@@ -15,7 +14,7 @@ const DriverDashboard = () => {
   const [gpsStatus, setGpsStatus] = useState({
     isTracking: false,
     currentPosition: null,
-    lastUpdate: null
+    lastUpdate: null,
   });
 
   useEffect(() => {
@@ -26,33 +25,32 @@ const DriverDashboard = () => {
   const fetchDriverData = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch driver profile info
       try {
-        const driverResponse = await axios.get('/api/drivers/profile');
+        const driverResponse = await axios.get("/api/drivers/profile");
         setDriverInfo(driverResponse.data);
       } catch (error) {
-        console.error('Error fetching driver info:', error);
+        console.error("Error fetching driver info:", error);
       }
 
       // Fetch assigned deliveries
       try {
-        const deliveriesResponse = await axios.get('/api/drivers/deliveries');
+        const deliveriesResponse = await axios.get("/api/drivers/deliveries");
         setDeliveries(deliveriesResponse.data.deliveries || []);
       } catch (error) {
-        console.error('Error fetching deliveries:', error);
+        console.error("Error fetching deliveries:", error);
       }
 
       // Fetch truck information
       try {
-        const truckResponse = await axios.get('/api/drivers/truck');
+        const truckResponse = await axios.get("/api/drivers/truck");
         setTruckInfo(truckResponse.data);
       } catch (error) {
-        console.error('Error fetching truck info:', error);
+        console.error("Error fetching truck info:", error);
       }
-
     } catch (error) {
-      console.error('Error fetching driver data:', error);
+      console.error("Error fetching driver data:", error);
     } finally {
       setLoading(false);
     }
@@ -61,31 +59,39 @@ const DriverDashboard = () => {
   const initializeGpsListener = () => {
     // Listen for GPS status updates
     const handlePositionUpdate = (position) => {
-      setGpsStatus(prev => ({
+      setGpsStatus((prev) => ({
         ...prev,
         currentPosition: position,
-        lastUpdate: new Date()
+        lastUpdate: new Date(),
       }));
     };
 
     const handleTrackingStarted = () => {
-      setGpsStatus(prev => ({ ...prev, isTracking: true }));
+      setGpsStatus((prev) => ({ ...prev, isTracking: true }));
     };
 
     const handleTrackingStopped = () => {
-      setGpsStatus(prev => ({ ...prev, isTracking: false }));
+      setGpsStatus((prev) => ({ ...prev, isTracking: false }));
     };
 
-    gpsTrackingService.addEventListener('positionUpdate', handlePositionUpdate);
-    gpsTrackingService.addEventListener('trackingStarted', handleTrackingStarted);
-    gpsTrackingService.addEventListener('trackingStopped', handleTrackingStopped);
+    gpsTrackingService.addEventListener("positionUpdate", handlePositionUpdate);
+    gpsTrackingService.addEventListener(
+      "trackingStarted",
+      handleTrackingStarted,
+    );
+    gpsTrackingService.addEventListener(
+      "trackingStopped",
+      handleTrackingStopped,
+    );
 
     // Update initial status
     const status = gpsTrackingService.getStatus();
     setGpsStatus({
       isTracking: status.isTracking,
       currentPosition: status.currentPosition,
-      lastUpdate: status.lastUpdateTime ? new Date(status.lastUpdateTime) : null
+      lastUpdate: status.lastUpdateTime
+        ? new Date(status.lastUpdateTime)
+        : null,
     });
 
     return () => {
@@ -104,17 +110,24 @@ const DriverDashboard = () => {
   };
 
   const formatTime = (date) => {
-    return date ? date.toLocaleTimeString() : 'Never';
+    return date ? date.toLocaleTimeString() : "Never";
   };
 
   const getDeliveryStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return '#f59e0b';
-      case 'in-progress': case 'started': return '#3b82f6';
-      case 'picked-up': return '#8b5cf6';
-      case 'completed': return '#10b981';
-      case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
+      case "pending":
+        return "#f59e0b";
+      case "in-progress":
+      case "started":
+        return "#3b82f6";
+      case "picked-up":
+        return "#8b5cf6";
+      case "completed":
+        return "#10b981";
+      case "cancelled":
+        return "#ef4444";
+      default:
+        return "#6b7280";
     }
   };
 
@@ -136,14 +149,19 @@ const DriverDashboard = () => {
         <div className="header-content">
           <div className="driver-info-header">
             <div className="driver-avatar">
-              {authUser?.username?.charAt(0).toUpperCase() || 'D'}
+              {authUser?.username?.charAt(0).toUpperCase() || "D"}
             </div>
             <div className="driver-details">
-              <h1>Welcome, {driverInfo?.DriverName || authUser?.username || 'Driver'}!</h1>
+              <h1>
+                Welcome,{" "}
+                {driverInfo?.DriverName || authUser?.username || "Driver"}!
+              </h1>
               <p className="driver-role">Driver Dashboard</p>
               <div className="status-indicators">
-                <div className={`status-badge ${gpsStatus.isTracking ? 'active' : 'inactive'}`}>
-                  📍 GPS: {gpsStatus.isTracking ? 'Active' : 'Inactive'}
+                <div
+                  className={`status-badge ${gpsStatus.isTracking ? "active" : "inactive"}`}
+                >
+                  📍 GPS: {gpsStatus.isTracking ? "Active" : "Inactive"}
                 </div>
                 {truckInfo && (
                   <div className="status-badge active">
@@ -154,10 +172,7 @@ const DriverDashboard = () => {
             </div>
           </div>
           <div className="header-actions">
-            <button 
-              className="btn btn-logout"
-              onClick={handleLogout}
-            >
+            <button className="btn btn-logout" onClick={handleLogout}>
               🚪 Logout
             </button>
           </div>
@@ -166,27 +181,27 @@ const DriverDashboard = () => {
 
       {/* Navigation Tabs */}
       <div className="dashboard-nav">
-        <button 
-          className={`nav-tab ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
+        <button
+          className={`nav-tab ${activeTab === "overview" ? "active" : ""}`}
+          onClick={() => setActiveTab("overview")}
         >
           📊 Overview
         </button>
-        <button 
-          className={`nav-tab ${activeTab === 'gps' ? 'active' : ''}`}
-          onClick={() => setActiveTab('gps')}
+        <button
+          className={`nav-tab ${activeTab === "gps" ? "active" : ""}`}
+          onClick={() => setActiveTab("gps")}
         >
           📍 GPS Tracking
         </button>
-        <button 
-          className={`nav-tab ${activeTab === 'deliveries' ? 'active' : ''}`}
-          onClick={() => setActiveTab('deliveries')}
+        <button
+          className={`nav-tab ${activeTab === "deliveries" ? "active" : ""}`}
+          onClick={() => setActiveTab("deliveries")}
         >
           📦 My Deliveries
         </button>
-        <button 
-          className={`nav-tab ${activeTab === 'profile' ? 'active' : ''}`}
-          onClick={() => setActiveTab('profile')}
+        <button
+          className={`nav-tab ${activeTab === "profile" ? "active" : ""}`}
+          onClick={() => setActiveTab("profile")}
         >
           👤 Profile
         </button>
@@ -194,7 +209,7 @@ const DriverDashboard = () => {
 
       {/* Tab Content */}
       <div className="dashboard-content">
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="overview-section">
             <div className="stats-grid">
               <div className="stat-card">
@@ -207,21 +222,28 @@ const DriverDashboard = () => {
               <div className="stat-card">
                 <div className="stat-icon active">🚀</div>
                 <div className="stat-details">
-                  <h3>{deliveries.filter(d => d.status === 'in-progress').length}</h3>
+                  <h3>
+                    {
+                      deliveries.filter((d) => d.status === "in-progress")
+                        .length
+                    }
+                  </h3>
                   <p>Active Deliveries</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon completed">✅</div>
                 <div className="stat-details">
-                  <h3>{deliveries.filter(d => d.status === 'completed').length}</h3>
+                  <h3>
+                    {deliveries.filter((d) => d.status === "completed").length}
+                  </h3>
                   <p>Completed Today</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon gps">📍</div>
                 <div className="stat-details">
-                  <h3>{gpsStatus.isTracking ? 'ON' : 'OFF'}</h3>
+                  <h3>{gpsStatus.isTracking ? "ON" : "OFF"}</h3>
                   <p>GPS Status</p>
                 </div>
               </div>
@@ -231,30 +253,30 @@ const DriverDashboard = () => {
             <div className="quick-actions">
               <h3>Quick Actions</h3>
               <div className="actions-grid">
-                <button 
+                <button
                   className="action-btn"
-                  onClick={() => setActiveTab('gps')}
+                  onClick={() => setActiveTab("gps")}
                 >
                   <span className="action-icon">📍</span>
                   <span>GPS Tracking</span>
                 </button>
-                <button 
+                <button
                   className="action-btn"
-                  onClick={() => setActiveTab('deliveries')}
+                  onClick={() => setActiveTab("deliveries")}
                 >
                   <span className="action-icon">📦</span>
                   <span>View Deliveries</span>
                 </button>
-                <button 
+                <button
                   className="action-btn"
-                  onClick={() => window.open('tel:911', '_blank')}
+                  onClick={() => window.open("tel:911", "_blank")}
                 >
                   <span className="action-icon">🆘</span>
                   <span>Emergency</span>
                 </button>
-                <button 
+                <button
                   className="action-btn"
-                  onClick={() => setActiveTab('profile')}
+                  onClick={() => setActiveTab("profile")}
                 >
                   <span className="action-icon">👤</span>
                   <span>My Profile</span>
@@ -278,7 +300,9 @@ const DriverDashboard = () => {
                   <div key={index} className="activity-item">
                     <div className="activity-icon">📦</div>
                     <div className="activity-details">
-                      <p>Delivery #{delivery.id} - {delivery.status}</p>
+                      <p>
+                        Delivery #{delivery.id} - {delivery.status}
+                      </p>
                       <small>{delivery.destination}</small>
                     </div>
                   </div>
@@ -288,28 +312,32 @@ const DriverDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'gps' && (
+        {activeTab === "gps" && (
           <div className="gps-section">
             <GPSTracker />
           </div>
         )}
 
-        {activeTab === 'deliveries' && (
+        {activeTab === "deliveries" && (
           <div className="deliveries-section">
             <div className="section-header">
               <h2>📦 My Deliveries</h2>
               <p>Manage your assigned deliveries</p>
             </div>
-            
+
             {deliveries.length > 0 ? (
               <div className="deliveries-grid">
                 {deliveries.map((delivery, index) => (
                   <div key={index} className="delivery-card">
                     <div className="delivery-header">
                       <h4>Delivery #{delivery.id}</h4>
-                      <div 
+                      <div
                         className="status-badge"
-                        style={{ backgroundColor: getDeliveryStatusColor(delivery.status) }}
+                        style={{
+                          backgroundColor: getDeliveryStatusColor(
+                            delivery.status,
+                          ),
+                        }}
                       >
                         {delivery.status}
                       </div>
@@ -341,32 +369,32 @@ const DriverDashboard = () => {
           </div>
         )}
 
-        {activeTab === 'profile' && (
+        {activeTab === "profile" && (
           <div className="profile-section">
             <div className="section-header">
               <h2>👤 Driver Profile</h2>
               <p>Your profile information</p>
             </div>
-            
+
             <div className="profile-cards">
               <div className="profile-card">
                 <h3>Personal Information</h3>
                 <div className="profile-details">
                   <div className="detail-row">
                     <span>Name:</span>
-                    <span>{driverInfo?.DriverName || 'Not specified'}</span>
+                    <span>{driverInfo?.DriverName || "Not specified"}</span>
                   </div>
                   <div className="detail-row">
                     <span>Username:</span>
-                    <span>{authUser?.username || 'Not specified'}</span>
+                    <span>{authUser?.username || "Not specified"}</span>
                   </div>
                   <div className="detail-row">
                     <span>Phone:</span>
-                    <span>{driverInfo?.DriverNumber || 'Not specified'}</span>
+                    <span>{driverInfo?.DriverNumber || "Not specified"}</span>
                   </div>
                   <div className="detail-row">
                     <span>Address:</span>
-                    <span>{driverInfo?.DriverAddress || 'Not specified'}</span>
+                    <span>{driverInfo?.DriverAddress || "Not specified"}</span>
                   </div>
                 </div>
               </div>
@@ -398,4 +426,4 @@ const DriverDashboard = () => {
   );
 };
 
-export default DriverDashboard; 
+export default DriverDashboard;

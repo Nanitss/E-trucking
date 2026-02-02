@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { FaShippingFast, FaCheckCircle, FaClipboardList } from 'react-icons/fa';
-import { AuthContext } from '../../context/AuthContext';
-import Loader from '../../components/common/Loader';
-import StatusBadge from '../../components/common/StatusBadge';
-import '../../styles/DesignSystem.css';
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { FaShippingFast, FaCheckCircle, FaClipboardList } from "react-icons/fa";
+import { AuthContext } from "../../context/AuthContext";
+import Loader from "../../components/common/Loader";
+import StatusBadge from "../../components/common/StatusBadge";
 
 const Dashboard = () => {
   const { authUser } = useContext(AuthContext);
@@ -17,27 +16,30 @@ const Dashboard = () => {
     const fetchHelperData = async () => {
       try {
         const [helperRes, deliveriesRes] = await Promise.all([
-          axios.get('/api/helpers/profile'),
-          axios.get('/api/helpers/deliveries')
+          axios.get("/api/helpers/profile"),
+          axios.get("/api/helpers/deliveries"),
         ]);
 
         setHelperData(helperRes.data);
-        
+
         const active = [];
         const completed = [];
-        deliveriesRes.data.forEach(delivery => {
-          if (delivery.DeliveryStatus === 'pending' || delivery.DeliveryStatus === 'in-progress') {
+        deliveriesRes.data.forEach((delivery) => {
+          if (
+            delivery.DeliveryStatus === "pending" ||
+            delivery.DeliveryStatus === "in-progress"
+          ) {
             active.push(delivery);
           } else {
             completed.push(delivery);
           }
         });
-        
+
         setActiveDeliveries(active);
         setCompletedDeliveries(completed);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching helper data:', error);
+        console.error("Error fetching helper data:", error);
         setIsLoading(false);
       }
     };
@@ -52,10 +54,10 @@ const Dashboard = () => {
   return (
     <div className="dashboard">
       <h1>Welcome, {helperData?.HelperName || authUser.username}</h1>
-      
+
       <div className="dashboard-stats">
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#F39C12' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#F39C12" }}>
             <FaShippingFast />
           </div>
           <div className="stat-info">
@@ -63,9 +65,9 @@ const Dashboard = () => {
             <p>Active Deliveries</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#2ECC71' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#2ECC71" }}>
             <FaCheckCircle />
           </div>
           <div className="stat-info">
@@ -73,9 +75,9 @@ const Dashboard = () => {
             <p>Completed Deliveries</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#0056b3' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#0056b3" }}>
             <FaClipboardList />
           </div>
           <div className="stat-info">
@@ -84,7 +86,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Active Deliveries</h2>
@@ -104,13 +106,17 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeDeliveries.map(delivery => (
+                  {activeDeliveries.map((delivery) => (
                     <tr key={delivery.DeliveryID}>
                       <td>{delivery.DeliveryID}</td>
                       <td>{delivery.ClientName}</td>
                       <td>{delivery.DriverName}</td>
-                      <td>{new Date(delivery.DeliveryDate).toLocaleDateString()}</td>
-                      <td><StatusBadge status={delivery.DeliveryStatus} /></td>
+                      <td>
+                        {new Date(delivery.DeliveryDate).toLocaleDateString()}
+                      </td>
+                      <td>
+                        <StatusBadge status={delivery.DeliveryStatus} />
+                      </td>
                       <td>{delivery.DeliveryAddress}</td>
                     </tr>
                   ))}
@@ -122,7 +128,7 @@ const Dashboard = () => {
           )}
         </div>
       </div>
-      
+
       <div className="card">
         <div className="card-header">
           <h2 className="card-title">Recent Completed Deliveries</h2>
@@ -141,12 +147,16 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {completedDeliveries.slice(0, 5).map(delivery => (
+                  {completedDeliveries.slice(0, 5).map((delivery) => (
                     <tr key={delivery.DeliveryID}>
                       <td>{delivery.DeliveryID}</td>
                       <td>{delivery.ClientName}</td>
-                      <td>{new Date(delivery.DeliveryDate).toLocaleDateString()}</td>
-                      <td><StatusBadge status={delivery.DeliveryStatus} /></td>
+                      <td>
+                        {new Date(delivery.DeliveryDate).toLocaleDateString()}
+                      </td>
+                      <td>
+                        <StatusBadge status={delivery.DeliveryStatus} />
+                      </td>
                       <td>{delivery.DeliveryDistance} km</td>
                     </tr>
                   ))}

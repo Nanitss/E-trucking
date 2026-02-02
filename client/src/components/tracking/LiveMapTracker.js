@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { database } from "../../config/firebase";
 import { ref, onValue, off } from "firebase/database";
-import "./LiveMapTracker.css";
 
 const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
   console.log("🚀 LiveMapTracker component rendering", { deliveryId, truckId });
@@ -60,7 +59,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       script.defer = true;
       script.onerror = () => {
         setError(
-          "Failed to load Google Maps. Please check your API key and internet connection."
+          "Failed to load Google Maps. Please check your API key and internet connection.",
         );
         setLoading(false);
         delete window.initGoogleMap; // Cleanup on error
@@ -130,10 +129,10 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         if (!data) {
           console.warn(
             "⚠️ No GPS data found at path:",
-            `Trucks/${truckId}/data`
+            `Trucks/${truckId}/data`,
           );
           setError(
-            `No GPS data from main ESP32 device (truck_12345).\n\nAll deliveries use the shared GPS device.\n\nPlease ensure:\n1. Main ESP32 device (truck_12345) is powered on\n2. Device is connected to WiFi\n3. GPS has satellite fix (may take 2-5 minutes outdoors)\n4. Firebase path: Trucks/truck_12345/data contains GPS data`
+            `No GPS data from main ESP32 device (truck_12345).\n\nAll deliveries use the shared GPS device.\n\nPlease ensure:\n1. Main ESP32 device (truck_12345) is powered on\n2. Device is connected to WiFi\n3. GPS has satellite fix (may take 2-5 minutes outdoors)\n4. Firebase path: Trucks/truck_12345/data contains GPS data`,
           );
           setLoading(false);
           return;
@@ -144,20 +143,20 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
           "📍 RAW lat from Firebase:",
           data.lat,
           "type:",
-          typeof data.lat
+          typeof data.lat,
         );
         console.log(
           "📍 RAW lon from Firebase:",
           data.lon,
           "type:",
-          typeof data.lon
+          typeof data.lon,
         );
 
         // Check if GPS has fix
         if (data.gpsFix === false) {
           console.warn("⚠️ GPS has no satellite fix");
           setError(
-            "GPS hardware has no satellite fix. Waiting for signal...\n\nThe device is connected but searching for GPS satellites. This may take a few minutes outdoors."
+            "GPS hardware has no satellite fix. Waiting for signal...\n\nThe device is connected but searching for GPS satellites. This may take a few minutes outdoors.",
           );
           setLoading(false);
           return;
@@ -172,7 +171,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         console.log(
           "📍 Actual vs Expected lat diff:",
           Math.abs(lat - 14.838).toFixed(6),
-          "degrees"
+          "degrees",
         );
 
         if (isNaN(lat) || isNaN(lng)) {
@@ -246,10 +245,10 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         console.error("❌ Error code:", err.code);
         console.error("❌ Error message:", err.message);
         setError(
-          `Failed to connect to GPS hardware:\n${err.message}\n\nPlease check Firebase Realtime Database configuration.`
+          `Failed to connect to GPS hardware:\n${err.message}\n\nPlease check Firebase Realtime Database configuration.`,
         );
         setLoading(false);
-      }
+      },
     );
 
     // Return unsubscribe function
@@ -292,7 +291,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
     // Don't validate against delivery route - truck can be anywhere
     // This matches mobile app behavior where it just centers on truck
     console.log(
-      `📱 Mobile app mode: Showing truck at actual GPS location regardless of delivery route`
+      `📱 Mobile app mode: Showing truck at actual GPS location regardless of delivery route`,
     );
 
     // If we have a previous valid location, check for unrealistic jumps
@@ -301,7 +300,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         lastValidLocation.current.lat,
         lastValidLocation.current.lng,
         newLat,
-        newLon
+        newLon,
       );
 
       // Mobile mode: Allow reasonable jumps (truck can drive between cities)
@@ -314,8 +313,8 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         console.warn(`   Max allowed: ${maxJumpDistance} km`);
         console.warn(
           `   Last valid: ${lastValidLocation.current.lat.toFixed(
-            6
-          )}, ${lastValidLocation.current.lng.toFixed(6)}`
+            6,
+          )}, ${lastValidLocation.current.lng.toFixed(6)}`,
         );
         console.warn(`   Rejected: ${newLat.toFixed(6)}, ${newLon.toFixed(6)}`);
         console.warn("⚠️ Jump too large - likely GPS error!");
@@ -324,8 +323,8 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
 
       console.log(
         `✅ GPS valid - Movement: ${distance.toFixed(
-          3
-        )} km from last position (mobile mode)`
+          3,
+        )} km from last position (mobile mode)`,
       );
     } else {
       console.log(`✅ First GPS reading - accepting as baseline`);
@@ -364,7 +363,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
             } else {
               reject(new Error("Geocoding failed: " + status));
             }
-          }
+          },
         );
       });
 
@@ -464,7 +463,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       // Geocode dropoff location
       if (deliveryData.deliveryAddress) {
         const dropoffCoords = await geocodeAddress(
-          deliveryData.deliveryAddress
+          deliveryData.deliveryAddress,
         );
         if (dropoffCoords) {
           setDropoffLocation(dropoffCoords);
@@ -599,7 +598,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       "🎬 Starting Waze-like smooth tracking from",
       startPos,
       "to",
-      targetPos
+      targetPos,
     );
     animate();
   };
@@ -623,11 +622,11 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       pathCoordinates.current.length === 0 ||
       Math.abs(
         pathCoordinates.current[pathCoordinates.current.length - 1].lat -
-          newPosition.lat
+          newPosition.lat,
       ) > 0.0001 ||
       Math.abs(
         pathCoordinates.current[pathCoordinates.current.length - 1].lng -
-          newPosition.lng
+          newPosition.lng,
       ) > 0.0001
     ) {
       pathCoordinates.current.push(newPosition);
@@ -663,13 +662,13 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       <div style="padding: 10px;">
         <h3 style="margin: 0 0 10px 0;">🚚 Truck Location</h3>
         <p style="margin: 5px 0;"><strong>Speed:</strong> ${Math.round(
-          locationData.speed * 3.6
+          locationData.speed * 3.6,
         )} km/h</p>
         <p style="margin: 5px 0;"><strong>Accuracy:</strong> ±${Math.round(
-          locationData.accuracy
+          locationData.accuracy,
         )}m</p>
         <p style="margin: 5px 0;"><strong>Updated:</strong> ${new Date(
-          locationData.timestamp
+          locationData.timestamp,
         ).toLocaleTimeString()}</p>
       </div>
     `;
@@ -681,7 +680,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       markerRef.current.addListener("click", () => {
         markerRef.current.infoWindow.open(
           googleMapRef.current,
-          markerRef.current
+          markerRef.current,
         );
       });
     } else {
@@ -692,7 +691,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
     if (pathCoordinates.current.length === 1) {
       markerRef.current.infoWindow.open(
         googleMapRef.current,
-        markerRef.current
+        markerRef.current,
       );
     }
   };
@@ -755,7 +754,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
             googleMapRef.current.setZoom(14);
           }
           window.google.maps.event.removeListener(listener);
-        }
+        },
       );
 
       console.log("🗺️ Viewing full route overview");

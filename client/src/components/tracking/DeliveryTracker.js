@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import './DeliveryTracker.css';
+import React, { useState, useEffect, useRef } from "react";
+import axios from "axios";
 
 const DeliveryTracker = ({ deliveryId, onClose }) => {
   const [trackingData, setTrackingData] = useState(null);
@@ -21,8 +20,8 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
         updateMap(response.data.data);
       }
     } catch (err) {
-      console.error('Error fetching tracking data:', err);
-      setError('Failed to load tracking data');
+      console.error("Error fetching tracking data:", err);
+      setError("Failed to load tracking data");
     } finally {
       setLoading(false);
     }
@@ -34,8 +33,9 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
 
     const map = new window.google.maps.Map(mapRef.current, {
       zoom: 13,
-      center: data.currentLocation || data.pickupCoordinates || { lat: 14.5995, lng: 120.9842 },
-      mapTypeId: 'roadmap'
+      center: data.currentLocation ||
+        data.pickupCoordinates || { lat: 14.5995, lng: 120.9842 },
+      mapTypeId: "roadmap",
     });
 
     mapInstanceRef.current = map;
@@ -49,7 +49,7 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
     const map = mapInstanceRef.current;
 
     // Clear existing markers
-    Object.values(markersRef.current).forEach(marker => marker.setMap(null));
+    Object.values(markersRef.current).forEach((marker) => marker.setMap(null));
     markersRef.current = {};
 
     // Add pickup marker
@@ -57,16 +57,18 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       markersRef.current.pickup = new window.google.maps.Marker({
         position: data.pickupCoordinates,
         map: map,
-        title: 'Pickup Location',
+        title: "Pickup Location",
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
             <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
               <circle cx="20" cy="20" r="18" fill="#10b981" stroke="white" stroke-width="2"/>
               <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-weight="bold">P</text>
             </svg>
           `),
-          scaledSize: new window.google.maps.Size(40, 40)
-        }
+          scaledSize: new window.google.maps.Size(40, 40),
+        },
       });
 
       // Add pickup info window
@@ -76,10 +78,10 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
             <h4 style="margin: 0 0 5px 0; color: #10b981;">📍 Pickup Location</h4>
             <p style="margin: 0; font-size: 14px;">${data.pickupLocation}</p>
           </div>
-        `
+        `,
       });
 
-      markersRef.current.pickup.addListener('click', () => {
+      markersRef.current.pickup.addListener("click", () => {
         pickupInfoWindow.open(map, markersRef.current.pickup);
       });
     }
@@ -89,16 +91,18 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       markersRef.current.dropoff = new window.google.maps.Marker({
         position: data.dropoffCoordinates,
         map: map,
-        title: 'Delivery Location',
+        title: "Delivery Location",
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
             <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
               <circle cx="20" cy="20" r="18" fill="#ef4444" stroke="white" stroke-width="2"/>
               <text x="20" y="26" text-anchor="middle" fill="white" font-size="16" font-weight="bold">D</text>
             </svg>
           `),
-          scaledSize: new window.google.maps.Size(40, 40)
-        }
+          scaledSize: new window.google.maps.Size(40, 40),
+        },
       });
 
       // Add dropoff info window
@@ -108,10 +112,10 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
             <h4 style="margin: 0 0 5px 0; color: #ef4444;">🎯 Delivery Location</h4>
             <p style="margin: 0; font-size: 14px;">${data.deliveryAddress}</p>
           </div>
-        `
+        `,
       });
 
-      markersRef.current.dropoff.addListener('click', () => {
+      markersRef.current.dropoff.addListener("click", () => {
         dropoffInfoWindow.open(map, markersRef.current.dropoff);
       });
     }
@@ -123,14 +127,16 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
         map: map,
         title: `Truck ${data.truckPlate}`,
         icon: {
-          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          url:
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(`
             <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
               <circle cx="25" cy="25" r="23" fill="#3b82f6" stroke="white" stroke-width="2"/>
               <text x="25" y="30" text-anchor="middle" fill="white" font-size="20" font-weight="bold">🚛</text>
             </svg>
           `),
-          scaledSize: new window.google.maps.Size(50, 50)
-        }
+          scaledSize: new window.google.maps.Size(50, 50),
+        },
       });
 
       // Add truck info window
@@ -140,14 +146,14 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
             <h4 style="margin: 0 0 5px 0; color: #3b82f6;">🚛 ${data.truckPlate}</h4>
             <p style="margin: 0; font-size: 14px;"><strong>Driver:</strong> ${data.driverName}</p>
             <p style="margin: 0; font-size: 14px;"><strong>Speed:</strong> ${data.currentSpeed} km/h</p>
-            <p style="margin: 0; font-size: 14px;"><strong>Status:</strong> ${data.isActive ? '🟢 Active' : '🔴 Inactive'}</p>
-            <p style="margin: 0; font-size: 14px;"><strong>GPS:</strong> ${data.hasGpsFix ? '🛰️ Fixed' : '❌ No Fix'}</p>
+            <p style="margin: 0; font-size: 14px;"><strong>Status:</strong> ${data.isActive ? "🟢 Active" : "🔴 Inactive"}</p>
+            <p style="margin: 0; font-size: 14px;"><strong>GPS:</strong> ${data.hasGpsFix ? "🛰️ Fixed" : "❌ No Fix"}</p>
             <p style="margin: 0; font-size: 12px; color: #666;">Last update: ${new Date(data.lastGpsUpdate).toLocaleTimeString()}</p>
           </div>
-        `
+        `,
       });
 
-      markersRef.current.truck.addListener('click', () => {
+      markersRef.current.truck.addListener("click", () => {
         truckInfoWindow.open(map, markersRef.current.truck);
       });
 
@@ -161,23 +167,26 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       const directionsRenderer = new window.google.maps.DirectionsRenderer({
         suppressMarkers: true, // We're using custom markers
         polylineOptions: {
-          strokeColor: '#3b82f6',
+          strokeColor: "#3b82f6",
           strokeWeight: 4,
-          strokeOpacity: 0.8
-        }
+          strokeOpacity: 0.8,
+        },
       });
 
       directionsRenderer.setMap(map);
 
-      directionsService.route({
-        origin: data.pickupCoordinates,
-        destination: data.dropoffCoordinates,
-        travelMode: window.google.maps.TravelMode.DRIVING
-      }, (result, status) => {
-        if (status === 'OK') {
-          directionsRenderer.setDirections(result);
-        }
-      });
+      directionsService.route(
+        {
+          origin: data.pickupCoordinates,
+          destination: data.dropoffCoordinates,
+          travelMode: window.google.maps.TravelMode.DRIVING,
+        },
+        (result, status) => {
+          if (status === "OK") {
+            directionsRenderer.setDirections(result);
+          }
+        },
+      );
     }
   };
 
@@ -198,18 +207,25 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
   // Format delivery status
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
-      case 'pending': return '#f59e0b';
-      case 'in-progress': case 'started': return '#3b82f6';
-      case 'picked-up': return '#8b5cf6';
-      case 'completed': return '#10b981';
-      case 'cancelled': return '#ef4444';
-      default: return '#6b7280';
+      case "pending":
+        return "#f59e0b";
+      case "in-progress":
+      case "started":
+        return "#3b82f6";
+      case "picked-up":
+        return "#8b5cf6";
+      case "completed":
+        return "#10b981";
+      case "cancelled":
+        return "#ef4444";
+      default:
+        return "#6b7280";
     }
   };
 
   // Format time
   const formatTime = (timestamp) => {
-    if (!timestamp) return 'N/A';
+    if (!timestamp) return "N/A";
     return new Date(timestamp).toLocaleString();
   };
 
@@ -218,7 +234,7 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
 
     // Load Google Maps if not already loaded
     if (!window.google) {
-      const script = document.createElement('script');
+      const script = document.createElement("script");
       script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry`;
       script.async = true;
       script.defer = true;
@@ -250,7 +266,9 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       <div className="delivery-tracker">
         <div className="tracker-header">
           <h3>🚛 Loading Tracking Data...</h3>
-          <button onClick={onClose} className="close-btn">×</button>
+          <button onClick={onClose} className="close-btn">
+            ×
+          </button>
         </div>
       </div>
     );
@@ -261,8 +279,12 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       <div className="delivery-tracker">
         <div className="tracker-header">
           <h3>❌ {error}</h3>
-          <button onClick={fetchTrackingData} className="retry-btn">Retry</button>
-          <button onClick={onClose} className="close-btn">×</button>
+          <button onClick={fetchTrackingData} className="retry-btn">
+            Retry
+          </button>
+          <button onClick={onClose} className="close-btn">
+            ×
+          </button>
         </div>
       </div>
     );
@@ -273,13 +295,15 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
       <div className="tracker-header">
         <h3>🚛 Delivery Tracking - {trackingData.deliveryId}</h3>
         <div className="header-controls">
-          <button 
-            onClick={toggleRealTime} 
-            className={`realtime-btn ${isRealTime ? 'active' : ''}`}
+          <button
+            onClick={toggleRealTime}
+            className={`realtime-btn ${isRealTime ? "active" : ""}`}
           >
-            {isRealTime ? '⏸️ Stop Live' : '▶️ Start Live'}
+            {isRealTime ? "⏸️ Stop Live" : "▶️ Start Live"}
           </button>
-          <button onClick={onClose} className="close-btn">×</button>
+          <button onClick={onClose} className="close-btn">
+            ×
+          </button>
         </div>
       </div>
 
@@ -288,42 +312,44 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
         <div className="status-panel">
           <div className="status-item">
             <span className="status-label">Status:</span>
-            <span 
+            <span
               className="status-value"
               style={{ color: getStatusColor(trackingData.deliveryStatus) }}
             >
               {trackingData.deliveryStatus?.toUpperCase()}
             </span>
           </div>
-          
+
           <div className="status-item">
             <span className="status-label">Truck:</span>
             <span className="status-value">{trackingData.truckPlate}</span>
           </div>
-          
+
           <div className="status-item">
             <span className="status-label">Driver:</span>
             <span className="status-value">{trackingData.driverName}</span>
           </div>
-          
+
           {trackingData.currentLocation && (
             <>
               <div className="status-item">
                 <span className="status-label">Speed:</span>
                 <span className="status-value">
                   {trackingData.currentSpeed} km/h
-                  {trackingData.isOverSpeed && <span className="warning"> ⚠️ SPEEDING</span>}
+                  {trackingData.isOverSpeed && (
+                    <span className="warning"> ⚠️ SPEEDING</span>
+                  )}
                 </span>
               </div>
-              
+
               <div className="status-item">
                 <span className="status-label">GPS Status:</span>
                 <span className="status-value">
-                  {trackingData.isActive ? '🟢 Active' : '🔴 Inactive'}
-                  {trackingData.hasGpsFix ? ' 🛰️ Fixed' : ' ❌ No Fix'}
+                  {trackingData.isActive ? "🟢 Active" : "🔴 Inactive"}
+                  {trackingData.hasGpsFix ? " 🛰️ Fixed" : " ❌ No Fix"}
                 </span>
               </div>
-              
+
               <div className="status-item">
                 <span className="status-label">Last Update:</span>
                 <span className="status-value">
@@ -340,7 +366,10 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
           {!trackingData.currentLocation && (
             <div className="map-overlay">
               <p>📍 Real-time GPS tracking not available for this truck</p>
-              <p>This truck ({trackingData.truckPlate}) does not have GPS tracking enabled</p>
+              <p>
+                This truck ({trackingData.truckPlate}) does not have GPS
+                tracking enabled
+              </p>
             </div>
           )}
         </div>
@@ -356,7 +385,7 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
               </div>
             </div>
           </div>
-          
+
           <div className="route-item">
             <div className="route-point dropoff">
               <span className="route-icon">🎯</span>
@@ -366,12 +395,14 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
               </div>
             </div>
           </div>
-          
+
           {trackingData.deliveryDistance && (
             <div className="route-stats">
               <span>📏 Distance: {trackingData.deliveryDistance} km</span>
               {trackingData.estimatedDuration && (
-                <span>⏱️ Est. Duration: {trackingData.estimatedDuration} min</span>
+                <span>
+                  ⏱️ Est. Duration: {trackingData.estimatedDuration} min
+                </span>
               )}
             </div>
           )}
@@ -381,4 +412,4 @@ const DeliveryTracker = ({ deliveryId, onClose }) => {
   );
 };
 
-export default DeliveryTracker; 
+export default DeliveryTracker;

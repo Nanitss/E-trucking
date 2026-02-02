@@ -1,5 +1,4 @@
-import React from 'react';
-import '../../styles/DesignSystem.css';
+import React from "react";
 
 export default function OperatorDashboard() {
   return (

@@ -6,9 +6,6 @@ import {
   Redirect,
 } from "react-router-dom";
 
-// Import Design System
-import "./styles/DesignSystem.css";
-
 import ProtectedRoute from "./components/ProtectedRoute";
 import AlertComponent from "./components/common/AlertComponent";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -32,7 +29,7 @@ import VehicleRateManagement from "./pages/staff/VehicleRateManagement";
 import AdminDashboard from "./pages/admin/Dashboard";
 import StaffDashboard from "./pages/staff/Dashboard";
 import ClientDashboard from "./pages/client/Dashboard";
-import ClientLanding from "./pages/client/Landing";
+// ClientLanding removed - redirects directly to profile
 import ClientProfile from "./pages/client/ClientProfile";
 import DriverDashboard from "./pages/driver/Dashboard";
 import HelperDashboard from "./pages/helper/Dashboard";
@@ -329,11 +326,10 @@ function App() {
                     </ClientLayout>
                   </ProtectedRoute>
 
-                  {/* Client Routes WITHOUT Sidebar Layout */}
-                  <ProtectedRoute
-                    path="/client/landing"
-                    component={ClientLanding}
-                  />
+                  {/* Client Landing redirects directly to profile */}
+                  <ProtectedRoute path="/client/landing">
+                    <Redirect to="/client/profile" />
+                  </ProtectedRoute>
                   <ProtectedRoute path="/client/dashboard" exact>
                     <Redirect to="/client/profile" />
                   </ProtectedRoute>

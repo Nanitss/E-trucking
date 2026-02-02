@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Box, Typography, Paper } from '@mui/material';
-import LocalShippingIcon from '@mui/icons-material/LocalShipping';
-import LocationOnIcon from '@mui/icons-material/LocationOn';
+import React, { useState, useEffect, useRef } from "react";
 
-const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dropoffLocation }) => {
+const DeliveryMap = ({
+  pickupCoordinates,
+  dropoffCoordinates,
+  pickupLocation,
+  dropoffLocation,
+}) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapError, setMapError] = useState(null);
   const mapRef = useRef(null);
@@ -13,7 +15,7 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
   // Function to initialize the map
   const initializeMap = () => {
     if (!window.google || !pickupCoordinates || !dropoffCoordinates) {
-      setMapError('Map could not be loaded or coordinates are missing');
+      setMapError("Map could not be loaded or coordinates are missing");
       return;
     }
 
@@ -21,12 +23,12 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
       // Create pickup and dropoff LatLng objects
       const pickupLatLng = new window.google.maps.LatLng(
         pickupCoordinates.lat,
-        pickupCoordinates.lng
+        pickupCoordinates.lng,
       );
-      
+
       const dropoffLatLng = new window.google.maps.LatLng(
         dropoffCoordinates.lat,
-        dropoffCoordinates.lng
+        dropoffCoordinates.lng,
       );
 
       // Create map instance
@@ -56,34 +58,34 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
       const pickupMarker = new window.google.maps.Marker({
         position: pickupLatLng,
         map: mapInstance,
-        title: 'Pickup Location',
-        label: 'P',
+        title: "Pickup Location",
+        label: "P",
         animation: window.google.maps.Animation.DROP,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: 10,
-          fillColor: '#4CAF50',
+          fillColor: "#4CAF50",
           fillOpacity: 1,
           strokeWeight: 2,
-          strokeColor: '#FFFFFF',
-        }
+          strokeColor: "#FFFFFF",
+        },
       });
 
       // Create dropoff marker
       const dropoffMarker = new window.google.maps.Marker({
         position: dropoffLatLng,
         map: mapInstance,
-        title: 'Dropoff Location',
-        label: 'D',
+        title: "Dropoff Location",
+        label: "D",
         animation: window.google.maps.Animation.DROP,
         icon: {
           path: window.google.maps.SymbolPath.CIRCLE,
           scale: 10,
-          fillColor: '#F44336',
+          fillColor: "#F44336",
           fillOpacity: 1,
           strokeWeight: 2,
-          strokeColor: '#FFFFFF',
-        }
+          strokeColor: "#FFFFFF",
+        },
       });
 
       // Store the markers in the ref
@@ -94,27 +96,27 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
         content: `
           <div style="padding: 8px;">
             <strong>Pickup Location</strong><br/>
-            ${pickupLocation || 'Unknown location'}
+            ${pickupLocation || "Unknown location"}
           </div>
-        `
+        `,
       });
 
       const dropoffInfoWindow = new window.google.maps.InfoWindow({
         content: `
           <div style="padding: 8px;">
             <strong>Dropoff Location</strong><br/>
-            ${dropoffLocation || 'Unknown location'}
+            ${dropoffLocation || "Unknown location"}
           </div>
-        `
+        `,
       });
 
       // Add click listeners to markers
-      pickupMarker.addListener('click', () => {
+      pickupMarker.addListener("click", () => {
         dropoffInfoWindow.close();
         pickupInfoWindow.open(mapInstance, pickupMarker);
       });
 
-      dropoffMarker.addListener('click', () => {
+      dropoffMarker.addListener("click", () => {
         pickupInfoWindow.close();
         dropoffInfoWindow.open(mapInstance, dropoffMarker);
       });
@@ -126,10 +128,10 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
           map: mapInstance,
           suppressMarkers: true, // We already have our custom markers
           polylineOptions: {
-            strokeColor: '#2196F3',
+            strokeColor: "#2196F3",
             strokeWeight: 5,
-            strokeOpacity: 0.7
-          }
+            strokeOpacity: 0.7,
+          },
         });
 
         directionsService.route(
@@ -139,31 +141,31 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
             travelMode: window.google.maps.TravelMode.DRIVING,
           },
           (response, status) => {
-            if (status === 'OK') {
+            if (status === "OK") {
               directionsRenderer.setDirections(response);
             } else {
-              console.warn('Directions request failed due to ' + status);
+              console.warn("Directions request failed due to " + status);
               // If directions fail, just draw a straight line
               new window.google.maps.Polyline({
                 path: [pickupLatLng, dropoffLatLng],
                 geodesic: true,
-                strokeColor: '#2196F3',
+                strokeColor: "#2196F3",
                 strokeOpacity: 0.7,
                 strokeWeight: 5,
-                map: mapInstance
+                map: mapInstance,
               });
             }
-          }
+          },
         );
       } else {
         // Fallback to simple polyline if DirectionsService is not available
         new window.google.maps.Polyline({
           path: [pickupLatLng, dropoffLatLng],
           geodesic: true,
-          strokeColor: '#2196F3',
+          strokeColor: "#2196F3",
           strokeOpacity: 0.7,
           strokeWeight: 5,
-          map: mapInstance
+          map: mapInstance,
         });
       }
 
@@ -176,8 +178,18 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
         const sw = bounds.getSouthWest();
         const latDiff = ne.lat() - sw.lat();
         const lngDiff = ne.lng() - sw.lng();
-        bounds.extend(new window.google.maps.LatLng(ne.lat() + latDiff * 0.1, ne.lng() + lngDiff * 0.1));
-        bounds.extend(new window.google.maps.LatLng(sw.lat() - latDiff * 0.1, sw.lng() - lngDiff * 0.1));
+        bounds.extend(
+          new window.google.maps.LatLng(
+            ne.lat() + latDiff * 0.1,
+            ne.lng() + lngDiff * 0.1,
+          ),
+        );
+        bounds.extend(
+          new window.google.maps.LatLng(
+            sw.lat() - latDiff * 0.1,
+            sw.lng() - lngDiff * 0.1,
+          ),
+        );
         mapInstance.fitBounds(bounds);
       };
 
@@ -185,16 +197,20 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
 
       // Adjust zoom if it's too high
       const MAX_ZOOM = 15;
-      window.google.maps.event.addListenerOnce(mapInstance, 'bounds_changed', () => {
-        if (mapInstance.getZoom() > MAX_ZOOM) {
-          mapInstance.setZoom(MAX_ZOOM);
-        }
-      });
+      window.google.maps.event.addListenerOnce(
+        mapInstance,
+        "bounds_changed",
+        () => {
+          if (mapInstance.getZoom() > MAX_ZOOM) {
+            mapInstance.setZoom(MAX_ZOOM);
+          }
+        },
+      );
 
       setMapLoaded(true);
     } catch (error) {
-      console.error('Error initializing map:', error);
-      setMapError('Failed to initialize the map. Please try again later.');
+      console.error("Error initializing map:", error);
+      setMapError("Failed to initialize the map. Please try again later.");
     }
   };
 
@@ -202,7 +218,7 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
   useEffect(() => {
     // Safety check for coordinates
     if (!pickupCoordinates || !dropoffCoordinates) {
-      setMapError('Pickup or dropoff coordinates are missing');
+      setMapError("Pickup or dropoff coordinates are missing");
       return;
     }
 
@@ -213,12 +229,12 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
     }
 
     // Otherwise, create a script to load Google Maps API
-    const script = document.createElement('script');
+    const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
     script.async = true;
     script.defer = true;
     script.onload = initializeMap;
-    script.onerror = () => setMapError('Failed to load Google Maps API');
+    script.onerror = () => setMapError("Failed to load Google Maps API");
     document.head.appendChild(script);
 
     // Cleanup on unmount
@@ -234,7 +250,7 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
     return () => {
       // Clear markers
       if (markersRef.current) {
-        markersRef.current.forEach(marker => {
+        markersRef.current.forEach((marker) => {
           if (marker) marker.setMap(null);
         });
       }
@@ -243,85 +259,44 @@ const DeliveryMap = ({ pickupCoordinates, dropoffCoordinates, pickupLocation, dr
 
   if (mapError) {
     return (
-      <Paper elevation={2} sx={{ p: 2, textAlign: 'center', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography color="error">{mapError}</Typography>
-      </Paper>
+      <div className="p-4 text-center h-full flex items-center justify-center bg-white shadow-sm rounded-lg border border-red-200">
+        <p className="text-red-500 font-medium">{mapError}</p>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
-      <Box ref={mapRef} sx={{ height: '100%', width: '100%', borderRadius: 1 }} />
-      
+    <div className="relative h-full w-full">
+      <div ref={mapRef} className="h-full w-full rounded-lg" />
+
       {!mapLoaded && (
-        <Box 
-          sx={{ 
-            position: 'absolute', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-            borderRadius: 1
-          }}
-        >
-          <Typography variant="body1">Loading map...</Typography>
-        </Box>
+        <div className="absolute inset-0 flex items-center justify-center bg-white/70 rounded-lg">
+          <p className="font-medium text-gray-600">Loading map...</p>
+        </div>
       )}
 
-      <Box 
-        sx={{ 
-          position: 'absolute', 
-          bottom: 16, 
-          left: 16, 
-          backgroundColor: 'white', 
-          p: 1, 
-          borderRadius: 1,
-          boxShadow: 1
-        }}
-      >
-        <Box display="flex" alignItems="center" sx={{ mb: 1 }}>
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              backgroundColor: '#4CAF50', 
-              borderRadius: '50%',
-              mr: 1
-            }} 
-          />
-          <Typography variant="body2" sx={{ mr: 1 }}>
-            <strong>P:</strong> Pickup
-          </Typography>
-          <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-            {pickupLocation?.substring(0, 30)}
-            {pickupLocation?.length > 30 ? '...' : ''}
-          </Typography>
-        </Box>
-        <Box display="flex" alignItems="center">
-          <Box 
-            sx={{ 
-              width: 12, 
-              height: 12, 
-              backgroundColor: '#F44336', 
-              borderRadius: '50%',
-              mr: 1
-            }} 
-          />
-          <Typography variant="body2" sx={{ mr: 1 }}>
-            <strong>D:</strong> Dropoff
-          </Typography>
-          <Typography variant="body2" sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
-            {dropoffLocation?.substring(0, 30)}
-            {dropoffLocation?.length > 30 ? '...' : ''}
-          </Typography>
-        </Box>
-      </Box>
-    </Box>
+      <div className="absolute bottom-4 left-4 bg-white p-3 rounded-lg shadow-md border border-gray-100 max-w-[250px]">
+        <div className="flex items-center mb-2">
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2 shrink-0"></div>
+          <div className="overflow-hidden">
+            <span className="font-bold text-xs mr-1 text-gray-800">P:</span>
+            <span className="text-xs text-gray-500 truncate block">
+              {pickupLocation || "Pickup"}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center">
+          <div className="w-3 h-3 bg-red-500 rounded-full mr-2 shrink-0"></div>
+          <div className="overflow-hidden">
+            <span className="font-bold text-xs mr-1 text-gray-800">D:</span>
+            <span className="text-xs text-gray-500 truncate block">
+              {dropoffLocation || "Dropoff"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
-export default DeliveryMap; 
+export default DeliveryMap;

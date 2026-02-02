@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const DriverFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -16,16 +15,16 @@ const DriverFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by name"
-          value={filters.name || ''}
-          onChange={(e) => handleChange('name', e.target.value)}
+          value={filters.name || ""}
+          onChange={(e) => handleChange("name", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="active">Active</option>
@@ -38,8 +37,8 @@ const DriverFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Assignment Status</label>
         <select
-          value={filters.assignmentStatus || ''}
-          onChange={(e) => handleChange('assignmentStatus', e.target.value)}
+          value={filters.assignmentStatus || ""}
+          onChange={(e) => handleChange("assignmentStatus", e.target.value)}
         >
           <option value="">All</option>
           <option value="assigned">Assigned</option>
@@ -50,8 +49,8 @@ const DriverFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>License Type</label>
         <select
-          value={filters.licenseType || ''}
-          onChange={(e) => handleChange('licenseType', e.target.value)}
+          value={filters.licenseType || ""}
+          onChange={(e) => handleChange("licenseType", e.target.value)}
         >
           <option value="">All Types</option>
           <option value="Professional">Professional</option>
@@ -65,8 +64,8 @@ const DriverFilters = ({ filters, onChange }) => {
         <label>License Expiry From</label>
         <input
           type="date"
-          value={filters.licenseExpiryFrom || ''}
-          onChange={(e) => handleChange('licenseExpiryFrom', e.target.value)}
+          value={filters.licenseExpiryFrom || ""}
+          onChange={(e) => handleChange("licenseExpiryFrom", e.target.value)}
         />
       </div>
 
@@ -74,16 +73,16 @@ const DriverFilters = ({ filters, onChange }) => {
         <label>License Expiry To</label>
         <input
           type="date"
-          value={filters.licenseExpiryTo || ''}
-          onChange={(e) => handleChange('licenseExpiryTo', e.target.value)}
+          value={filters.licenseExpiryTo || ""}
+          onChange={(e) => handleChange("licenseExpiryTo", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Medical Certificate Status</label>
         <select
-          value={filters.medicalStatus || ''}
-          onChange={(e) => handleChange('medicalStatus', e.target.value)}
+          value={filters.medicalStatus || ""}
+          onChange={(e) => handleChange("medicalStatus", e.target.value)}
         >
           <option value="">All</option>
           <option value="valid">Valid</option>
@@ -96,8 +95,8 @@ const DriverFilters = ({ filters, onChange }) => {
         <label>Employment Date From</label>
         <input
           type="date"
-          value={filters.employmentDateFrom || ''}
-          onChange={(e) => handleChange('employmentDateFrom', e.target.value)}
+          value={filters.employmentDateFrom || ""}
+          onChange={(e) => handleChange("employmentDateFrom", e.target.value)}
         />
       </div>
 
@@ -105,8 +104,8 @@ const DriverFilters = ({ filters, onChange }) => {
         <label>Employment Date To</label>
         <input
           type="date"
-          value={filters.employmentDateTo || ''}
-          onChange={(e) => handleChange('employmentDateTo', e.target.value)}
+          value={filters.employmentDateTo || ""}
+          onChange={(e) => handleChange("employmentDateTo", e.target.value)}
         />
       </div>
 
@@ -115,8 +114,8 @@ const DriverFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by contact"
-          value={filters.contact || ''}
-          onChange={(e) => handleChange('contact', e.target.value)}
+          value={filters.contact || ""}
+          onChange={(e) => handleChange("contact", e.target.value)}
         />
       </div>
     </div>

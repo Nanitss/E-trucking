@@ -21,12 +21,13 @@ import {
   TbMapPin,
   TbFilter,
   TbFilterOff,
+  TbSearch,
+  TbChevronLeft,
+  TbChevronRight,
 } from "react-icons/tb";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Loader from "../../../components/common/Loader";
-import "../../../styles/DesignSystem.css";
 import { AlertContext } from "../../../context/AlertContext";
-import "./DeliveryList.css";
 import AdminHeader from "../../../components/common/AdminHeader";
 import LiveMapTracker from "../../../components/tracking/LiveMapTracker";
 
@@ -216,383 +217,338 @@ const DeliveryList = ({ currentUser }) => {
   }
 
   return (
-    <div className="admin-page-container">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <AdminHeader currentUser={currentUser} />
 
-      <div className="admin-content">
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
         {/* Greeting and Summary Cards */}
-        <div className="greeting-section">
-          <h2 className="greeting-text">Delivery Management</h2>
-          <p className="greeting-subtitle">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Delivery Management
+          </h2>
+          <p className="text-gray-500 mt-1">
             Manage delivery schedules, track status, and monitor progress
           </p>
 
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbX size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">
-                  {
-                    deliveries.filter(
-                      (d) => d.DeliveryStatus?.toLowerCase() === "cancelled",
-                    ).length
-                  }
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                  <TbX size={20} />
                 </div>
-                <div className="card-label">Cancelled</div>
-                <div className="card-change negative">
-                  <TbArrowDown size={12} />
-                  0.0%
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Cancelled</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {
+                      deliveries.filter(
+                        (d) => d.DeliveryStatus?.toLowerCase() === "cancelled",
+                      ).length
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center text-xs font-semibold text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                <TbArrowDown size={12} className="mr-0.5" /> 0%
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                  <TbClock size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Pending</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {
+                      deliveries.filter(
+                        (d) => d.DeliveryStatus?.toLowerCase() === "pending",
+                      ).length
+                    }
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                <TbArrowUp size={12} className="mr-0.5" /> +3.1%
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                  <TbActivity size={20} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Active</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {
+                      deliveries.filter((d) =>
+                        ["in-progress", "in progress", "accepted"].includes(
+                          d.DeliveryStatus?.toLowerCase(),
+                        ),
+                      ).length
+                    }
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbClock size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">
-                  {
-                    deliveries.filter(
-                      (d) => d.DeliveryStatus?.toLowerCase() === "pending",
-                    ).length
-                  }
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-500">
+                  <TbCheck size={20} />
                 </div>
-                <div className="card-label">Pending</div>
-                <div className="card-change positive">
-                  <TbArrowUp size={12} />
-                  +3.1%
-                </div>
-              </div>
-            </div>
-
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbActivity size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">
-                  {
-                    deliveries.filter(
-                      (d) =>
-                        d.DeliveryStatus?.toLowerCase() === "in-progress" ||
-                        d.DeliveryStatus?.toLowerCase() === "in progress" ||
-                        d.DeliveryStatus?.toLowerCase() === "accepted",
-                    ).length
-                  }
-                </div>
-                <div className="card-label">Active</div>
-                <div className="card-change neutral">
-                  <TbActivity size={12} />
-                  0.0%
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Delivered</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    {
+                      deliveries.filter((d) =>
+                        ["delivered", "completed"].includes(
+                          d.DeliveryStatus?.toLowerCase(),
+                        ),
+                      ).length
+                    }
+                  </p>
                 </div>
               </div>
-            </div>
-
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbCheck size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">
-                  {
-                    deliveries.filter(
-                      (d) =>
-                        d.DeliveryStatus?.toLowerCase() === "delivered" ||
-                        d.DeliveryStatus?.toLowerCase() === "completed",
-                    ).length
-                  }
-                </div>
-                <div className="card-label">Delivered</div>
-                <div className="card-change positive">
-                  <TbArrowUp size={12} />
-                  +2.8%
-                </div>
+              <div className="flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                <TbArrowUp size={12} className="mr-0.5" /> +2.8%
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modern Filter Bar - Delivery List */}
-        <div
-          className="modern-filter-bar"
-          style={{ position: "relative", marginBottom: "24px" }}
-        >
-          <div
-            className="search-filter-row"
-            style={{
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Search (Top Left) */}
-            <div className="search-container" style={{ flex: "0 0 350px" }}>
-              <div className="search-input-wrapper">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Search by ID, client, driver..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="modern-search-input"
-                />
-              </div>
-            </div>
+        {/* Filters & Actions */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+          <div className="relative w-full md:w-96">
+            <TbSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={18}
+            />
+            <input
+              type="text"
+              placeholder="Search by ID, client, driver..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
 
-            {/* Filter Toggle Button */}
+          <div className="relative flex items-center gap-2 w-full md:w-auto">
             <button
-              className={`btn btn-secondary ${showFilters ? "active" : ""}`}
-              style={{
-                height: "42px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                position: "relative",
-                paddingRight: activeFilterCount > 0 ? "36px" : "16px",
-              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all ${showFilters || activeFilterCount > 0 ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <TbFilter size={18} />
-              Filters
+              <span>Filters</span>
               {activeFilterCount > 0 && (
-                <span
-                  className="filter-count-badge"
-                  style={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                  }}
-                >
+                <span className="ml-1 px-1.5 py-0.5 bg-blue-600 text-white text-xs rounded-full">
                   {activeFilterCount}
                 </span>
               )}
             </button>
-          </div>
 
-          <div
-            className="filter-summary"
-            style={{ marginTop: "12px", color: "#64748b", fontSize: "0.9rem" }}
-          >
-            Showing {filteredDeliveries.length} of {deliveries.length}{" "}
-            deliveries
-          </div>
-
-          {/* Filter Popup */}
-          {showFilters && (
-            <div
-              className="filter-popup-card"
-              style={{
-                position: "absolute",
-                top: "48px",
-                left: "0",
-                zIndex: 1000,
-                background: "white",
-                borderRadius: "12px",
-                boxShadow:
-                  "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                border: "1px solid #f1f5f9",
-                width: "480px",
-                maxWidth: "90vw",
-                padding: "20px",
-              }}
-            >
-              <div
-                className="popup-header"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                  alignItems: "center",
-                }}
-              >
-                <h4 style={{ margin: 0, color: "#1e293b", fontSize: "1.1rem" }}>
-                  Filter Options
-                </h4>
-                <button
-                  className="btn-ghost"
-                  onClick={() => setShowFilters(false)}
-                  style={{ height: "32px", padding: "0 8px", width: "auto" }}
-                >
-                  <TbX />
-                </button>
-              </div>
-
-              <div
-                className="filters-grid-popup"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
-                {/* Status Filter - Full Width */}
-                <div className="filter-group" style={{ gridColumn: "1 / -1" }}>
-                  <label className="filter-label">Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
-                    style={{ width: "100%" }}
+            {/* Filter Popup */}
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-20 animate-fade-in-up">
+                <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-100">
+                  <h4 className="font-semibold text-sm text-gray-800">
+                    Filter Options
+                  </h4>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    <option value="all">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Accepted">Accepted</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Delivered">Delivered</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
+                    <TbX size={16} />
+                  </button>
                 </div>
 
-                {/* Start Date */}
-                <div className="filter-group">
-                  <label className="filter-label">From Date</label>
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="modern-filter-select"
-                    max={endDate || undefined}
-                    style={{ width: "100%" }}
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Status
+                    </label>
+                    <select
+                      className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                    >
+                      <option value="all">All Statuses</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Accepted">Accepted</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 mb-1">
+                      Date Range
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="date"
+                        className="w-full p-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                      <input
+                        type="date"
+                        className="w-full p-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:border-blue-500"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* End Date */}
-                <div className="filter-group">
-                  <label className="filter-label">To Date</label>
-                  <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="modern-filter-select"
-                    min={startDate || undefined}
-                    style={{ width: "100%" }}
-                  />
+                <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end gap-2">
+                  <button
+                    className="px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setStartDate("");
+                      setEndDate("");
+                      setSearchQuery("");
+                    }}
+                  >
+                    Reset
+                  </button>
+                  <button
+                    className="px-3 py-1.5 text-xs font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    onClick={() => setShowFilters(false)}
+                  >
+                    Apply
+                  </button>
                 </div>
               </div>
-
-              <div
-                className="popup-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #f1f5f9",
-                }}
-              >
-                <button
-                  className="btn-ghost"
-                  onClick={() => {
-                    setStatusFilter("all");
-                    setStartDate("");
-                    setEndDate("");
-                    setSearchQuery("");
-                  }}
-                  style={{ width: "auto" }}
-                >
-                  <TbFilterOff size={16} /> Reset
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => setShowFilters(false)}
-                  style={{ height: "42px", padding: "0 24px" }}
-                >
-                  Apply Filters
-                </button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Deliveries Table */}
-        <div className="deliveries-table-container">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           {filteredDeliveries.length > 0 ? (
-            <div className="table-wrapper">
-              <table className="deliveries-table">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("DeliveryID")}
-                      className="sortable"
                     >
-                      Delivery ID{" "}
-                      {sortField === "DeliveryID" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Delivery ID{" "}
+                        {sortField === "DeliveryID" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("ClientName")}
-                      className="sortable"
                     >
-                      Client{" "}
-                      {sortField === "ClientName" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Client{" "}
+                        {sortField === "ClientName" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("DriverName")}
-                      className="sortable"
                     >
-                      Driver{" "}
-                      {sortField === "DriverName" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Driver{" "}
+                        {sortField === "DriverName" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("HelperName")}
-                      className="sortable"
                     >
-                      Helper{" "}
-                      {sortField === "HelperName" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Helper{" "}
+                        {sortField === "HelperName" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("TruckPlate")}
-                      className="sortable"
                     >
-                      Truck{" "}
-                      {sortField === "TruckPlate" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Truck{" "}
+                        {sortField === "TruckPlate" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
                     <th
+                      className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition-colors"
                       onClick={() => handleSort("DeliveryStatus")}
-                      className="sortable"
                     >
-                      Status{" "}
-                      {sortField === "DeliveryStatus" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Status{" "}
+                        {sortField === "DeliveryStatus" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={12} />
+                          ) : (
+                            <TbArrowDown size={12} />
+                          ))}
+                      </div>
                     </th>
-                    <th>Actions</th>
+                    <th className="px-6 py-4 text-center">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {getSortedAndPaginatedDeliveries().map((delivery) => (
-                    <tr key={delivery.DeliveryID} className="delivery-row">
-                      <td className="delivery-id-cell">
-                        <div className="delivery-id-wrapper">
-                          <TbTruckDelivery className="delivery-icon" />
-                          <span className="delivery-id-text">
+                    <tr
+                      key={delivery.DeliveryID}
+                      className="hover:bg-gray-50/50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                            <TbTruckDelivery size={16} />
+                          </div>
+                          <span className="font-medium text-gray-900 text-sm">
                             {delivery.DeliveryID
                               ? delivery.DeliveryID.substring(0, 12)
                               : "N/A"}
                           </span>
                         </div>
                       </td>
-                      <td>{delivery.ClientName || "N/A"}</td>
-                      <td>
-                        <div className="driver-cell">
-                          <span>{delivery.DriverName || "Not Assigned"}</span>
-                          <span className="mini-badge">
+                      <td className="px-6 py-4 text-sm text-gray-600 font-medium">
+                        {delivery.ClientName || "N/A"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {delivery.DriverName || "Not Assigned"}
+                          </p>
+                          <span className="text-xs text-gray-400 capitalize">
                             {formatDriverStatus(
                               delivery.DriverStatus,
                               delivery.DriverApprovalStatus,
@@ -600,10 +556,12 @@ const DeliveryList = ({ currentUser }) => {
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="helper-cell">
-                          <span>{delivery.HelperName || "Not Assigned"}</span>
-                          <span className="mini-badge">
+                      <td className="px-6 py-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">
+                            {delivery.HelperName || "Not Assigned"}
+                          </p>
+                          <span className="text-xs text-gray-400 capitalize">
                             {formatHelperStatus(
                               delivery.HelperStatus,
                               delivery.HelperApprovalStatus,
@@ -611,19 +569,19 @@ const DeliveryList = ({ currentUser }) => {
                           </span>
                         </div>
                       </td>
-                      <td>{delivery.TruckPlate || "N/A"}</td>
-                      <td>
+                      <td className="px-6 py-4 text-sm text-gray-600 font-mono">
+                        {delivery.TruckPlate || "N/A"}
+                      </td>
+                      <td className="px-6 py-4">
                         <StatusBadge
                           status={delivery.DeliveryStatus || "unknown"}
                         />
                       </td>
-                      <td>
-                        <div className="table-actions">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-center gap-2">
                           <Link
-                            to={`/admin/deliveries/${
-                              delivery.DeliveryID || ""
-                            }/view`}
-                            className="action-btn view-btn"
+                            to={`/admin/deliveries/${delivery.DeliveryID || ""}/view`}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <TbEye size={18} />
@@ -632,15 +590,6 @@ const DeliveryList = ({ currentUser }) => {
                             onClick={() => {
                               const truckIdentifier =
                                 delivery.TruckPlate || delivery.TruckID;
-                              console.log(
-                                "🚚 Opening tracking for delivery:",
-                                delivery.DeliveryID,
-                              );
-                              console.log(
-                                "🚚 Truck Plate/ID:",
-                                truckIdentifier,
-                              );
-
                               if (!truckIdentifier) {
                                 showAlert(
                                   "No truck assigned to this delivery",
@@ -648,13 +597,12 @@ const DeliveryList = ({ currentUser }) => {
                                 );
                                 return;
                               }
-
                               setSelectedDeliveryId(delivery.DeliveryID);
                               setSelectedTruckId(truckIdentifier);
                               window.currentDeliveryData = delivery;
                               setShowTrackingModal(true);
                             }}
-                            className="action-btn track-btn"
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                             title="Track Live GPS"
                           >
                             <TbMapPin size={18} />
@@ -667,36 +615,60 @@ const DeliveryList = ({ currentUser }) => {
               </table>
             </div>
           ) : (
-            <div className="deliveries-empty-state">
-              <div className="empty-state-icon">📦</div>
-              <h3>No deliveries found</h3>
-              <p>No delivery records match your current filters.</p>
+            <div className="p-12 flex flex-col items-center justify-center text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-4">
+                <TbPackage size={32} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">
+                No deliveries found
+              </h3>
+              <p className="text-gray-500 max-w-sm">
+                No delivery records match your current criteria. Try adjusting
+                your filters.
+              </p>
+              <button
+                onClick={() => {
+                  setStatusFilter("all");
+                  setSearchQuery("");
+                  setStartDate("");
+                  setEndDate("");
+                }}
+                className="mt-6 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Clear All Filters
+              </button>
             </div>
           )}
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="pagination">
-              <button
-                onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                disabled={currentPage === 1}
-                className="pagination-btn"
-              >
-                ← Previous
-              </button>
-              <span className="pagination-info">
-                Page {currentPage} of {totalPages} ({filteredDeliveries.length}{" "}
-                deliveries)
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/30">
+              <span className="text-sm text-gray-500">
+                Page{" "}
+                <span className="font-medium text-gray-900">{currentPage}</span>{" "}
+                of{" "}
+                <span className="font-medium text-gray-900">{totalPages}</span>
               </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                }
-                disabled={currentPage === totalPages}
-                className="pagination-btn"
-              >
-                Next →
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
+                  disabled={currentPage === 1}
+                  className="p-2 border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <TbChevronLeft size={16} />
+                </button>
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  className="p-2 border border-gray-200 rounded-lg bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <TbChevronRight size={16} />
+                </button>
+              </div>
             </div>
           )}
         </div>

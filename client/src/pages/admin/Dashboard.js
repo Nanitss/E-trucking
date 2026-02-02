@@ -37,9 +37,6 @@ import {
   TbChevronLeft,
   TbChevronRight,
 } from "react-icons/tb";
-import "../../styles/ModernForms.css";
-import "../../styles/DesignSystem.css";
-import "./Dashboard.css";
 import AdminHeader from "../../components/common/AdminHeader";
 
 const Dashboard = ({ currentUser }) => {
@@ -107,15 +104,19 @@ const Dashboard = ({ currentUser }) => {
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case "delivered":
-        return "text-green-600 bg-green-100";
+        return "text-green-700 bg-green-100 border-green-200";
       case "in transit":
-        return "text-blue-600 bg-blue-100";
+      case "in-progress":
+      case "in progress":
+        return "text-blue-700 bg-blue-100 border-blue-200";
       case "pending":
-        return "text-yellow-600 bg-yellow-100";
+        return "text-amber-700 bg-amber-100 border-amber-200";
       case "processing":
-        return "text-purple-600 bg-purple-100";
+        return "text-purple-700 bg-purple-100 border-purple-200";
+      case "cancelled":
+        return "text-red-700 bg-red-100 border-red-200";
       default:
-        return "text-gray-600 bg-gray-100";
+        return "text-gray-700 bg-gray-100 border-gray-200";
     }
   };
 
@@ -126,50 +127,21 @@ const Dashboard = ({ currentUser }) => {
 
   // Process deliveries into chart data
   const processChartData = (deliveries, period) => {
-    console.log("📊 Processing chart data:", {
-      deliveriesCount: deliveries?.length,
-      period,
-      sampleDelivery: deliveries?.[0],
-    });
-
     if (!deliveries || deliveries.length === 0) {
-      console.log("⚠️ No deliveries to process");
       setChartData([]);
       return;
     }
 
-    const now = new Date();
     const dateCounts = {};
 
     deliveries.forEach((delivery, index) => {
-      // Log first delivery to see structure
-      if (index === 0) {
-        console.log("📦 First delivery structure:", {
-          deliveryDate: delivery.deliveryDate,
-          deliveryDateType: typeof delivery.deliveryDate,
-          DeliveryDate: delivery.DeliveryDate,
-          DeliveryDateType: typeof delivery.DeliveryDate,
-          scheduledDate: delivery.scheduledDate,
-          created_at: delivery.created_at,
-          CreatedAt: delivery.CreatedAt,
-          CreatedAtType: typeof delivery.CreatedAt,
-          allKeys: Object.keys(delivery).filter(
-            (key) =>
-              key.toLowerCase().includes("date") ||
-              key.toLowerCase().includes("created"),
-          ),
-        });
-      }
-
       let deliveryDate;
 
       // Helper function to parse various date formats
       const parseDate = (dateValue) => {
-        // Handle null, undefined, or empty string
         if (!dateValue || dateValue === "") return null;
 
         try {
-          // Firestore Timestamp object with seconds
           if (
             typeof dateValue === "object" &&
             dateValue !== null &&
@@ -178,8 +150,6 @@ const Dashboard = ({ currentUser }) => {
             const parsed = new Date(dateValue.seconds * 1000);
             return !isNaN(parsed.getTime()) ? parsed : null;
           }
-
-          // Firestore Timestamp with toDate method
           if (
             typeof dateValue === "object" &&
             dateValue !== null &&
@@ -188,74 +158,52 @@ const Dashboard = ({ currentUser }) => {
             const parsed = dateValue.toDate();
             return !isNaN(parsed.getTime()) ? parsed : null;
           }
-
-          // String or number
           if (typeof dateValue === "string" || typeof dateValue === "number") {
             const parsed = new Date(dateValue);
-            // Check if valid date
             return !isNaN(parsed.getTime()) ? parsed : null;
           }
         } catch (error) {
           console.log("Error parsing date:", error, dateValue);
         }
-
         return null;
       };
 
-      // Try deliveryDate field (both lowercase and PascalCase)
       deliveryDate =
         parseDate(delivery.deliveryDate) || parseDate(delivery.DeliveryDate);
 
-      // Try scheduledDate field
       if (!deliveryDate) {
         deliveryDate =
           parseDate(delivery.scheduledDate) ||
           parseDate(delivery.ScheduledDate);
       }
 
-      // Try created_at field (both snake_case and PascalCase)
       if (!deliveryDate) {
         deliveryDate =
           parseDate(delivery.created_at) || parseDate(delivery.CreatedAt);
       }
 
-      // If still no date found, log and skip
       if (!deliveryDate || isNaN(deliveryDate.getTime())) {
-        console.log(
-          `⚠️ Delivery ${index} has no valid date field or invalid date`,
-        );
         return;
-      }
-
-      if (index === 0) {
-        console.log("📅 Sample delivery date:", deliveryDate);
       }
 
       let dateKey;
       if (period === "daily") {
         dateKey = deliveryDate.getDate(); // Day of month
       } else if (period === "weekly") {
-        const weekStart = new Date(deliveryDate);
-        weekStart.setDate(deliveryDate.getDate() - deliveryDate.getDay());
         dateKey = `Week ${Math.ceil(deliveryDate.getDate() / 7)}`;
       } else {
-        // monthly
         dateKey = `${deliveryDate.toLocaleDateString("en-US", { month: "short" })} ${deliveryDate.getFullYear()}`;
       }
 
       dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
     });
 
-    console.log("📊 Date counts:", dateCounts);
-
-    // Convert to array and sort
     let chartArray = Object.entries(dateCounts).map(([label, count]) => ({
       label,
       count,
-      percentage: 0, // Will calculate below
+      percentage: 0,
     }));
 
-    // For daily view, ensure we show last 10 days
     if (period === "daily") {
       const last10Days = [];
       for (let i = 9; i >= 0; i--) {
@@ -270,7 +218,6 @@ const Dashboard = ({ currentUser }) => {
       }
       chartArray = last10Days;
     } else if (period === "monthly") {
-      // For monthly view, show last 12 months
       const last12Months = [];
       for (let i = 11; i >= 0; i--) {
         const date = new Date();
@@ -285,14 +232,12 @@ const Dashboard = ({ currentUser }) => {
       chartArray = last12Months;
     }
 
-    // Calculate percentages for bar heights
     const maxCount = Math.max(...chartArray.map((d) => d.count), 1);
     chartArray = chartArray.map((d) => ({
       ...d,
-      percentage: d.count > 0 ? Math.max((d.count / maxCount) * 100, 10) : 0, // Minimum 10% height for visibility when count > 0
+      percentage: d.count > 0 ? Math.max((d.count / maxCount) * 100, 10) : 0,
     }));
 
-    console.log("📊 Final chart data:", chartArray);
     setChartData(chartArray);
   };
 
@@ -301,7 +246,6 @@ const Dashboard = ({ currentUser }) => {
     const newPeriod = e.target.value.toLowerCase();
     setChartPeriod(newPeriod);
 
-    // Re-fetch and reprocess data
     try {
       const deliveriesResponse = await axios.get("/api/deliveries");
       processChartData(deliveriesResponse.data || [], newPeriod);
@@ -310,7 +254,7 @@ const Dashboard = ({ currentUser }) => {
     }
   };
 
-  // Fetch header counts (same as header functionality)
+  // Fetch header counts
   const fetchHeaderCounts = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
@@ -327,6 +271,7 @@ const Dashboard = ({ currentUser }) => {
         axiosWithAuth
           .get("/api/deliveries/status/pending")
           .catch((err) => ({ data: [] })),
+        axiosWithAuth.get("/api/notifications").catch((err) => ({ data: [] })),
       ];
 
       const [
@@ -365,11 +310,6 @@ const Dashboard = ({ currentUser }) => {
       console.error("Error fetching header counts:", error);
     }
   }, []);
-
-  // Check if a menu item is active
-  const isActive = (path) => {
-    return location.pathname.startsWith(path) ? "active" : "";
-  };
 
   // Handle filter changes
   const handleActionFilterChange = (e) => {
@@ -425,69 +365,42 @@ const Dashboard = ({ currentUser }) => {
       try {
         setLoading(true);
 
-        // Fetch audit trail data - request more entries
         const activityResponse = await axios.get("/api/audit/recent?limit=30");
-
-        // Fetch pending deliveries
         const pendingResponse = await axios.get(
           "/api/deliveries/status/pending",
         );
-
-        // Fetch in-progress deliveries
         const inProgressResponse = await axios.get(
           "/api/deliveries/status/in-progress",
         );
-
-        // Fetch completed deliveries
         const completedResponse = await axios.get(
           "/api/deliveries/status/completed",
         );
-
-        // Fetch active trucks
         const trucksResponse = await axios.get("/api/trucks");
-
-        // Fetch active drivers
         const driversResponse = await axios.get("/api/drivers");
-
-        // Fetch all deliveries
         const deliveriesResponse = await axios.get("/api/deliveries");
 
-        // Set total deliveries count (ALL statuses)
         setTotalDeliveries(deliveriesResponse.data.length || 0);
 
-        // Fetch shipments data for the table
         const shipmentsResponse = await axios.get("/api/deliveries?limit=60");
         setShipmentsData(shipmentsResponse.data || []);
 
-        // Process deliveries for chart
         processChartData(deliveriesResponse.data || [], chartPeriod);
 
-        // Fetch header counts
         await fetchHeaderCounts();
 
-        // Update delivery stats
         setDeliveryStats({
           pending: pendingResponse.data.length || 0,
           inProgress: inProgressResponse.data.length || 0,
           completed: completedResponse.data.length || 0,
         });
 
-        // Calculate total revenue from ALL paid payments
         let totalRevenue = 0;
         try {
           const paymentsResponse = await axios.get("/api/payments/successful");
-
-          // Sum ALL paid payments (no date filtering)
           totalRevenue = paymentsResponse.data.reduce((total, payment) => {
             return total + (parseFloat(payment.amount) || 0);
           }, 0);
-
-          console.log(
-            `💰 Total revenue from ${paymentsResponse.data.length} paid payments: ₱${totalRevenue}`,
-          );
         } catch (paymentError) {
-          console.error("Error fetching payments:", paymentError);
-          // If payment API fails, calculate from deliveries with paid status
           try {
             const deliveriesResponse = await axios.get("/api/deliveries");
             const paidDeliveries = deliveriesResponse.data.filter(
@@ -501,9 +414,6 @@ const Dashboard = ({ currentUser }) => {
                 0;
               return total + amount;
             }, 0);
-            console.log(
-              `💰 Total revenue from ${paidDeliveries.length} paid deliveries: ₱${totalRevenue}`,
-            );
           } catch (deliveryError) {
             console.error(
               "Error fetching deliveries for revenue:",
@@ -512,7 +422,6 @@ const Dashboard = ({ currentUser }) => {
           }
         }
 
-        // Update overall stats
         setStats({
           trucks: trucksResponse.data.length || 0,
           drivers:
@@ -524,7 +433,6 @@ const Dashboard = ({ currentUser }) => {
           revenue: totalRevenue,
         });
 
-        // Update activity feed
         const activityData = activityResponse.data || [];
         setRecentActivity(activityData);
         setFilteredActivity(activityData);
@@ -534,131 +442,132 @@ const Dashboard = ({ currentUser }) => {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to load dashboard data");
         setLoading(false);
-
-        // Set empty data instead of demo data
         setRecentActivity([]);
         setFilteredActivity([]);
-        setAvailableActions([]);
-        setAvailableUsers([]);
         setTotalDeliveries(0);
-
-        // Show zero stats on error
-        setDeliveryStats({
-          pending: 0,
-          inProgress: 0,
-          completed: 0,
-        });
-
-        setStats({
-          trucks: 0,
-          drivers: 0,
-          deliveries: 0,
-          revenue: 0,
-        });
+        setDeliveryStats({ pending: 0, inProgress: 0, completed: 0 });
+        setStats({ trucks: 0, drivers: 0, deliveries: 0, revenue: 0 });
       }
     };
 
     fetchDashboardData();
   }, []);
 
-  // Note: totalDeliveries is now set directly from /api/deliveries response
-  // to include ALL delivery statuses (pending, in-progress, completed, cancelled, etc.)
-
-  // Show loading state if currentUser is not yet loaded
   if (!currentUser) {
     return (
-      <div className="admin-page-container">
-        <div
-          className="modern-loading"
-          style={{
-            minHeight: "100vh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexDirection: "column",
-            gap: "1rem",
-          }}
-        >
-          <div className="loading-spinner"></div>
-          <p>Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center flex-col gap-4">
+        <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-gray-500 font-medium">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="admin-page-container">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <AdminHeader currentUser={currentUser} />
 
-      <div className="admin-content">
-        {/* Main Content */}
-        <div className="dashboard-content">
-          {/* Greeting and Summary Cards */}
-          <div className="greeting-section">
-            <h2 className="greeting-text">
-              Hello {currentUser?.username || "Admin"}, Good Morning
-            </h2>
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
+        {/* Greeting and Summary Cards */}
+        <div className="mb-10">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">
+            Hello {currentUser?.username || "Admin"}, Good Morning
+          </h2>
 
-            <div className="summary-cards">
-              <div className="summary-card">
-                <div className="card-icon">
-                  <TbPackage size={24} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <TbPackage size={24} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {totalDeliveries || 0}
                 </div>
-                <div className="card-content">
-                  <div className="card-value">{totalDeliveries || 0}</div>
-                  <div className="card-label">Total Shipments</div>
-                  <div className="card-change positive">
-                    <TbArrowUp size={12} />
-                    +1.92%
-                  </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Total Shipments
+                </div>
+                <div className="flex items-center text-xs font-semibold text-emerald-600 mt-1">
+                  <TbArrowUp size={12} className="mr-0.5" />
+                  +1.92%
                 </div>
               </div>
+            </div>
 
-              <div className="summary-card">
-                <div className="card-icon">
-                  <TbClock size={24} />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                <TbClock size={24} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {deliveryStats.pending}
                 </div>
-                <div className="card-content">
-                  <div className="card-value">{deliveryStats.pending}</div>
-                  <div className="card-label">Pending Package</div>
-                  <div className="card-change positive">
-                    <TbArrowUp size={12} />
-                    +1.89%
-                  </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Pending Packages
+                </div>
+                <div className="flex items-center text-xs font-semibold text-emerald-600 mt-1">
+                  <TbArrowUp size={12} className="mr-0.5" />
+                  +1.89%
                 </div>
               </div>
+            </div>
 
-              <div className="summary-card">
-                <div className="card-icon">
-                  <TbTruckDelivery size={24} />
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                <TbTruckDelivery size={24} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {deliveryStats.completed}
                 </div>
-                <div className="card-content">
-                  <div className="card-value">{deliveryStats.completed}</div>
-                  <div className="card-label">Delivery Shipments</div>
-                  <div className="card-change negative">
-                    <TbArrowDown size={12} />
-                    -0.98%
-                  </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Completed Deliveries
+                </div>
+                <div className="flex items-center text-xs font-semibold text-rose-600 mt-1">
+                  <TbArrowDown size={12} className="mr-0.5" />
+                  -0.98%
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1 hover:shadow-md">
+              <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+                <TbCurrencyDollar size={24} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(stats.revenue)}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Total Revenue
+                </div>
+                <div className="flex items-center text-xs font-semibold text-emerald-600 mt-1">
+                  <TbArrowUp size={12} className="mr-0.5" />
+                  +5.4%
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Analytics Widgets */}
-          <div className="analytics-widgets">
-            {/* Shipments Statistics */}
-            <div className="widget shipments-stats">
-              <div className="widget-header">
-                <h3>Shipments Statistics</h3>
-                <p>Total number of deliveries: {totalDeliveries || 0}</p>
+        {/* Analytics Widgets */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 h-auto lg:h-[450px]">
+          {/* Shipments Statistics */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Shipments Statistics
+                </h3>
+                <p className="text-sm text-gray-500">
+                  Total number of deliveries: {totalDeliveries || 0}
+                </p>
               </div>
-              <div className="widget-filters">
-                <div className="filter-dots">
-                  <span className="dot active"></span>
-                  <span className="dot"></span>
+              <div className="flex items-center gap-3">
+                <div className="flex space-x-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                  <span className="w-2 h-2 rounded-full bg-gray-200"></span>
                 </div>
                 <select
-                  className="filter-select"
+                  className="bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2"
                   onChange={handleChartPeriodChange}
                   value={chartPeriod}
                 >
@@ -667,176 +576,168 @@ const Dashboard = ({ currentUser }) => {
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
-              <div className="chart-container">
-                <div className="chart-placeholder">
-                  {chartData.length > 0 ? (
-                    <>
-                      <div className="chart-bars">
-                        {chartData.map((data, index) => (
-                          <div
-                            key={index}
-                            className="chart-bar"
-                            style={{ height: `${data.percentage}%` }}
-                          >
-                            <div
-                              className="bar shipment"
-                              title={`${data.count} deliveries`}
-                            ></div>
-                            <div className="bar delivery"></div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="chart-labels">
-                        {chartData.map((data, index) => (
-                          <span key={index}>{data.label}</span>
-                        ))}
-                      </div>
-                    </>
-                  ) : (
+            </div>
+
+            <div className="flex-1 min-h-[250px] relative flex items-end justify-between gap-2 px-2 pb-2">
+              {chartData.length > 0 ? (
+                <>
+                  {chartData.map((data, index) => (
                     <div
-                      style={{
-                        textAlign: "center",
-                        padding: "2rem",
-                        color: "#6b7280",
-                      }}
+                      key={index}
+                      className="flex flex-col items-center flex-1 h-full justify-end group cursor-pointer relative"
                     >
-                      No delivery data available
+                      {/* Tooltip */}
+                      <div className="absolute -top-10 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-800 text-white text-xs px-2 py-1 rounded pointer-events-none whitespace-nowrap z-10">
+                        {data.label}: {data.count}
+                      </div>
+
+                      <div
+                        className="w-full max-w-[40px] bg-blue-500 rounded-t-sm hover:bg-blue-600 transition-all duration-300 relative"
+                        style={{ height: `${data.percentage}%` }}
+                      >
+                        {/* Dashed line effect simulation or overlay if needed */}
+                      </div>
+                      <span className="text-[10px] text-gray-400 mt-2 font-medium truncate w-full text-center">
+                        {data.label}
+                      </span>
                     </div>
-                  )}
+                  ))}
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  No delivery data available
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tracking Delivery / Recent */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full">
+            <div className="mb-6">
+              <h3 className="text-lg font-bold text-gray-800">
+                Tracking Delivery
+              </h3>
+              <p className="text-xs text-gray-500">Last viewed delivery</p>
             </div>
 
-            {/* Revenue Overview */}
-            <div className="widget revenue-overview">
-              <div className="widget-header">
-                <h3>Analytic view - Total shipping revenue overview</h3>
-              </div>
-              <div className="revenue-content">
-                <div className="revenue-amount">
-                  {formatCurrency(stats.revenue)}
-                </div>
-                <div className="revenue-change positive">
-                  Total from all paid deliveries
-                </div>
-              </div>
-            </div>
-
-            {/* Tracking Delivery */}
-            <div className="widget tracking-delivery">
-              <div className="widget-header">
-                <h3>Tracking Delivery - Last viewed delivery history</h3>
-              </div>
-              <div className="tracking-content">
-                {shipmentsData.length > 0 ? (
-                  <>
-                    <div className="tracking-id">
-                      <span>
-                        Tracking ID #
+            <div className="flex-1 overflow-auto custom-scrollbar">
+              {shipmentsData.length > 0 ? (
+                <div>
+                  <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div>
+                      <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider mb-1">
+                        Tracking ID
+                      </div>
+                      <div className="font-mono text-sm font-bold text-gray-800">
+                        #
                         {shipmentsData[0].id ||
                           shipmentsData[0].DeliveryID ||
                           "N/A"}
-                      </span>
-                      <span
-                        className={`status-badge ${getStatusColor(shipmentsData[0].status || shipmentsData[0].deliveryStatus || "pending")}`}
-                      >
-                        {shipmentsData[0].status ||
-                          shipmentsData[0].deliveryStatus ||
-                          "Pending"}
-                      </span>
-                    </div>
-                    <div className="tracking-timeline">
-                      <div className="timeline-item completed">
-                        <div className="timeline-dot"></div>
-                        <div className="timeline-content">
-                          <span>
-                            {formatDate(
-                              shipmentsData[0].created_at ||
-                                shipmentsData[0].CreatedAt,
-                            )}{" "}
-                            Created
-                          </span>
-                        </div>
-                      </div>
-                      <div
-                        className={`timeline-item ${shipmentsData[0].driverAcceptedAt || shipmentsData[0].DriverAcceptedAt ? "completed" : ""}`}
-                      >
-                        <div className="timeline-dot"></div>
-                        <div className="timeline-content">
-                          <span>
-                            {shipmentsData[0].driverAcceptedAt ||
-                            shipmentsData[0].DriverAcceptedAt
-                              ? `${formatDate(shipmentsData[0].driverAcceptedAt || shipmentsData[0].DriverAcceptedAt)} Driver Accepted`
-                              : "Waiting for driver acceptance"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="timeline-item">
-                        <div className="timeline-dot"></div>
-                        <div className="timeline-content">
-                          <span>
-                            {shipmentsData[0].deliveryDate ||
-                            shipmentsData[0].DeliveryDate
-                              ? `${formatDate(shipmentsData[0].deliveryDate || shipmentsData[0].DeliveryDate)} Delivery`
-                              : "Awaiting delivery"}
-                          </span>
-                        </div>
                       </div>
                     </div>
-                    <div className="courier-info">
-                      <div className="courier-avatar">
-                        {(
-                          shipmentsData[0].driverName ||
-                          shipmentsData[0].DriverName
-                        )?.charAt(0) || "D"}
-                      </div>
-                      <div className="courier-details">
-                        <span className="courier-name">
-                          {shipmentsData[0].driverName ||
-                            shipmentsData[0].DriverName ||
-                            "No driver assigned"}
-                        </span>
-                        <span className="courier-role">Driver</span>
-                      </div>
-                      <div className="courier-actions">
-                        <TbPhone size={16} />
-                        <TbMessage size={16} />
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <p
-                    style={{
-                      textAlign: "center",
-                      padding: "2rem",
-                      color: "#6b7280",
-                    }}
-                  >
-                    No delivery data available
-                  </p>
-                )}
-              </div>
-            </div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold capitalize border ${getStatusColor(shipmentsData[0].status || shipmentsData[0].deliveryStatus || "pending")}`}
+                    >
+                      {shipmentsData[0].status ||
+                        shipmentsData[0].deliveryStatus ||
+                        "Pending"}
+                    </span>
+                  </div>
 
-            {/* Delivery Vehicles */}
-            <div className="widget delivery-vehicles">
-              <div className="widget-header">
-                <h3>Delivery Vehicles - Vehicles operating on the road</h3>
-              </div>
-              <div className="vehicles-content">
-                <div className="vehicles-count">{stats.trucks}</div>
-                <div className="vehicles-change positive">
-                  <TbArrowUp size={16} />
-                  +2.29% than last week
+                  <div className="relative pl-4 space-y-8 before:absolute before:left-[21px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-100">
+                    {/* Created */}
+                    <div className="relative flex items-center gap-4">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-50 z-10"></div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-800">
+                          Order Created
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(
+                            shipmentsData[0].created_at ||
+                              shipmentsData[0].CreatedAt,
+                          )}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Driver Assigned/Accepted */}
+                    <div className="relative flex items-center gap-4">
+                      <div
+                        className={`w-3 h-3 rounded-full z-10 ${shipmentsData[0].driverAcceptedAt || shipmentsData[0].DriverAcceptedAt ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300 ring-4 ring-gray-100"}`}
+                      ></div>
+                      <div>
+                        <p
+                          className={`text-sm font-bold ${shipmentsData[0].driverAcceptedAt ? "text-gray-800" : "text-gray-400"}`}
+                        >
+                          Driver Accepted
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {shipmentsData[0].driverAcceptedAt ||
+                          shipmentsData[0].DriverAcceptedAt
+                            ? formatDate(
+                                shipmentsData[0].driverAcceptedAt ||
+                                  shipmentsData[0].DriverAcceptedAt,
+                              )
+                            : "Pending"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* In Transit/Delivered */}
+                    <div className="relative flex items-center gap-4">
+                      <div
+                        className={`w-3 h-3 rounded-full z-10 ${shipmentsData[0].deliveryDate || shipmentsData[0].DeliveryDate ? "bg-blue-500 ring-4 ring-blue-50" : "bg-gray-300 ring-4 ring-gray-100"}`}
+                      ></div>
+                      <div>
+                        <p
+                          className={`text-sm font-bold ${shipmentsData[0].deliveryDate ? "text-gray-800" : "text-gray-400"}`}
+                        >
+                          Delivered
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {shipmentsData[0].deliveryDate ||
+                          shipmentsData[0].DeliveryDate
+                            ? formatDate(
+                                shipmentsData[0].deliveryDate ||
+                                  shipmentsData[0].DeliveryDate,
+                              )
+                            : "Estimated Delivery"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 pt-6 border-t border-gray-100 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-bold">
+                      {(
+                        shipmentsData[0].driverName ||
+                        shipmentsData[0].DriverName
+                      )?.charAt(0) || "D"}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-gray-900">
+                        {shipmentsData[0].driverName ||
+                          shipmentsData[0].DriverName ||
+                          "No driver assigned"}
+                      </p>
+                      <p className="text-xs text-gray-500">Assigned Driver</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                        <TbPhone size={16} />
+                      </button>
+                      <button className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-100 transition-colors">
+                        <TbMessage size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="vehicle-image">
-                  <TbTruck size={48} />
+              ) : (
+                <div className="flex items-center justify-center h-48 text-gray-400 text-sm">
+                  No shipments to track
                 </div>
-                <div className="vehicle-status">
-                  <div className="status-indicator"></div>
-                  <span>On-Route</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

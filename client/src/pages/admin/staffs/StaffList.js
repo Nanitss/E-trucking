@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useHistory } from 'react-router-dom';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import { Link, useHistory } from "react-router-dom";
+import axios from "axios";
 import {
   TbUser,
   TbEye,
@@ -15,34 +15,39 @@ import {
   TbFilter,
   TbX,
   TbList,
-  TbLayoutGrid
-} from 'react-icons/tb';
-import './StaffList.css'; // copy your DriversList.css → StaffList.css
-import '../../../styles/ModernForms.css';
-import '../../../styles/DesignSystem.css';
-import AdminHeader from '../../../components/common/AdminHeader';
+  TbLayoutGrid,
+  TbSearch,
+  TbPlus,
+  TbBriefcase,
+  TbPhone,
+  TbMail,
+} from "react-icons/tb";
+import AdminHeader from "../../../components/common/AdminHeader";
+import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
 
 const StaffList = ({ currentUser }) => {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [departmentFilter, setDepartmentFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
-  const [sortField, setSortField] = useState('StaffName');
-  const [sortDirection, setSortDirection] = useState('asc');
+  const [viewMode, setViewMode] = useState("table"); // 'table' or 'cards'
+  const [sortField, setSortField] = useState("StaffName");
+  const [sortDirection, setSortDirection] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const staffPerPage = 20;
+  const indexOfLastItem = currentPage * staffPerPage;
+  const indexOfFirstItem = indexOfLastItem - staffPerPage;
   const history = useHistory();
 
   // Calculate active filters count
   const activeFilterCount = [
-    statusFilter !== 'all' ? statusFilter : null,
-    departmentFilter !== 'all' ? departmentFilter : null,
+    statusFilter !== "all" ? statusFilter : null,
+    departmentFilter !== "all" ? departmentFilter : null,
   ].filter(Boolean).length;
 
   // Fetch staff on component mount
@@ -50,28 +55,33 @@ const StaffList = ({ currentUser }) => {
     const fetchStaff = async () => {
       try {
         setLoading(true);
-        console.log('Fetching staff from API...');
-        const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
-        console.log('API Base URL:', baseURL);
+        console.log("Fetching staff from API...");
+        const baseURL =
+          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        console.log("API Base URL:", baseURL);
 
         const response = await axios.get(`${baseURL}/api/staffs`);
-        console.log('API Response:', response);
+        console.log("API Response:", response);
 
         if (response.data && Array.isArray(response.data)) {
           setStaff(response.data);
-          console.log('Staff loaded:', response.data.length);
+          console.log("Staff loaded:", response.data.length);
         } else {
-          console.warn('API returned unexpected data format:', response.data);
+          console.warn("API returned unexpected data format:", response.data);
           setStaff([]);
         }
 
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching staff:', err);
+        console.error("Error fetching staff:", err);
         if (err.response) {
-          setError(`Server error (${err.response.status}): ${err.response.data?.message || 'Unknown error'}`);
+          setError(
+            `Server error (${err.response.status}): ${err.response.data?.message || "Unknown error"}`,
+          );
         } else if (err.request) {
-          setError('No response received from server. Please check your API connection.');
+          setError(
+            "No response received from server. Please check your API connection.",
+          );
         } else {
           setError(`Request error: ${err.message}`);
         }
@@ -98,26 +108,34 @@ const StaffList = ({ currentUser }) => {
   // Sorting function
   const handleSort = (field) => {
     if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
     } else {
       setSortField(field);
-      setSortDirection('asc');
+      setSortDirection("asc");
     }
   };
 
   // Filter staff based on search and filters
-  const filteredStaff = staff.filter(staffMember => {
-    const matchesSearch = !searchTerm ||
+  const filteredStaff = staff.filter((staffMember) => {
+    const matchesSearch =
+      !searchTerm ||
       staffMember.StaffName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      staffMember.StaffUserName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      staffMember.StaffUserName?.toLowerCase().includes(
+        searchTerm.toLowerCase(),
+      ) ||
       staffMember.StaffNumber?.includes(searchTerm) ||
-      staffMember.StaffDepartment?.toLowerCase().includes(searchTerm.toLowerCase());
+      staffMember.StaffDepartment?.toLowerCase().includes(
+        searchTerm.toLowerCase(),
+      );
 
-    const matchesStatus = statusFilter === 'all' ||
+    const matchesStatus =
+      statusFilter === "all" ||
       staffMember.StaffStatus?.toLowerCase() === statusFilter.toLowerCase();
 
-    const matchesDepartment = departmentFilter === 'all' ||
-      staffMember.StaffDepartment?.toLowerCase() === departmentFilter.toLowerCase();
+    const matchesDepartment =
+      departmentFilter === "all" ||
+      staffMember.StaffDepartment?.toLowerCase() ===
+        departmentFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesDepartment;
   });
@@ -131,8 +149,8 @@ const StaffList = ({ currentUser }) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
 
-      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
 
@@ -145,14 +163,22 @@ const StaffList = ({ currentUser }) => {
   const totalPages = Math.ceil(filteredStaff.length / staffPerPage);
 
   // Get unique values for filters
-  const uniqueStatuses = [...new Set(staff.map(s => s.StaffStatus).filter(Boolean))];
-  const uniqueDepartments = [...new Set(staff.map(s => s.StaffDepartment).filter(Boolean))];
+  const uniqueStatuses = [
+    ...new Set(staff.map((s) => s.StaffStatus).filter(Boolean)),
+  ];
+  const uniqueDepartments = [
+    ...new Set(staff.map((s) => s.StaffDepartment).filter(Boolean)),
+  ];
 
   // Calculate summary data
   const getSummaryData = () => {
     const total = staff.length;
-    const active = staff.filter(s => s.StaffStatus?.toLowerCase() === 'active').length;
-    const inactive = staff.filter(s => s.StaffStatus?.toLowerCase() === 'inactive').length;
+    const active = staff.filter(
+      (s) => s.StaffStatus?.toLowerCase() === "active",
+    ).length;
+    const inactive = staff.filter(
+      (s) => s.StaffStatus?.toLowerCase() === "inactive",
+    ).length;
     const departments = uniqueDepartments.length;
 
     return { total, active, inactive, departments };
@@ -162,73 +188,98 @@ const StaffList = ({ currentUser }) => {
 
   // Helper function to format status
   const formatStatus = (status) => {
-    if (!status) return 'Unknown';
+    if (!status) return "Unknown";
     return status.charAt(0).toUpperCase() + status.slice(1);
   };
 
   return (
-    <div className="admin-page-container">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <AdminHeader currentUser={null} />
+      <PersonnelSubNav activeTab="staff" />
 
-      <div className="admin-content">
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
         {/* Greeting and Summary Cards */}
-        <div className="greeting-section">
-          <h2 className="greeting-text">Staff Management</h2>
-          <p className="greeting-subtitle">Manage staff members, departments, and administrative roles</p>
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">Staff Management</h2>
+          <p className="text-gray-500 mt-1">
+            Manage staff members, departments, and administrative roles
+          </p>
 
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbUser size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{staff.length}</div>
-                <div className="card-label">Total Staff</div>
-                <div className="card-change positive">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <TbUser size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                   <TbArrowUp size={12} />
                   +1.9%
                 </div>
               </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {staff.length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Total Staff
+                </div>
+              </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbCheck size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{staff.filter(s => s.status === 'active').length}</div>
-                <div className="card-label">Active</div>
-                <div className="card-change positive">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <TbCheck size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                   <TbArrowUp size={12} />
                   +1.2%
                 </div>
               </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {staff.filter((s) => s.status === "active").length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">Active</div>
+              </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbClock size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{staff.filter(s => s.status === 'inactive').length}</div>
-                <div className="card-label">Inactive</div>
-                <div className="card-change neutral">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-gray-50 text-gray-600 rounded-xl flex items-center justify-center">
+                  <TbClock size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
                   <TbActivity size={12} />
                   0.0%
                 </div>
               </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {staff.filter((s) => s.status === "inactive").length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Inactive
+                </div>
+              </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbFileText size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{staff.filter(s => s.role === 'admin').length}</div>
-                <div className="card-label">Administrators</div>
-                <div className="card-change positive">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                  <TbFileText size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                   <TbArrowUp size={12} />
                   +0.5%
+                </div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {staff.filter((s) => s.role === "admin").length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Administrators
                 </div>
               </div>
             </div>
@@ -238,170 +289,63 @@ const StaffList = ({ currentUser }) => {
         {error && (
           <div className="error-message">
             {error}
-            <div style={{ marginTop: '10px', fontSize: '12px' }}>
-              <button onClick={() => window.location.reload()}>Refresh Page</button>
+            <div style={{ marginTop: "10px", fontSize: "12px" }}>
+              <button onClick={() => window.location.reload()}>
+                Refresh Page
+              </button>
             </div>
           </div>
         )}
 
-
-        {/* Modern Filter Bar - Popup Style */}
-        <div className="modern-filter-bar" style={{ position: 'relative', marginBottom: '24px' }}>
-          <div className="search-filter-row" style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Search (Top Left) */}
-            <div className="search-container" style={{ flex: '0 0 350px' }}>
-              <div className="search-input-wrapper">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Search by name, username, department, phone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="modern-search-input"
-                />
-              </div>
+        {/* Modern Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+          {/* Search (Top Left) */}
+          <div className="relative flex-1 max-w-lg w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <TbSearch size={20} />
             </div>
+            <input
+              type="text"
+              placeholder="Search by name, department..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+            />
+          </div>
 
+          <div className="flex items-center gap-3 w-full md:w-auto">
             {/* Filter Toggle Button */}
             <button
-              className={`btn btn-secondary ${showFilters ? 'active' : ''}`}
-              style={{
-                height: '42px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                position: 'relative',
-                paddingRight: activeFilterCount > 0 ? '36px' : '16px'
-              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <TbFilter size={18} />
               Filters
               {activeFilterCount > 0 && (
-                <span
-                  className="filter-count-badge"
-                  style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'rgba(255,255,255,0.2)',
-                    color: 'white',
-                    borderRadius: '12px',
-                    padding: '2px 8px',
-                    fontSize: '0.75rem',
-                    fontWeight: 'bold'
-                  }}
-                >
+                <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
                   {activeFilterCount}
                 </span>
               )}
             </button>
 
-            {/* View Mode Toggle (Aligned Right) */}
-            <div className="view-mode-toggle" style={{ marginLeft: 'auto' }}>
+            {/* View Mode Toggle */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
               <button
-                onClick={() => setViewMode('table')}
-                className={`view-mode-btn ${viewMode === 'table' ? 'active' : ''}`}
+                onClick={() => setViewMode("table")}
+                className={`p-2 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Table View"
               >
-                <TbList size={20} />
+                <TbList size={18} />
               </button>
               <button
-                onClick={() => setViewMode('cards')}
-                className={`view-mode-btn ${viewMode === 'cards' ? 'active' : ''}`}
+                onClick={() => setViewMode("cards")}
+                className={`p-2 rounded-md transition-all ${viewMode === "cards" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Card View"
               >
-                <TbLayoutGrid size={20} />
+                <TbLayoutGrid size={18} />
               </button>
             </div>
           </div>
-
-          <div className="filter-summary" style={{ marginTop: '12px', color: '#64748b', fontSize: '0.9rem' }}>
-            Showing {filteredStaff.length} of {staff.length} staff members
-          </div>
-
-          {/* Filter Popup */}
-          {showFilters && (
-            <div
-              className="filter-popup-card"
-              style={{
-                position: 'absolute',
-                top: '48px',
-                left: '0',
-                zIndex: 1000,
-                background: 'white',
-                borderRadius: '12px',
-                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #f1f5f9',
-                width: '320px',
-                maxWidth: '90vw',
-                padding: '20px'
-              }}
-            >
-              <div className="popup-header" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', alignItems: 'center' }}>
-                <h4 style={{ margin: 0, color: '#1e293b', fontSize: '1.1rem' }}>Filter Options</h4>
-                <button
-                  className="btn-ghost"
-                  onClick={() => setShowFilters(false)}
-                  style={{ height: '32px', padding: '0 8px', width: 'auto' }}
-                >
-                  <TbX />
-                </button>
-              </div>
-
-              <div className="filters-grid-popup" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px', marginBottom: '20px' }}>
-                {/* Status Filter */}
-                <div className="filter-group-popup">
-                  <label className="filter-label" style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: '#64748b' }}>Status</label>
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
-                    style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '0 12px' }}
-                  >
-                    <option value="all">All Status</option>
-                    {uniqueStatuses.map(status => (
-                      <option key={status} value={status}>
-                        {formatStatus(status)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Department Filter */}
-                <div className="filter-group-popup">
-                  <label className="filter-label" style={{ display: 'block', marginBottom: '6px', fontSize: '0.85rem', color: '#64748b' }}>Department</label>
-                  <select
-                    value={departmentFilter}
-                    onChange={(e) => setDepartmentFilter(e.target.value)}
-                    className="modern-filter-select"
-                    style={{ width: '100%', height: '40px', borderRadius: '8px', border: '1px solid #e2e8f0', padding: '0 12px' }}
-                  >
-                    <option value="all">All Departments</option>
-                    {uniqueDepartments.map(dept => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Clear Filters Button */}
-              <button
-                className="btn btn-secondary"
-                style={{ width: '100%' }}
-                onClick={() => {
-                  setSearchTerm('');
-                  setStatusFilter('all');
-                  setDepartmentFilter('all');
-                }}
-              >
-                Clear All Filters
-              </button>
-            </div>
-          )}
         </div>
 
         {loading ? (
@@ -409,112 +353,205 @@ const StaffList = ({ currentUser }) => {
             <div className="loading-spinner"></div>
             Loading staff data...
           </div>
-        ) : filteredStaff.length === 0 ? (
-          <div className="trucks-empty-state">
-            <div className="empty-state-icon">👨‍💼</div>
-            <h3 className="empty-state-title">No staff found</h3>
-            <p className="empty-state-description">
-              {searchTerm || statusFilter !== 'all' || departmentFilter !== 'all'
-                ? 'No staff members match your current filters. Try adjusting your search criteria or add a new staff member.'
-                : 'No staff records found. Add your first staff member to get started.'
-              }
-            </p>
-            <Link to="/admin/staffs/add" className="modern-btn modern-btn-primary">
-              ➕ Add Your First Staff Member
-            </Link>
-          </div>
         ) : (
-          <div className="staff-table-container">
-            <div className="table-wrapper">
-              <table className="staff-table">
-                <thead>
-                  <tr>
-                    <th onClick={() => handleSort('StaffName')} className="sortable">
-                      Staff Name {sortField === 'StaffName' && (sortDirection === 'asc' ? '↑' : '↓')}
-                    </th>
-                    <th onClick={() => handleSort('StaffDepartment')} className="sortable">
-                      Department {sortField === 'StaffDepartment' && (sortDirection === 'asc' ? '↑' : '↓')}
-                    </th>
-                    <th onClick={() => handleSort('StaffNumber')} className="sortable">
-                      Contact {sortField === 'StaffNumber' && (sortDirection === 'asc' ? '↑' : '↓')}
-                    </th>
-                    <th onClick={() => handleSort('StaffEmploymentDate')} className="sortable">
-                      Employment Date {sortField === 'StaffEmploymentDate' && (sortDirection === 'asc' ? '↑' : '↓')}
-                    </th>
-                    <th onClick={() => handleSort('StaffStatus')} className="sortable">
-                      Status {sortField === 'StaffStatus' && (sortDirection === 'asc' ? '↑' : '↓')}
-                    </th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getSortedAndPaginatedStaff().map(staffMember => (
-                    <tr key={staffMember.StaffID} className="staff-row">
-                      <td className="staff-name-cell">
-                        <div className="staff-name-wrapper">
-                          <TbUser className="staff-icon" />
-                          <span className="staff-name-text">{staffMember.StaffName}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="department-badge">{staffMember.StaffDepartment || 'N/A'}</span>
-                      </td>
-                      <td>{staffMember.StaffNumber || 'N/A'}</td>
-                      <td>
-                        {staffMember.StaffEmploymentDate ? new Date(staffMember.StaffEmploymentDate).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td>
-                        <span className={`status-badge status-${staffMember.StaffStatus?.toLowerCase() || 'unknown'}`}>
-                          {formatStatus(staffMember.StaffStatus)}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="table-actions">
-                          <button
-                            onClick={() => handleViewDetails(staffMember)}
-                            className="action-btn view-btn"
-                            title="View Details"
-                          >
-                            <TbEye size={18} />
-                          </button>
-                          <Link
-                            to={`/admin/staffs/edit/${staffMember.StaffID}`}
-                            className="action-btn edit-btn"
-                            title="Edit Staff"
-                          >
-                            <TbEdit size={18} />
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          <>
+            {filteredStaff.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
+                  <TbUser size={40} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  No staff found
+                </h3>
+                <p className="text-gray-500 max-w-md mx-auto mb-8">
+                  {searchTerm ||
+                  statusFilter !== "all" ||
+                  departmentFilter !== "all"
+                    ? "No staff members match your current filters. Try adjusting your search criteria."
+                    : "No staff records found. Add your first staff member to get started."}
+                </p>
+                <Link
+                  to="/admin/staffs/add"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all shadow-sm shadow-blue-200"
+                >
+                  <TbPlus size={20} />
+                  Add New Staff
+                </Link>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50/50 border-b border-gray-100">
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider w-20">
+                          ID
+                        </th>
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Staff Member
+                        </th>
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Department
+                        </th>
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Contact
+                        </th>
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="py-4 px-6 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {getSortedAndPaginatedStaff().map((s) => (
+                        <tr
+                          key={s._id || s.id}
+                          className="hover:bg-gray-50/80 transition-colors group"
+                        >
+                          <td className="py-4 px-6 text-sm text-gray-500 font-mono">
+                            #{s.StaffID}
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-sm font-bold">
+                                {s.StaffName?.charAt(0) || "S"}
+                              </div>
+                              <div>
+                                <div className="font-semibold text-gray-900">
+                                  {s.StaffName}
+                                </div>
+                                <div className="text-xs text-gray-400">
+                                  @{s.StaffUserName}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-medium border border-gray-200">
+                              <TbBriefcase
+                                size={14}
+                                className="text-gray-400"
+                              />
+                              {s.StaffDepartment || "Unassigned"}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col gap-1">
+                              {s.StaffNumber && (
+                                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                  <TbPhone
+                                    size={14}
+                                    className="text-gray-400"
+                                  />
+                                  {s.StaffNumber}
+                                </div>
+                              )}
+                              {s.email && (
+                                <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                  <TbMail size={14} className="text-gray-400" />
+                                  {s.email}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                s.StaffStatus === "Active"
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                  : "bg-gray-50 text-gray-600 border-gray-100"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  s.StaffStatus === "Active"
+                                    ? "bg-emerald-500"
+                                    : "bg-gray-400"
+                                }`}
+                              ></span>
+                              {formatStatus(s.StaffStatus)}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleViewDetails(s)}
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                title="View Details"
+                              >
+                                <TbEye size={18} />
+                              </button>
+                              <Link
+                                to={`/admin/staffs/edit/${s.StaffID}`}
+                                className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                title="Edit Staff"
+                              >
+                                <TbEdit size={18} />
+                              </Link>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pagination">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className="pagination-btn"
-                >
-                  ← Previous
-                </button>
-                <span className="pagination-info">
-                  Page {currentPage} of {totalPages} ({filteredStaff.length} staff)
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className="pagination-btn"
-                >
-                  Next →
-                </button>
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+                    <div className="text-sm text-gray-500">
+                      Showing{" "}
+                      <span className="font-medium text-gray-900">
+                        {indexOfFirstItem + 1}
+                      </span>{" "}
+                      to{" "}
+                      <span className="font-medium text-gray-900">
+                        {Math.min(indexOfLastItem, filteredStaff.length)}
+                      </span>{" "}
+                      of{" "}
+                      <span className="font-medium text-gray-900">
+                        {filteredStaff.length}
+                      </span>{" "}
+                      entries
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-white hover:text-blue-600 hover:border-blue-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-600 transition-all"
+                      >
+                        Previous
+                      </button>
+                      <div className="flex gap-1">
+                        {[...Array(totalPages)].map((_, i) => (
+                          <button
+                            key={i + 1}
+                            onClick={() => handlePageChange(i + 1)}
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
+                              currentPage === i + 1
+                                ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                                : "text-gray-600 hover:bg-white hover:text-blue-600 border border-transparent hover:border-gray-200"
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-white hover:text-blue-600 hover:border-blue-200 disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-gray-600 transition-all"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Staff Details Modal */}
@@ -523,7 +560,9 @@ const StaffList = ({ currentUser }) => {
             <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>👨‍💼 {selectedStaff.StaffName} Details</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>✕</button>
+                <button className="modal-close-btn" onClick={closeDetailsModal}>
+                  ✕
+                </button>
               </div>
 
               <div className="modal-body">
@@ -534,23 +573,33 @@ const StaffList = ({ currentUser }) => {
                     <div className="details-items">
                       <div className="detail-item">
                         <span className="detail-label">Staff ID:</span>
-                        <span className="detail-value">{selectedStaff.StaffID}</span>
+                        <span className="detail-value">
+                          {selectedStaff.StaffID}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Full Name:</span>
-                        <span className="detail-value">{selectedStaff.StaffName}</span>
+                        <span className="detail-value">
+                          {selectedStaff.StaffName}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Username:</span>
-                        <span className="detail-value">@{selectedStaff.StaffUserName}</span>
+                        <span className="detail-value">
+                          @{selectedStaff.StaffUserName}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Phone Number:</span>
-                        <span className="detail-value">{selectedStaff.StaffNumber || 'Not provided'}</span>
+                        <span className="detail-value">
+                          {selectedStaff.StaffNumber || "Not provided"}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Address:</span>
-                        <span className="detail-value">{selectedStaff.StaffAddress || 'Not provided'}</span>
+                        <span className="detail-value">
+                          {selectedStaff.StaffAddress || "Not provided"}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -561,20 +610,25 @@ const StaffList = ({ currentUser }) => {
                     <div className="details-items">
                       <div className="detail-item">
                         <span className="detail-label">Department:</span>
-                        <span className="detail-value">{selectedStaff.StaffDepartment || 'Not assigned'}</span>
+                        <span className="detail-value">
+                          {selectedStaff.StaffDepartment || "Not assigned"}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Employment Date:</span>
                         <span className="detail-value">
                           {selectedStaff.StaffEmploymentDate
-                            ? new Date(selectedStaff.StaffEmploymentDate).toLocaleDateString()
-                            : 'Unknown'
-                          }
+                            ? new Date(
+                                selectedStaff.StaffEmploymentDate,
+                              ).toLocaleDateString()
+                            : "Unknown"}
                         </span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Status:</span>
-                        <span className={`detail-badge status-${selectedStaff.StaffStatus?.toLowerCase() || 'unknown'}`}>
+                        <span
+                          className={`detail-badge status-${selectedStaff.StaffStatus?.toLowerCase() || "unknown"}`}
+                        >
                           {formatStatus(selectedStaff.StaffStatus)}
                         </span>
                       </div>

@@ -21,9 +21,6 @@ import {
   TbX,
 } from "react-icons/tb";
 import { useTimeframe } from "../../../contexts/TimeframeContext";
-import "./HelpersList.css";
-import "../../../styles/ModernForms.css";
-import "../../../styles/DesignSystem.css";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
 
@@ -110,11 +107,11 @@ const HelpersList = ({ currentUser }) => {
 
         // Get helpers with actual documents from file system (all in one call)
         const response = await axios.get(
-          `${baseURL}/api/simple-files/helpers-with-documents`
+          `${baseURL}/api/simple-files/helpers-with-documents`,
         );
         console.log(
           "Raw API response (helpers with actual documents):",
-          response.data
+          response.data,
         );
 
         // Handle both array response and object with helpers property
@@ -206,7 +203,7 @@ const HelpersList = ({ currentUser }) => {
           helper.name?.toLowerCase().includes(query) ||
           helper.contactNumber?.includes(query) ||
           helper.licenseType?.toLowerCase().includes(query) ||
-          helper.address?.toLowerCase().includes(query)
+          helper.address?.toLowerCase().includes(query),
       );
     }
 
@@ -382,7 +379,7 @@ const HelpersList = ({ currentUser }) => {
                     helpers.filter(
                       (h) =>
                         h.licenseExpiryDate &&
-                        new Date(h.licenseExpiryDate) < new Date()
+                        new Date(h.licenseExpiryDate) < new Date(),
                     ).length
                   }
                 </div>
@@ -679,7 +676,7 @@ const HelpersList = ({ currentUser }) => {
                       <td>
                         <span
                           className={`status-badge ${getStatusBadgeClass(
-                            helper.status
+                            helper.status,
                           )}`}
                         >
                           {helper.status || "Active"}
@@ -772,7 +769,7 @@ const HelpersList = ({ currentUser }) => {
                       <span
                         className={`helper-status-primary ${statusClass.replace(
                           "status-",
-                          ""
+                          "",
                         )}`}
                       >
                         {helper.status || "Active"}
@@ -814,7 +811,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="helper-info-value">
                           {helper.licenseExpiryDate
                             ? new Date(
-                                helper.licenseExpiryDate
+                                helper.licenseExpiryDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
@@ -824,7 +821,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="helper-info-value">
                           {helper.employmentDate
                             ? new Date(
-                                helper.employmentDate
+                                helper.employmentDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
@@ -835,7 +832,7 @@ const HelpersList = ({ currentUser }) => {
                   {/* Document Compliance */}
                   <div
                     className={`helper-card-compliance ${getComplianceClass(
-                      helper
+                      helper,
                     )}`}
                   >
                     <div className="compliance-info">
@@ -929,7 +926,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-label">Status:</span>
                         <span
                           className={`detail-badge ${getStatusBadgeClass(
-                            selectedHelper.status
+                            selectedHelper.status,
                           )}`}
                         >
                           {selectedHelper.status}
@@ -947,7 +944,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedHelper.employmentDate
                             ? new Date(
-                                selectedHelper.employmentDate
+                                selectedHelper.employmentDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
@@ -976,7 +973,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedHelper.licenseExpiryDate
                             ? new Date(
-                                selectedHelper.licenseExpiryDate
+                                selectedHelper.licenseExpiryDate,
                               ).toLocaleDateString()
                             : "N/A"}
                         </span>
@@ -992,7 +989,7 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-label">Overall Status:</span>
                         <span
                           className={`detail-badge compliance-${getComplianceClass(
-                            selectedHelper
+                            selectedHelper,
                           ).replace("compliance-", "")}`}
                         >
                           {getComplianceStatus(selectedHelper)}

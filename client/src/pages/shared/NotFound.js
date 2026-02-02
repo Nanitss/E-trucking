@@ -1,7 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FaHome, FaExclamationTriangle } from 'react-icons/fa';
-import '../../styles/DesignSystem.css';
+import React from "react";
+import { Link } from "react-router-dom";
+import { FaHome, FaExclamationTriangle } from "react-icons/fa";
 
 const NotFound = () => {
   return (

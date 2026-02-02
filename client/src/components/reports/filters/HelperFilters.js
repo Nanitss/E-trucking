@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const HelperFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -16,16 +15,16 @@ const HelperFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by name"
-          value={filters.name || ''}
-          onChange={(e) => handleChange('name', e.target.value)}
+          value={filters.name || ""}
+          onChange={(e) => handleChange("name", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="active">Active</option>
@@ -37,8 +36,8 @@ const HelperFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Assignment Status</label>
         <select
-          value={filters.assignmentStatus || ''}
-          onChange={(e) => handleChange('assignmentStatus', e.target.value)}
+          value={filters.assignmentStatus || ""}
+          onChange={(e) => handleChange("assignmentStatus", e.target.value)}
         >
           <option value="">All</option>
           <option value="assigned">Assigned</option>
@@ -49,8 +48,8 @@ const HelperFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>ID Type</label>
         <select
-          value={filters.idType || ''}
-          onChange={(e) => handleChange('idType', e.target.value)}
+          value={filters.idType || ""}
+          onChange={(e) => handleChange("idType", e.target.value)}
         >
           <option value="">All Types</option>
           <option value="National ID">National ID</option>
@@ -64,8 +63,8 @@ const HelperFilters = ({ filters, onChange }) => {
         <label>ID Expiry From</label>
         <input
           type="date"
-          value={filters.idExpiryFrom || ''}
-          onChange={(e) => handleChange('idExpiryFrom', e.target.value)}
+          value={filters.idExpiryFrom || ""}
+          onChange={(e) => handleChange("idExpiryFrom", e.target.value)}
         />
       </div>
 
@@ -73,8 +72,8 @@ const HelperFilters = ({ filters, onChange }) => {
         <label>ID Expiry To</label>
         <input
           type="date"
-          value={filters.idExpiryTo || ''}
-          onChange={(e) => handleChange('idExpiryTo', e.target.value)}
+          value={filters.idExpiryTo || ""}
+          onChange={(e) => handleChange("idExpiryTo", e.target.value)}
         />
       </div>
 
@@ -82,8 +81,8 @@ const HelperFilters = ({ filters, onChange }) => {
         <label>Join Date From</label>
         <input
           type="date"
-          value={filters.joinDateFrom || ''}
-          onChange={(e) => handleChange('joinDateFrom', e.target.value)}
+          value={filters.joinDateFrom || ""}
+          onChange={(e) => handleChange("joinDateFrom", e.target.value)}
         />
       </div>
 
@@ -91,8 +90,8 @@ const HelperFilters = ({ filters, onChange }) => {
         <label>Join Date To</label>
         <input
           type="date"
-          value={filters.joinDateTo || ''}
-          onChange={(e) => handleChange('joinDateTo', e.target.value)}
+          value={filters.joinDateTo || ""}
+          onChange={(e) => handleChange("joinDateTo", e.target.value)}
         />
       </div>
 
@@ -101,8 +100,8 @@ const HelperFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by contact"
-          value={filters.contact || ''}
-          onChange={(e) => handleChange('contact', e.target.value)}
+          value={filters.contact || ""}
+          onChange={(e) => handleChange("contact", e.target.value)}
         />
       </div>
 
@@ -112,16 +111,16 @@ const HelperFilters = ({ filters, onChange }) => {
           <input
             type="number"
             placeholder="Min"
-            value={filters.minAge || ''}
-            onChange={(e) => handleChange('minAge', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.minAge || ""}
+            onChange={(e) => handleChange("minAge", e.target.value)}
+            style={{ width: "48%" }}
           />
           <input
             type="number"
             placeholder="Max"
-            value={filters.maxAge || ''}
-            onChange={(e) => handleChange('maxAge', e.target.value)}
-            style={{ width: '48%' }}
+            value={filters.maxAge || ""}
+            onChange={(e) => handleChange("maxAge", e.target.value)}
+            style={{ width: "48%" }}
           />
         </div>
       </div>

@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useHistory } from 'react-router-dom';
-import axios from 'axios';
-import { AuthContext } from '../../context/AuthContext';
-import { FaTruck, FaClipboardList, FaEye, FaUser, FaSignOutAlt, FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
-import './Dashboard.css';
+import React, { useState, useEffect, useContext } from "react";
+import { useHistory } from "react-router-dom";
+import axios from "axios";
+import { AuthContext } from "../../context/AuthContext";
+import {
+  FaTruck,
+  FaClipboardList,
+  FaEye,
+  FaUser,
+  FaSignOutAlt,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEnvelope,
+} from "react-icons/fa";
 
 const ClientLanding = () => {
   const { authUser, logout } = useContext(AuthContext);
@@ -14,26 +22,26 @@ const ClientLanding = () => {
 
   useEffect(() => {
     // Set up axios with token
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     }
 
     const fetchClientData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Fetch client profile
-        const profileRes = await axios.get('/api/clients/profile');
+        const profileRes = await axios.get("/api/clients/profile");
         setClientData(profileRes.data);
-        
+
         // Fetch allocated trucks
-        const trucksRes = await axios.get('/api/clients/profile/trucks');
+        const trucksRes = await axios.get("/api/clients/profile/trucks");
         setAllocatedTrucks(trucksRes.data || []);
-        
+
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching client data:', error);
+        console.error("Error fetching client data:", error);
         setIsLoading(false);
       }
     };
@@ -44,7 +52,7 @@ const ClientLanding = () => {
   // Redirect to profile page since we now have sidebar navigation
   useEffect(() => {
     const timer = setTimeout(() => {
-      history.push('/client/profile');
+      history.push("/client/profile");
     }, 2000);
 
     return () => clearTimeout(timer);
@@ -52,7 +60,7 @@ const ClientLanding = () => {
 
   const handleLogout = () => {
     logout();
-    history.push('/login');
+    history.push("/login");
   };
 
   return (
@@ -64,7 +72,10 @@ const ClientLanding = () => {
               <FaUser />
             </div>
             <div className="user-details">
-              <h1>Welcome, {clientData?.ClientName || authUser?.username || 'Client'}!</h1>
+              <h1>
+                Welcome,{" "}
+                {clientData?.ClientName || authUser?.username || "Client"}!
+              </h1>
               <p>Client Dashboard</p>
             </div>
           </div>
@@ -79,13 +90,16 @@ const ClientLanding = () => {
       <div className="landing-content">
         <div className="welcome-section">
           <h2>Welcome to Your Trucking Dashboard</h2>
-          <p>Redirecting you to your comprehensive dashboard with all your trucking services...</p>
-          
+          <p>
+            Redirecting you to your comprehensive dashboard with all your
+            trucking services...
+          </p>
+
           <div className="loading-indicator">
             <div className="loading-spinner"></div>
             <span>Loading your dashboard...</span>
           </div>
-          
+
           <div className="quick-info">
             <div className="info-card">
               <FaTruck />
@@ -94,7 +108,7 @@ const ClientLanding = () => {
                 <p>Allocated Trucks</p>
               </div>
             </div>
-            
+
             <div className="info-card">
               <FaClipboardList />
               <div>
@@ -102,7 +116,7 @@ const ClientLanding = () => {
                 <p>To Book</p>
               </div>
             </div>
-            
+
             <div className="info-card">
               <FaEye />
               <div>
@@ -111,11 +125,12 @@ const ClientLanding = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="manual-redirect">
-            <p>Taking too long? 
-              <button 
-                onClick={() => history.push('/client/profile')} 
+            <p>
+              Taking too long?
+              <button
+                onClick={() => history.push("/client/profile")}
                 className="link-btn"
               >
                 Click here to go to your dashboard
@@ -128,4 +143,4 @@ const ClientLanding = () => {
   );
 };
 
-export default ClientLanding; 
+export default ClientLanding;

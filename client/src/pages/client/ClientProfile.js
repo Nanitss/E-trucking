@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import axios from "axios";
-import "../../components/common/ContentAdjust.css";
 import {
   FaUser,
   FaTruck,
@@ -46,11 +45,7 @@ import WarningModal from "../../components/common/WarningModal";
 import RouteMap from "../../components/maps/RouteMap";
 import enhancedIsolatedMapModal from "../../components/maps/EnhancedIsolatedMapModal";
 import useWarningModal from "../../hooks/useWarningModal";
-import "./ClientProfile.css";
-import "../../styles/DesignSystem.css";
-import "../../styles/ClientPage.css";
-
-// Modern Billing Section Component
+// Modern Billing Section Component - Converted to Tailwind
 const ModernBillingSection = ({ onBillingDataUpdate }) => {
   const [billingData, setBillingData] = useState(null);
   const [deliveryData, setDeliveryData] = useState({ active: 0, completed: 0 });
@@ -249,7 +244,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
   if (loading) {
     if (loading) {
       return (
-        <div className="modern-billing-section">
+        <div className="w-full bg-white rounded-xl shadow-lg border border-amber-400/20 p-8 min-h-[400px]">
           <Loader message="Loading billing information..." />
         </div>
       );
@@ -258,27 +253,21 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 
   if (error) {
     return (
-      <div className="modern-billing-section">
-        <div className="billing-error">
-          <FaExclamationTriangle className="error-icon" />
-          <h3>Unable to load billing information</h3>
-          <p>{error}</p>
+      <div className="w-full bg-white rounded-xl shadow-lg border border-amber-400/20 p-8 min-h-[400px]">
+        <div className="flex flex-col items-center justify-center py-12 text-center text-red-500">
+          <FaExclamationTriangle className="text-5xl mb-4" />
+          <h3 className="text-xl font-bold mb-2">
+            Unable to load billing information
+          </h3>
+          <p className="text-gray-600 max-w-md mx-auto mb-6">{error}</p>
 
           {/* Debug information for development */}
           {process.env.NODE_ENV === "development" && (
-            <details
-              style={{
-                marginTop: "1rem",
-                padding: "1rem",
-                background: "#f8f9fa",
-                borderRadius: "4px",
-                fontSize: "0.85rem",
-              }}
-            >
-              <summary style={{ cursor: "pointer", fontWeight: "bold" }}>
+            <details className="mt-4 p-4 bg-gray-50 rounded text-left text-sm w-full max-w-lg overflow-x-auto">
+              <summary className="cursor-pointer font-bold text-gray-700">
                 Debug Information (Development Only)
               </summary>
-              <div style={{ marginTop: "0.5rem" }}>
+              <div className="mt-2 space-y-1 text-gray-600">
                 <p>
                   <strong>Client ID:</strong> {getClientId() || "Not found"}
                 </p>
@@ -301,15 +290,11 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
             </details>
           )}
 
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              marginTop: "1.5rem",
-              flexWrap: "wrap",
-            }}
-          >
-            <button onClick={fetchBillingData} className="btn btn-primary">
+          <div className="flex flex-wrap justify-center gap-4 mt-8">
+            <button
+              onClick={fetchBillingData}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all"
+            >
               <FaRedo /> Try Again
             </button>
             <button
@@ -317,13 +302,13 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                 localStorage.clear();
                 window.location.href = "/login";
               }}
-              className="btn btn-secondary"
+              className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all border border-gray-200"
             >
               <FaSignOutAlt /> Clear Session & Login
             </button>
             <button
               onClick={() => window.location.reload()}
-              className="btn btn-outline"
+              className="flex items-center gap-2 px-6 py-3 bg-transparent border-2 border-amber-400 text-amber-500 rounded-lg hover:bg-amber-50 transition-all"
             >
               <FaSync /> Refresh Page
             </button>
@@ -357,12 +342,14 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
   }).length;
 
   return (
-    <div className="modern-billing-section">
+    <div className="w-full bg-slate-50 rounded-xl shadow-lg border border-amber-400/20 box-border p-0 overflow-hidden flex flex-col mb-8">
       {/* Header */}
-      <div className="billing-header">
+      <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center">
         <div className="header-content">
-          <h2>Billing Records</h2>
-          <p className="header-subtitle">
+          <h2 className="text-2xl font-bold text-blue-900 m-0">
+            Billing Records
+          </h2>
+          <p className="text-gray-500 mt-1 mb-0 font-medium">
             View your delivery charges and payment history
           </p>
         </div>
@@ -370,40 +357,52 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 
       {/* Outstanding Balance Alert */}
       {unpaidBalance > 0 && (
-        <div
-          className={`balance-alert ${overdueAmount > 0 ? "alert-danger" : "alert-warning"}`}
-        >
-          <div className="alert-icon">
-            {overdueAmount > 0 ? <FaExclamationTriangle /> : <FaInfoCircle />}
-          </div>
-          <div className="alert-content">
-            <h4>{overdueAmount > 0 ? "Overdue Balance" : "Pending Balance"}</h4>
-            <p>
-              {overdueAmount > 0
-                ? `You have ${formatCurrency(overdueAmount)} in overdue payments.`
-                : `You have ${formatCurrency(unpaidBalance)} in pending payments.`}
-            </p>
+        <div className="px-8 pt-6">
+          <div
+            className={`flex items-center gap-4 p-4 rounded-xl border-l-[6px] shadow-sm ${overdueAmount > 0 ? "bg-red-50 border-red-500 text-red-800" : "bg-orange-50 border-orange-500 text-orange-900"}`}
+          >
+            <div
+              className={`text-xl ${overdueAmount > 0 ? "text-red-500" : "text-orange-500"}`}
+            >
+              {overdueAmount > 0 ? <FaExclamationTriangle /> : <FaInfoCircle />}
+            </div>
+            <div className="flex-1">
+              <h4 className="m-0 font-bold mb-0.5 text-base">
+                {overdueAmount > 0 ? "Overdue Balance" : "Pending Balance"}
+              </h4>
+              <p className="m-0 text-sm opacity-90">
+                {overdueAmount > 0
+                  ? `You have ${formatCurrency(overdueAmount)} in overdue payments.`
+                  : `You have ${formatCurrency(unpaidBalance)} in pending payments.`}
+              </p>
+            </div>
           </div>
         </div>
       )}
 
       {/* Billing Cards Grid */}
-      <div className="billing-cards-grid">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-8">
         {/* Outstanding Balance Card */}
-        <div className="billing-card primary-card">
-          <div className="card-header">
-            <div className="card-icon outstanding">
+        <div className="bg-white p-6 rounded-xl border-2 border-blue-500/20 shadow-md relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-lg">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-xl shadow-sm">
               <FaExclamationCircle />
             </div>
-            <div className="card-title">
-              <h3>Outstanding Balance</h3>
-              <span className="card-subtitle">Amount due</span>
+            <div>
+              <h3 className="m-0 text-gray-500 text-sm font-semibold uppercase tracking-wider">
+                Outstanding Balance
+              </h3>
+              <span className="text-xs text-blue-400 font-medium">
+                Amount due
+              </span>
             </div>
           </div>
-          <div className="card-amount">
-            <span className="amount">{formatCurrency(unpaidBalance)}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-2xl font-bold text-gray-800 tracking-tight">
+              {formatCurrency(unpaidBalance)}
+            </span>
             {unpaidBalance > 0 && (
-              <span className="amount-note">
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 w-fit">
                 {pendingPayments + overduePayments} payment
                 {pendingPayments + overduePayments !== 1 ? "s" : ""}
               </span>
@@ -412,19 +411,25 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         </div>
 
         {/* Paid This Month Card */}
-        <div className="billing-card success-card">
-          <div className="card-header">
-            <div className="card-icon paid">
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-md hover:border-emerald-200">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl">
               <FaCheckCircle />
             </div>
-            <div className="card-title">
-              <h3>Paid This Month</h3>
-              <span className="card-subtitle">Current period</span>
+            <div>
+              <h3 className="m-0 text-gray-500 text-sm font-semibold uppercase tracking-wider">
+                Paid This Month
+              </h3>
+              <span className="text-xs text-emerald-500 font-medium">
+                Current period
+              </span>
             </div>
           </div>
-          <div className="card-amount">
-            <span className="amount">{formatCurrency(totalPaid)}</span>
-            <span className="amount-note">
+          <div className="flex flex-col gap-1">
+            <span className="text-2xl font-bold text-gray-800 tracking-tight">
+              {formatCurrency(totalPaid)}
+            </span>
+            <span className="text-xs text-emerald-600 font-medium">
               {billingData?.paidPayments || 0} payment
               {billingData?.paidPayments !== 1 ? "s" : ""}
             </span>
@@ -432,36 +437,56 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         </div>
 
         {/* Overdue Payments Card */}
-        <div className="billing-card danger-card">
-          <div className="card-header">
-            <div className="card-icon overdue">
+        <div
+          className={`bg-white p-6 rounded-xl border relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-md ${overduePayments > 0 ? "border-red-200 shadow-red-100" : "border-gray-100 shadow-sm"}`}
+        >
+          <div className="flex items-center gap-4 mb-4">
+            <div
+              className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${overduePayments > 0 ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-400"}`}
+            >
               <FaClock />
             </div>
-            <div className="card-title">
-              <h3>Overdue Payments</h3>
-              <span className="card-subtitle">Requires attention</span>
+            <div>
+              <h3 className="m-0 text-gray-500 text-sm font-semibold uppercase tracking-wider">
+                Overdue Payments
+              </h3>
+              <span className="text-xs text-red-400 font-medium">
+                Requires attention
+              </span>
             </div>
           </div>
-          <div className="card-amount">
-            <span className="amount">{overduePayments}</span>
-            <span className="amount-note">{formatCurrency(overdueAmount)}</span>
+          <div className="flex flex-col gap-1">
+            <span className="text-2xl font-bold text-gray-800 tracking-tight">
+              {overduePayments}
+            </span>
+            <span
+              className={`text-xs font-medium ${overduePayments > 0 ? "text-red-500" : "text-gray-400"}`}
+            >
+              {formatCurrency(overdueAmount)}
+            </span>
           </div>
         </div>
 
         {/* Active Services Card */}
-        <div className="billing-card">
-          <div className="card-header">
-            <div className="card-icon services">
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-md hover:border-blue-200">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center text-xl">
               <FaTruck />
             </div>
-            <div className="card-title">
-              <h3>Active Services</h3>
-              <span className="card-subtitle">Current deliveries</span>
+            <div>
+              <h3 className="m-0 text-gray-500 text-sm font-semibold uppercase tracking-wider">
+                Active Services
+              </h3>
+              <span className="text-xs text-blue-400 font-medium">
+                Current deliveries
+              </span>
             </div>
           </div>
-          <div className="card-amount">
-            <span className="amount">{deliveryData.active}</span>
-            <span className="amount-note">
+          <div className="flex flex-col gap-1">
+            <span className="text-2xl font-bold text-gray-800 tracking-tight">
+              {deliveryData.active}
+            </span>
+            <span className="text-xs text-green-600 font-medium">
               {deliveryData.completed} completed
             </span>
           </div>
@@ -469,25 +494,41 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
       </div>
 
       {/* Detailed Billing Records */}
-      <div className="billing-records-section">
-        <div className="section-header">
-          <h3>Billing Records</h3>
-          <p className="section-subtitle">
-            All your delivery charges and payment status
-          </p>
+      <div className="px-8 pb-8">
+        <div className="mb-6 flex justify-between items-end border-b border-gray-200 pb-4">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800 mb-1">
+              Billing Records
+            </h3>
+            <p className="text-gray-500 text-sm m-0">
+              All your delivery charges and payment status
+            </p>
+          </div>
         </div>
 
         {billingData?.payments?.length > 0 ? (
-          <div className="billing-table-container">
-            <table className="billing-table">
+          <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+            <table className="w-full border-collapse min-w-[800px]">
               <thead>
-                <tr>
-                  <th>Delivery ID</th>
-                  <th>Route</th>
-                  <th>Delivery Date</th>
-                  <th>Due Date</th>
-                  <th>Amount</th>
-                  <th>Status</th>
+                <tr className="bg-gray-50 text-left">
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Delivery ID
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Route
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Delivery Date
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Due Date
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Amount
+                  </th>
+                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Status
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -506,60 +547,76 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                   const isPaid = actualStatus === "paid";
                   const isPending = actualStatus === "pending";
 
+                  let rowClass =
+                    "hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-none";
+                  if (isOverdue) rowClass += " bg-red-50/30";
+
                   return (
-                    <tr
-                      key={payment.id || index}
-                      className={`billing-row ${actualStatus}`}
-                    >
-                      <td>
-                        <div className="delivery-id">
-                          <span className="id-text">#{payment.deliveryId}</span>
-                          <span className="delivery-status">
-                            {payment.metadata?.deliveryStatus || "pending"}
+                    <tr key={payment.id || index} className={rowClass}>
+                      <td className="px-6 py-4 text-sm align-middle">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-mono font-semibold text-blue-600">
+                            #{payment.deliveryId}
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="route-info">
-                          <div className="route-from">
-                            <FaMapMarkerAlt className="location-icon pickup" />
-                            {payment.metadata?.pickupLocation ||
-                              "Pickup Location"}
+                      <td className="px-6 py-4 text-sm align-middle">
+                        <div className="flex flex-col gap-1.5 max-w-[200px]">
+                          <div
+                            className="flex items-center gap-1.5 text-xs text-gray-600 truncate"
+                            title={payment.metadata?.pickupLocation}
+                          >
+                            <FaMapMarkerAlt className="text-emerald-600 min-w-[12px]" />
+                            <span className="truncate">
+                              {payment.metadata?.pickupLocation ||
+                                "Pickup Location"}
+                            </span>
                           </div>
-                          <div className="route-to">
-                            <FaMapMarkerAlt className="location-icon dropoff" />
-                            {payment.metadata?.deliveryAddress ||
-                              "Delivery Address"}
+                          <div
+                            className="flex items-center gap-1.5 text-xs text-gray-600 truncate"
+                            title={payment.metadata?.deliveryAddress}
+                          >
+                            <FaMapMarkerAlt className="text-red-500 min-w-[12px]" />
+                            <span className="truncate">
+                              {payment.metadata?.deliveryAddress ||
+                                "Delivery Address"}
+                            </span>
                           </div>
                         </div>
                       </td>
-                      <td>
-                        <div className="date-info">
-                          {formatDate(payment.deliveryDate)}
-                        </div>
+                      <td className="px-6 py-4 text-sm text-gray-600 align-middle">
+                        {formatDate(payment.deliveryDate)}
                       </td>
-                      <td>
-                        <div className="date-info">
+                      <td className="px-6 py-4 text-sm text-gray-600 align-middle">
+                        <div className="flex flex-col gap-1">
                           {formatDate(payment.dueDate)}
                           {isOverdue && (
-                            <span className="overdue-badge">
+                            <span className="text-[10px] font-bold text-red-500 flex items-center gap-1">
                               <FaExclamationTriangle /> Overdue
                             </span>
                           )}
                         </div>
                       </td>
-                      <td>
-                        <div className="amount-info">
-                          <span className="amount">
+                      <td className="px-6 py-4 text-sm text-gray-800 font-semibold align-middle">
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-700">
                             {formatCurrency(payment.amount)}
                           </span>
                           {payment.testMode && (
-                            <span className="test-badge">TEST</span>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded uppercase font-bold tracking-wider">
+                              TEST
+                            </span>
                           )}
                         </div>
                       </td>
-                      <td>
-                        <span className={`status-badge ${actualStatus}`}>
+                      <td className="px-6 py-4 text-sm align-middle">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                          ${isPaid ? "bg-emerald-100 text-emerald-700" : ""}
+                          ${isOverdue ? "bg-red-100 text-red-700" : ""}
+                          ${isPending ? "bg-amber-100 text-amber-700" : ""}
+                        `}
+                        >
                           {isPaid && <FaCheckCircle />}
                           {isOverdue && <FaExclamationTriangle />}
                           {isPending && <FaClock />}
@@ -574,18 +631,20 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
             </table>
           </div>
         ) : (
-          <div className="empty-billing-state">
-            <div className="empty-icon">
+          <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 bg-white rounded-xl border border-gray-200 border-dashed">
+            <div className="text-5xl mb-4 opacity-50">
               <FaFileInvoiceDollar />
             </div>
-            <h4>No Billing Records Found</h4>
-            <p>
+            <h4 className="text-lg font-bold text-gray-600 mb-2">
+              No Billing Records Found
+            </h4>
+            <p className="max-w-md mx-auto mb-6">
               You don't have any delivery charges yet. Start by booking a truck
               delivery.
             </p>
             <Link
               to="/client/dashboard?tab=book-truck"
-              className="btn btn-primary"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all"
             >
               <FaTruck /> Book Your First Delivery
             </Link>
@@ -2476,59 +2535,66 @@ const ClientProfile = () => {
         onClose={() => setShowBookingModal(false)}
         size="large"
       >
-        <form onSubmit={handleBookingSubmit}>
-          <div className="form-group">
-            <label htmlFor="weight">Cargo Weight (tons)</label>
-            <div className="input-group">
+        <form onSubmit={handleBookingSubmit} className="flex flex-col gap-5">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="weight" className="text-sm font-bold text-gray-700">
+              Cargo Weight (tons)
+            </label>
+            <div className="flex gap-2">
               <input
                 type="number"
                 id="weight"
                 name="weight"
                 value={bookingData.weight}
                 onChange={handleCapacityChange}
-                className="form-control"
+                className="flex-1 w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
                 min="0.1"
                 step="0.1"
                 placeholder="Enter cargo weight in tons"
               />
-              <div className="input-group-append">
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={async () => {
-                    const weight = parseFloat(bookingData.weight);
-                    if (weight && weight > 0) {
-                      console.log(
-                        `🚀 Smart booking triggered for ${weight} tons`,
-                      );
-                      await handleSmartBooking(weight);
-                    } else {
-                      showWarning(
-                        "Invalid Input",
-                        "Please enter a valid cargo weight first",
-                      );
-                    }
-                  }}
-                  disabled={
-                    !bookingData.weight || parseFloat(bookingData.weight) <= 0
+              <button
+                type="button"
+                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${
+                  !bookingData.weight || parseFloat(bookingData.weight) <= 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
+                }`}
+                onClick={async () => {
+                  const weight = parseFloat(bookingData.weight);
+                  if (weight && weight > 0) {
+                    console.log(
+                      `🚀 Smart booking triggered for ${weight} tons`,
+                    );
+                    await handleSmartBooking(weight);
+                  } else {
+                    showWarning(
+                      "Invalid Input",
+                      "Please enter a valid cargo weight first",
+                    );
                   }
-                >
-                  🚀 Smart Book
-                </button>
-              </div>
+                }}
+                disabled={
+                  !bookingData.weight || parseFloat(bookingData.weight) <= 0
+                }
+              >
+                🚀 Smart Book
+              </button>
             </div>
-            <small className="form-text text-muted">
+            <small className="text-xs text-gray-500">
               Enter cargo weight and click "Smart Book" to automatically find
               the optimal truck combination
             </small>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="pickupLocation">
-              <FaMapMarkerAlt /> Pickup Location
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="pickupLocation"
+              className="text-sm font-bold text-gray-700"
+            >
+              <FaMapMarkerAlt className="inline mr-1" /> Pickup Location
             </label>
-            <div className="input-group">
+            <div className="flex gap-2">
               <input
                 type="text"
                 id="pickupLocation"
@@ -2540,27 +2606,28 @@ const ClientProfile = () => {
                     pickupLocation: e.target.value,
                   }))
                 }
-                className="form-control"
+                className="flex-1 w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
                 placeholder="Enter pickup address"
               />
-              <div className="input-group-append">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => openMapModal("pickup")}
-                >
-                  <FaSearch /> Map
-                </button>
-              </div>
+              <button
+                type="button"
+                className="px-4 py-2 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 rounded-xl font-medium transition-colors flex items-center gap-2"
+                onClick={() => openMapModal("pickup")}
+              >
+                <FaSearch /> Map
+              </button>
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="dropoffLocation">
-              <FaMapMarkerAlt /> Drop-off Location
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="dropoffLocation"
+              className="text-sm font-bold text-gray-700"
+            >
+              <FaMapMarkerAlt className="inline mr-1" /> Drop-off Location
             </label>
-            <div className="input-group">
+            <div className="flex gap-2">
               <input
                 type="text"
                 id="dropoffLocation"
@@ -2572,42 +2639,42 @@ const ClientProfile = () => {
                     dropoffLocation: e.target.value,
                   }))
                 }
-                className="form-control"
+                className="flex-1 w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
                 placeholder="Enter delivery address"
               />
-              <div className="input-group-append">
-                <button
-                  type="button"
-                  className="btn btn-outline-secondary"
-                  onClick={() => openMapModal("dropoff")}
-                >
-                  <FaSearch /> Map
-                </button>
-              </div>
+              <button
+                type="button"
+                className="px-4 py-2 border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 rounded-xl font-medium transition-colors flex items-center gap-2"
+                onClick={() => openMapModal("dropoff")}
+              >
+                <FaSearch /> Map
+              </button>
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="flex justify-center">
             <button
               type="button"
-              className="btn btn-outline-primary"
+              className="px-4 py-2 border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-xl font-bold flex items-center gap-2 transition-colors"
               onClick={toggleRoutePreview}
               disabled={
                 !bookingData.pickupCoordinates ||
                 !bookingData.dropoffCoordinates
               }
             >
-              <FaRoute className="me-2" />{" "}
+              <FaRoute />{" "}
               {showRoutePreview ? "Hide Route Preview" : "Show Route Preview"}
             </button>
           </div>
 
           {/* Automatically show route info when both coordinates are available */}
           {bookingData.pickupCoordinates && bookingData.dropoffCoordinates && (
-            <div className="route-info-container">
-              <div className="route-info-header">
-                <h4>🚛 Delivery Route Information (Philippines Only)</h4>
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+              <div className="mb-3 pb-2 border-b border-blue-200/50">
+                <h4 className="text-sm font-bold text-blue-800 m-0 flex items-center gap-2">
+                  🚛 Delivery Route Information (Philippines Only)
+                </h4>
               </div>
 
               {/* Always show RouteMap when coordinates are available for calculation */}
@@ -2622,33 +2689,39 @@ const ClientProfile = () => {
               </div>
 
               {routeDetails && (
-                <div className="route-summary-card">
-                  <div className="route-summary-item">
-                    <div className="route-summary-icon">📏</div>
-                    <div className="route-summary-content">
-                      <div className="route-summary-label">Distance</div>
-                      <div className="route-summary-value">
+                <div className="grid grid-cols-2 gap-4 mb-3">
+                  <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                    <div className="text-2xl mt-1">📏</div>
+                    <div>
+                      <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                        Distance
+                      </div>
+                      <div className="text-lg font-bold text-gray-800">
                         {routeDetails.distanceText}
                       </div>
                     </div>
                   </div>
 
-                  <div className="route-summary-item">
-                    <div className="route-summary-icon">⏱️</div>
-                    <div className="route-summary-content">
-                      <div className="route-summary-label">Travel Time</div>
-                      <div className="route-summary-value">
+                  <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                    <div className="text-2xl mt-1">⏱️</div>
+                    <div>
+                      <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                        Travel Time
+                      </div>
+                      <div className="text-lg font-bold text-gray-800">
                         {routeDetails.durationText}
                       </div>
                     </div>
                   </div>
 
                   {routeDetails.averageSpeed && (
-                    <div className="route-summary-item">
-                      <div className="route-summary-icon">🚗</div>
-                      <div className="route-summary-content">
-                        <div className="route-summary-label">Avg Speed</div>
-                        <div className="route-summary-value">
+                    <div className="flex items-start gap-3 bg-white p-3 rounded-lg shadow-sm border border-blue-100 col-span-2">
+                      <div className="text-2xl mt-1">🚗</div>
+                      <div>
+                        <div className="text-xs text-gray-500 font-bold uppercase tracking-wider">
+                          Avg Speed
+                        </div>
+                        <div className="text-lg font-bold text-gray-800">
                           {routeDetails.averageSpeed} km/h
                         </div>
                       </div>
@@ -2658,35 +2731,38 @@ const ClientProfile = () => {
               )}
 
               {routeDetails && routeDetails.isShortestRoute && (
-                <div className="shortest-route-badge">
+                <div className="bg-emerald-100 text-emerald-800 text-xs px-3 py-2 rounded-lg font-medium mb-2 flex items-center gap-2">
                   ✅ Shortest route automatically selected (
                   {routeDetails.totalRoutes} routes analyzed)
                 </div>
               )}
 
               {routeDetails && routeDetails.isEstimate && (
-                <div className="estimate-badge">
+                <div className="bg-amber-100 text-amber-800 text-xs px-3 py-2 rounded-lg font-medium flex items-center gap-2">
                   ℹ️ Estimated values based on Philippines road conditions
                 </div>
               )}
 
-              <div className="form-group">
+              <div className="mt-3 flex justify-end">
                 <button
                   type="button"
-                  className="btn btn-outline-primary"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 underline flex items-center gap-1"
                   onClick={toggleRoutePreview}
                 >
-                  <FaRoute className="me-2" />{" "}
-                  {showRoutePreview ? "Hide Map Preview" : "Show Map Preview"}
+                  <FaRoute /> {showRoutePreview ? "Hide Map" : "View Map"}
                 </button>
               </div>
             </div>
           )}
 
           {showRoutePreview && (
-            <div className="route-preview-container">
-              <h4>Delivery Route Map Preview</h4>
-              <div className="route-preview-map">
+            <div className="mt-4 border rounded-xl overflow-hidden shadow-md">
+              <div className="bg-gray-50 px-4 py-2 border-b border-gray-200">
+                <h4 className="text-sm font-bold text-gray-700 m-0">
+                  Delivery Route Map Preview
+                </h4>
+              </div>
+              <div className="h-64 w-full">
                 <RouteMap
                   pickupCoordinates={bookingData.pickupCoordinates}
                   dropoffCoordinates={bookingData.dropoffCoordinates}
@@ -2698,9 +2774,12 @@ const ClientProfile = () => {
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="deliveryDate">
-              <FaCalendarAlt /> Delivery Date
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="deliveryDate"
+              className="text-sm font-bold text-gray-700"
+            >
+              <FaCalendarAlt className="inline mr-1" /> Delivery Date
             </label>
             <input
               type="date"
@@ -2708,26 +2787,31 @@ const ClientProfile = () => {
               name="deliveryDate"
               value={bookingData.deliveryDate}
               onChange={handleDateChange}
-              className="form-control"
+              className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
               required
               min={new Date().toISOString().split("T")[0]}
               disabled={isCheckingAvailability}
             />
             {isCheckingAvailability && (
-              <small className="text-muted">
+              <small className="text-xs text-blue-600 animate-pulse font-medium">
                 🔍 Checking truck availability...
               </small>
             )}
             {bookingData.deliveryDate && availableTrucksForDate.length > 0 && (
-              <small className="text-success">
+              <small className="text-xs text-emerald-600 font-medium">
                 ✅ {availableTrucksForDate.length} truck(s) available on this
                 date
               </small>
             )}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="deliveryTime">Delivery Time</label>
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="deliveryTime"
+              className="text-sm font-bold text-gray-700"
+            >
+              Delivery Time
+            </label>
             <input
               type="time"
               id="deliveryTime"
@@ -2739,179 +2823,175 @@ const ClientProfile = () => {
                   deliveryTime: e.target.value,
                 }))
               }
-              className="form-control"
+              className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
               required
             />
           </div>
 
           {/* Contact Information Tip */}
-          <div className="alert alert-info" style={{ marginTop: "20px" }}>
-            💡 <strong>Tip:</strong> If you select a saved location, contact
-            info will be auto-filled
+          <div className="bg-blue-50 text-blue-700 p-3 rounded-xl border border-blue-200 text-sm flex items-start gap-2">
+            <span className="text-lg">💡</span>
+            <div>
+              <strong>Tip:</strong> If you select a saved location, contact info
+              will be auto-filled
+            </div>
           </div>
 
           {/* Pickup Contact Information */}
-          <div
-            className="contact-section"
-            style={{
-              marginTop: "20px",
-              padding: "15px",
-              backgroundColor: "#f8f9fa",
-              borderRadius: "8px",
-            }}
-          >
-            <h5 style={{ marginBottom: "15px", color: "#2c5282" }}>
+          <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+            <h5 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
               📍 Pickup Contact Information
             </h5>
 
-            <div className="form-group">
-              <label htmlFor="pickupContactPerson">
-                <FaUser /> Contact Person{" "}
-                <span style={{ color: "#6c757d", fontSize: "0.9em" }}>
-                  (Optional)
-                </span>
-              </label>
-              <input
-                type="text"
-                id="pickupContactPerson"
-                name="pickupContactPerson"
-                value={bookingData.pickupContactPerson || ""}
-                onChange={(e) =>
-                  setBookingData((prev) => ({
-                    ...prev,
-                    pickupContactPerson: e.target.value,
-                  }))
-                }
-                className="form-control"
-                placeholder="Enter contact person name at pickup location"
-              />
-              <small className="form-text text-muted">
-                Who should we contact at the pickup location?
-              </small>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="pickupContactPerson"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  <FaUser className="inline mr-1" /> Contact Person{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (Optional)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  id="pickupContactPerson"
+                  name="pickupContactPerson"
+                  value={bookingData.pickupContactPerson || ""}
+                  onChange={(e) =>
+                    setBookingData((prev) => ({
+                      ...prev,
+                      pickupContactPerson: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                  placeholder="Person at pickup"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="pickupContactNumber">
-                <FaPhone /> Contact Number{" "}
-                <span style={{ color: "#dc3545" }}>*</span>
-              </label>
-              <input
-                type="tel"
-                id="pickupContactNumber"
-                name="pickupContactNumber"
-                value={bookingData.pickupContactNumber || ""}
-                onChange={(e) =>
-                  setBookingData((prev) => ({
-                    ...prev,
-                    pickupContactNumber: e.target.value,
-                  }))
-                }
-                className="form-control"
-                required
-                placeholder="e.g., 09605877964"
-              />
-              <small className="form-text text-muted">
-                Phone number for pickup coordination
-              </small>
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="pickupContactNumber"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  <FaPhone className="inline mr-1" /> Contact Number{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="pickupContactNumber"
+                  name="pickupContactNumber"
+                  value={bookingData.pickupContactNumber || ""}
+                  onChange={(e) =>
+                    setBookingData((prev) => ({
+                      ...prev,
+                      pickupContactNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                  required
+                  placeholder="e.g., 09605877964"
+                />
+              </div>
             </div>
           </div>
 
           {/* Dropoff Contact Information */}
-          <div
-            className="contact-section"
-            style={{
-              marginTop: "20px",
-              padding: "15px",
-              backgroundColor: "#f8f9fa",
-              borderRadius: "8px",
-            }}
-          >
-            <h5 style={{ marginBottom: "15px", color: "#2c5282" }}>
+          <div className="bg-gray-50 p-5 rounded-xl border border-gray-200">
+            <h5 className="text-sm font-bold text-blue-800 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
               📍 Dropoff Contact Information
             </h5>
 
-            <div className="form-group">
-              <label htmlFor="dropoffContactPerson">
-                <FaUser /> Contact Person{" "}
-                <span style={{ color: "#6c757d", fontSize: "0.9em" }}>
-                  (Optional)
-                </span>
-              </label>
-              <input
-                type="text"
-                id="dropoffContactPerson"
-                name="dropoffContactPerson"
-                value={bookingData.dropoffContactPerson || ""}
-                onChange={(e) =>
-                  setBookingData((prev) => ({
-                    ...prev,
-                    dropoffContactPerson: e.target.value,
-                  }))
-                }
-                className="form-control"
-                placeholder="Enter contact person name at dropoff location"
-              />
-              <small className="form-text text-muted">
-                Who should we contact at the dropoff/delivery location?
-              </small>
-            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="dropoffContactPerson"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  <FaUser className="inline mr-1" /> Contact Person{" "}
+                  <span className="text-gray-400 font-normal text-xs">
+                    (Optional)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  id="dropoffContactPerson"
+                  name="dropoffContactPerson"
+                  value={bookingData.dropoffContactPerson || ""}
+                  onChange={(e) =>
+                    setBookingData((prev) => ({
+                      ...prev,
+                      dropoffContactPerson: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                  placeholder="Person at dropoff"
+                />
+              </div>
 
-            <div className="form-group">
-              <label htmlFor="dropoffContactNumber">
-                <FaPhone /> Contact Number{" "}
-                <span style={{ color: "#dc3545" }}>*</span>
-              </label>
-              <input
-                type="tel"
-                id="dropoffContactNumber"
-                name="dropoffContactNumber"
-                value={bookingData.dropoffContactNumber || ""}
-                onChange={(e) =>
-                  setBookingData((prev) => ({
-                    ...prev,
-                    dropoffContactNumber: e.target.value,
-                  }))
-                }
-                className="form-control"
-                required
-                placeholder="e.g., 09605877964"
-              />
-              <small className="form-text text-muted">
-                Phone number for dropoff/delivery coordination
-                <br />
-                💡 <strong>Tip:</strong> If you select a saved location, contact
-                info will be auto-filled
-              </small>
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="dropoffContactNumber"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  <FaPhone className="inline mr-1" /> Contact Number{" "}
+                  <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="dropoffContactNumber"
+                  name="dropoffContactNumber"
+                  value={bookingData.dropoffContactNumber || ""}
+                  onChange={(e) =>
+                    setBookingData((prev) => ({
+                      ...prev,
+                      dropoffContactNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
+                  required
+                  placeholder="e.g., 09605877964"
+                />
+              </div>
             </div>
           </div>
 
           {/* Price Estimation Section */}
           {bookingData.selectedTrucks.length > 0 && routeDetails && (
-            <div className="price-estimation-section">
-              <h4>🧮 Estimated Cost</h4>
-              <div className="price-breakdown">
-                <div className="price-item">
-                  <span className="price-label">Distance:</span>
-                  <span className="price-value">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-200 shadow-sm relative overflow-hidden">
+              <h4 className="text-base font-bold text-blue-900 mb-3 pb-2 border-b border-blue-200 mx-0 flex items-center gap-2">
+                🧮 Estimated Cost
+              </h4>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium">Distance:</span>
+                  <span className="font-bold text-gray-800">
                     {routeDetails.distanceText}
                   </span>
                 </div>
-                <div className="price-item">
-                  <span className="price-label">Selected Trucks:</span>
-                  <span className="price-value">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium">
+                    Selected Trucks:
+                  </span>
+                  <span className="font-bold text-gray-800">
                     {bookingData.selectedTrucks.length} truck
                     {bookingData.selectedTrucks.length !== 1 ? "s" : ""}
                   </span>
                 </div>
-                <div className="price-item">
-                  <span className="price-label">Estimated Cost per Truck:</span>
-                  <span className="price-value price-highlight">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-600 font-medium">
+                    Estimated Cost per Truck:
+                  </span>
+                  <span className="font-bold text-blue-700">
                     ₱{calculateEstimatedCostPerTruck()}
                   </span>
                 </div>
-                <div className="price-item">
-                  <span className="price-label">Total Estimated Cost:</span>
-                  <span className="price-value price-highlight">
+                <div className="flex justify-between items-center pt-2 mt-1 border-t border-blue-200/50">
+                  <span className="text-base font-bold text-blue-900">
+                    Total Estimated Cost:
+                  </span>
+                  <span className="text-xl font-extrabold text-blue-700">
                     ₱{calculateTotalEstimatedCost()}
                   </span>
                 </div>
@@ -2933,7 +3013,7 @@ const ClientProfile = () => {
                     const baseRate = parseFloat(rate.baseRate) || 0;
                     const ratePerKm = parseFloat(rate.ratePerKm) || 0;
                     return (
-                      <div className="price-breakdown-detail">
+                      <div className="text-xs text-gray-500 mt-1 italic text-right">
                         <small>
                           {vehicleType}: ₱{baseRate} base + {distance}km × ₱
                           {ratePerKm}/km × {bookingData.selectedTrucks.length}{" "}
@@ -2945,7 +3025,7 @@ const ClientProfile = () => {
                   }
                   return null;
                 })()}
-                <div className="price-note">
+                <div className="text-xs text-gray-500 mt-2 bg-white/50 p-2 rounded border border-blue-100">
                   * Final pricing calculated using current vehicle rates set by
                   staff
                 </div>
@@ -2953,27 +3033,23 @@ const ClientProfile = () => {
             </div>
           )}
 
-          <div className="form-group">
-            <label>Select Trucks for Booking</label>
-            <p className="form-help-text">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-bold text-gray-700">
+              Select Trucks for Booking
+            </label>
+            <p className="text-xs text-gray-500 m-0">
               📋 Only trucks allocated to your account can be booked. Contact
               your account manager if you need additional trucks.
             </p>
             {bookingData.weight && recommendedTrucks.length > 0 && (
-              <div
-                className="alert alert-info"
-                style={{
-                  marginBottom: "1rem",
-                  padding: "0.75rem",
-                  backgroundColor: "#e3f2fd",
-                  border: "1px solid #2196f3",
-                  borderRadius: "4px",
-                }}
-              >
-                ⚙️ <strong>Smart Recommendation:</strong>{" "}
-                {recommendedTrucks.length} truck
-                {recommendedTrucks.length !== 1 ? "s" : ""} recommended for{" "}
-                {bookingData.weight} tons cargo
+              <div className="bg-emerald-50 text-emerald-800 p-3 rounded-xl border border-emerald-200 mb-3 flex items-start gap-2 text-sm">
+                <span className="text-lg">⚙️</span>
+                <div>
+                  <strong>Smart Recommendation:</strong>{" "}
+                  {recommendedTrucks.length} truck
+                  {recommendedTrucks.length !== 1 ? "s" : ""} recommended for{" "}
+                  {bookingData.weight} tons cargo
+                </div>
               </div>
             )}
             {(() => {
@@ -2991,18 +3067,11 @@ const ClientProfile = () => {
                   operationalStatus === "maintenance" ||
                   operationalStatus === "broken"
                 ) {
-                  console.log(
-                    `🚫 Excluding truck ${truck.TruckPlate} - ${operationalStatus}`,
-                  );
                   return false;
                 }
 
                 return true; // Show all other trucks
               });
-
-              console.log(
-                `✅ After operational filter: ${availableTrucks.length} trucks`,
-              );
 
               // REAL-TIME DATE-BASED AVAILABILITY: Filter by selected date
               if (
@@ -3012,9 +3081,6 @@ const ClientProfile = () => {
                 // Only show trucks available on the selected date (from backend API)
                 availableTrucks = availableTrucks.filter((truck) =>
                   availableTrucksForDate.includes(truck.TruckID),
-                );
-                console.log(
-                  `📅 Date filter applied: ${availableTrucks.length} trucks available on ${bookingData.deliveryDate}`,
                 );
               } else if (bookingData.deliveryDate) {
                 // If date is selected but API hasn't returned yet, do client-side date checking
@@ -3062,25 +3128,13 @@ const ClientProfile = () => {
                     return deliveryDateStr === selectedDateStr;
                   });
 
-                  if (hasDateConflict) {
-                    console.log(
-                      `📅 Truck ${truck.TruckPlate} unavailable on ${bookingData.deliveryDate}`,
-                    );
-                  }
                   return !hasDateConflict;
                 });
-                console.log(
-                  `📅 Client-side date filter: ${availableTrucks.length} trucks available`,
-                );
-              } else {
-                console.log(
-                  `✅ No date filter: showing all ${availableTrucks.length} operational trucks`,
-                );
               }
 
               return availableTrucks.length > 0 ? (
                 <div>
-                  <div className="truck-selection-grid">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
                     {availableTrucks.map((truck, index) => {
                       const isRecommended = recommendedTrucks.some(
                         (rt) => rt.TruckID === truck.TruckID,
@@ -3128,59 +3182,71 @@ const ClientProfile = () => {
                       return (
                         <div
                           key={truck.TruckID}
-                          className={`truck-selection-card ${isSelected ? "selected" : ""} ${isRecommended ? "recommended" : ""}`}
+                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                              : isRecommended
+                                ? "border-amber-400 bg-amber-50"
+                                : "border-gray-200 bg-white hover:bg-gray-50"
+                          }`}
                           onClick={() =>
                             handleTruckSelectionWithAvailability(truck.TruckID)
                           }
                         >
                           {isRecommended && (
-                            <div
-                              style={{
-                                position: "absolute",
-                                top: "5px",
-                                right: "5px",
-                                background: "#ffc107",
-                                color: "#000",
-                                padding: "2px 8px",
-                                borderRadius: "4px",
-                                fontSize: "10px",
-                                fontWeight: "bold",
-                              }}
-                            >
+                            <div className="absolute top-2 right-2 bg-amber-400 text-white text-[10px] font-extrabold px-2 py-0.5 rounded shadow-sm z-10">
                               RECOMMENDED
                             </div>
                           )}
-                          <div className="truck-icon">
-                            <FaTruck />
-                          </div>
-                          <div className="truck-details">
-                            <div className="truck-plate">
-                              {truck.TruckPlate}
+                          <div className="flex gap-3 items-center mb-2">
+                            <div
+                              className={`p-2 rounded-lg ${isSelected ? "bg-blue-200 text-blue-700" : "bg-gray-100 text-gray-500"}`}
+                            >
+                              <FaTruck className="text-xl" />
                             </div>
-                            <div className="truck-type">{truck.TruckType}</div>
-                            <div className="truck-capacity">
-                              {truck.TruckCapacity} tons capacity
-                            </div>
-                            {assignedCargo > 0 && (
-                              <div className="truck-cargo-estimate">
-                                {assignedCargo > 0
-                                  ? `${assignedCargo.toFixed(1)}t cargo`
-                                  : "Backup truck"}
+                            <div>
+                              <div className="font-bold text-gray-800 text-sm">
+                                {truck.TruckPlate}
                               </div>
+                              <div className="text-xs text-gray-500 uppercase font-medium">
+                                {truck.TruckType}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="text-sm text-gray-600 mb-2">
+                            {truck.TruckCapacity} tons capacity
+                          </div>
+
+                          {assignedCargo > 0 && (
+                            <div className="text-xs font-bold text-blue-600 mb-2">
+                              {assignedCargo > 0
+                                ? `${assignedCargo.toFixed(1)}t cargo`
+                                : "Backup truck"}
+                            </div>
+                          )}
+
+                          <div className="absolute top-2 right-2">
+                            {isSelected && (
+                              <span className="text-blue-600 font-bold text-lg">
+                                ✓
+                              </span>
                             )}
                           </div>
-                          <div className="selection-indicator">
-                            {isSelected && "✓"}
-                          </div>
-                          <div className="utilization-bar">
+
+                          <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className="utilization-fill"
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                utilizationPercentage > 100
+                                  ? "bg-red-500"
+                                  : "bg-emerald-500"
+                              }`}
                               style={{
                                 width: `${Math.min(100, utilizationPercentage)}%`,
                               }}
                             ></div>
                           </div>
-                          <div className="utilization-text">
+                          <div className="text-[10px] text-gray-500 mt-1 text-right font-medium">
                             {utilizationPercentage.toFixed(0)}% utilized
                           </div>
                         </div>
@@ -3189,20 +3255,22 @@ const ClientProfile = () => {
                   </div>
                 </div>
               ) : (
-                <div className="no-trucks-message">
-                  <p>No available trucks for booking.</p>
-                  <p>
+                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-6 text-center text-gray-500">
+                  <p className="m-0 font-medium">
+                    No available trucks for booking.
+                  </p>
+                  <p className="m-0 text-sm mt-1">
                     All trucks are currently in use or contact your account
                     manager to get trucks allocated.
                   </p>
                 </div>
               );
             })()}
-            <small className="form-text text-muted">
+            <small className="text-xs text-gray-500 mt-2 block">
               {bookingData.selectedTrucks.length} truck
               {bookingData.selectedTrucks.length !== 1 ? "s" : ""} selected
               {bookingData.selectedTrucks.length > 0 && (
-                <span>
+                <span className="font-medium text-gray-700">
                   {" "}
                   • Total capacity:{" "}
                   {bookingData.selectedTrucks
@@ -3219,21 +3287,21 @@ const ClientProfile = () => {
             </small>
           </div>
 
-          <div className="form-actions">
+          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+            <button
+              type="button"
+              className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
+              onClick={() => setShowBookingModal(false)}
+            >
+              Cancel
+            </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className="px-6 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
               disabled={bookingData.selectedTrucks.length === 0}
             >
               Book {bookingData.selectedTrucks.length} Truck
               {bookingData.selectedTrucks.length !== 1 ? "s" : ""}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => setShowBookingModal(false)}
-            >
-              Cancel
             </button>
           </div>
         </form>
@@ -3913,14 +3981,12 @@ const ClientProfile = () => {
   }
 
   return (
-    <div className="client-page-container">
-      <div className="client-page-header">
-        <h1>
-          <FaUser style={{ marginRight: "10px" }} /> My Profile
+    <div className="w-full max-w-[1400px] mx-auto p-8 box-border animate-fade-in block md:p-4 bg-slate-50 min-h-screen">
+      <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200 md:flex-col md:items-start md:gap-4">
+        <h1 className="text-3xl font-bold text-blue-900 m-0 flex items-center gap-3">
+          <FaUser className="text-amber-500" /> My Profile
         </h1>
-        <div className="header-actions">
-          {/* Actions can go here if needed */}
-        </div>
+        <div className="flex gap-4">{/* Actions can go here if needed */}</div>
       </div>
 
       {/* Booking Modal */}
@@ -3946,24 +4012,30 @@ const ClientProfile = () => {
           onClose={() => setShowRouteModal(false)}
           size="large"
         >
-          <div className="route-modal-content">
-            <div className="route-info-header">
-              <h4>📍 Route Details</h4>
-              <div className="route-addresses">
-                <div className="route-address">
-                  <strong>Pickup:</strong>{" "}
-                  {selectedDeliveryRoute.pickupLocation}
+          <div className="p-0">
+            <div className="flex justify-between items-start mb-6 bg-slate-50 p-4 rounded-lg border border-slate-100">
+              <h4 className="m-0 text-blue-900 font-bold text-lg flex items-center gap-2">
+                <FaMapMarkerAlt className="text-amber-500" /> Route Details
+              </h4>
+              <div className="text-right text-sm">
+                <div className="mb-1">
+                  <strong className="text-gray-700">Pickup:</strong>{" "}
+                  <span className="text-gray-600 block sm:inline">
+                    {selectedDeliveryRoute.pickupLocation}
+                  </span>
                 </div>
-                <div className="route-address">
-                  <strong>Dropoff:</strong>{" "}
-                  {selectedDeliveryRoute.dropoffLocation}
+                <div>
+                  <strong className="text-gray-700">Dropoff:</strong>{" "}
+                  <span className="text-gray-600 block sm:inline">
+                    {selectedDeliveryRoute.dropoffLocation}
+                  </span>
                 </div>
               </div>
             </div>
 
             {selectedDeliveryRoute.pickupCoordinates &&
               selectedDeliveryRoute.dropoffCoordinates && (
-                <div className="route-map-container">
+                <div className="h-[400px] w-full rounded-xl overflow-hidden border border-gray-200 shadow-inner mb-6 relative">
                   <RouteMap
                     pickupCoordinates={selectedDeliveryRoute.pickupCoordinates}
                     dropoffCoordinates={
@@ -3976,16 +4048,20 @@ const ClientProfile = () => {
                 </div>
               )}
 
-            <div className="route-summary">
-              <div className="route-stat">
-                <span className="route-stat-label">Distance:</span>
-                <span className="route-stat-value">
+            <div className="grid grid-cols-2 gap-4 bg-blue-50 p-5 rounded-xl border border-blue-100">
+              <div className="flex flex-col items-center justify-center p-2">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
+                  Distance
+                </span>
+                <span className="text-2xl font-bold text-blue-900">
                   {selectedDeliveryRoute.distance} km
                 </span>
               </div>
-              <div className="route-stat">
-                <span className="route-stat-label">Duration:</span>
-                <span className="route-stat-value">
+              <div className="flex flex-col items-center justify-center p-2 border-l border-blue-200">
+                <span className="text-xs font-bold text-blue-400 uppercase tracking-wider mb-1">
+                  Duration
+                </span>
+                <span className="text-2xl font-bold text-blue-900">
                   {selectedDeliveryRoute.duration} min
                 </span>
               </div>
@@ -3995,67 +4071,90 @@ const ClientProfile = () => {
       )}
 
       {/* Content Sections */}
-      <div className="profile-content">
+      <div className="w-full flex-1 flex flex-col items-center relative z-10 box-border">
         {activeTab === "overview" && (
-          <div className="overview-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon bg-blue">
+          <div className="flex flex-col gap-8 w-full max-w-[1400px] mx-auto box-border">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full mx-auto">
+              <div className="bg-white rounded-xl p-6 flex items-center gap-5 shadow-sm border border-amber-400/20 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400 min-h-[110px] h-full">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white shrink-0 shadow-sm bg-gradient-to-br from-blue-700 to-blue-900">
                   <FaTruck />
                 </div>
-                <div className="stat-details">
-                  <h3>{allocatedTrucks.length}</h3>
-                  <p>Allocated Trucks</p>
+                <div className="flex flex-col">
+                  <h3 className="m-0 mb-1 text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-500 bg-clip-text text-transparent">
+                    {allocatedTrucks.length}
+                  </h3>
+                  <p className="m-0 text-gray-500 font-medium text-sm">
+                    Allocated Trucks
+                  </p>
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon bg-green">
+              <div className="bg-white rounded-xl p-6 flex items-center gap-5 shadow-sm border border-amber-400/20 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400 min-h-[110px] h-full">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white shrink-0 shadow-sm bg-gradient-to-br from-emerald-600 to-emerald-800">
                   <FaShippingFast />
                 </div>
-                <div className="stat-details">
-                  <h3>{getActiveDeliveries().length}</h3>
-                  <p>Active Deliveries</p>
+                <div className="flex flex-col">
+                  <h3 className="m-0 mb-1 text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-500 bg-clip-text text-transparent">
+                    {getActiveDeliveries().length}
+                  </h3>
+                  <p className="m-0 text-gray-500 font-medium text-sm">
+                    Active Deliveries
+                  </p>
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon bg-purple">
+              <div className="bg-white rounded-xl p-6 flex items-center gap-5 shadow-sm border border-amber-400/20 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400 min-h-[110px] h-full">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white shrink-0 shadow-sm bg-gradient-to-br from-violet-600 to-purple-700">
                   <FaHistory />
                 </div>
-                <div className="stat-details">
-                  <h3>{getCompletedDeliveries().length}</h3>
-                  <p>Completed</p>
+                <div className="flex flex-col">
+                  <h3 className="m-0 mb-1 text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-500 bg-clip-text text-transparent">
+                    {getCompletedDeliveries().length}
+                  </h3>
+                  <p className="m-0 text-gray-500 font-medium text-sm">
+                    Completed
+                  </p>
                 </div>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon bg-orange">
+              <div className="bg-white rounded-xl p-6 flex items-center gap-5 shadow-sm border border-amber-400/20 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400 min-h-[110px] h-full">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white shrink-0 shadow-sm bg-gradient-to-br from-amber-500 to-amber-700">
                   <FaDollarSign />
                 </div>
-                <div className="stat-details">
-                  <h3>{formatCurrency(calculateTotalSpent())}</h3>
-                  <p>Total Spent</p>
+                <div className="flex flex-col">
+                  <h3 className="m-0 mb-1 text-2xl font-bold bg-gradient-to-r from-blue-900 to-amber-500 bg-clip-text text-transparent">
+                    {formatCurrency(calculateTotalSpent())}
+                  </h3>
+                  <p className="m-0 text-gray-500 font-medium text-sm">
+                    Total Spent
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="recent-activity">
-              <h3>Recent Activity</h3>
-              <div className="activity-list">
+            <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-amber-400/20 w-full mb-8">
+              <h3 className="m-0 mb-6 text-blue-900 text-2xl font-bold">
+                Recent Activity
+              </h3>
+              <div className="flex flex-col gap-5">
                 {deliveries.slice(0, 5).map((delivery) => (
-                  <div key={delivery.DeliveryID} className="activity-item">
-                    <div className="activity-icon">
+                  <div
+                    key={delivery.DeliveryID}
+                    className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100 transition-all hover:bg-white hover:shadow-md hover:border-blue-100 group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                       <FaShippingFast />
                     </div>
-                    <div className="activity-details">
-                      <h4>Delivery #{delivery.DeliveryID}</h4>
-                      <p>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="m-0 text-gray-800 font-semibold text-sm mb-1 truncate">
+                        Delivery #{delivery.DeliveryID}
+                      </h4>
+                      <p className="m-0 text-gray-500 text-xs truncate">
                         {delivery.PickupLocation} → {delivery.DropoffLocation}
                       </p>
-                      <span className="activity-date">
+                      <span className="block mt-1 text-[10px] text-gray-400 uppercase tracking-wider font-semibold">
                         {formatDate(delivery.DeliveryDate, delivery)}
                       </span>
                     </div>
                     <div
-                      className={`activity-status ${getStatusBadgeClass(delivery.DeliveryStatus)}`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusBadgeClass(delivery.DeliveryStatus)}`}
                     >
                       {delivery.DeliveryStatus}
                     </div>
@@ -4067,18 +4166,22 @@ const ClientProfile = () => {
         )}
 
         {activeTab === "transactions" && (
-          <div className="transactions-section">
-            <div className="section-header">
-              <h3>Booking History</h3>
+          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8 overflow-hidden">
+            <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center">
+              <h3 className="text-2xl font-bold text-blue-900 m-0">
+                Booking History
+              </h3>
             </div>
 
             {/* Modern Filters Section - Like Admin Pages */}
-            <div className="modern-filters">
-              <div className="filters-grid">
+            <div className="p-6 bg-white border-b border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 {/* Search */}
-                <div className="search-container">
-                  <label className="search-label">Search</label>
-                  <div className="search-input-wrapper">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Search
+                  </label>
+                  <div className="relative">
                     <input
                       type="text"
                       placeholder="Search bookings..."
@@ -4086,19 +4189,21 @@ const ClientProfile = () => {
                       onChange={(e) =>
                         setTransactionSearchQuery(e.target.value)
                       }
-                      className="modern-search-input"
+                      className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none placeholder-gray-400"
                     />
-                    <FaSearch className="search-icon" />
+                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
                   </div>
                 </div>
 
                 {/* Status Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Status</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Status
+                  </label>
                   <select
                     value={statusFilter || "all"}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -4108,12 +4213,14 @@ const ClientProfile = () => {
                 </div>
 
                 {/* Date Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Date Range</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Date Range
+                  </label>
                   <select
                     value={dateFilter || "all"}
                     onChange={(e) => setDateFilter(e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
                   >
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
@@ -4124,9 +4231,9 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="filter-actions">
+              <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 mt-2">
                 <button
-                  className="btn btn-secondary"
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
                   onClick={() => {
                     setTransactionSearchQuery("");
                     setStatusFilter("all");
@@ -4136,7 +4243,7 @@ const ClientProfile = () => {
                   Clear Filters
                 </button>
 
-                <div className="filter-summary">
+                <div className="text-sm font-medium text-gray-500">
                   Showing {filteredDeliveries.length} of {deliveries.length}{" "}
                   bookings
                 </div>
@@ -4145,68 +4252,72 @@ const ClientProfile = () => {
 
             {/* Modern Bookings Table */}
             {filteredDeliveries.length === 0 ? (
-              <div className="trucks-empty-state">
-                <div className="empty-state-icon">📋</div>
-                <h3 className="empty-state-title">No bookings found</h3>
-                <p className="empty-state-description">
+              <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 bg-white">
+                <div className="text-5xl mb-4 opacity-50">
+                  <FaFileInvoiceDollar />
+                </div>
+                <h3 className="text-lg font-bold text-gray-600 mb-2">
+                  No bookings found
+                </h3>
+                <p className="max-w-md mx-auto">
                   No bookings match your current filters. Try adjusting your
                   search criteria.
                 </p>
               </div>
             ) : (
               <>
-                <div className="modern-bookings-table-wrapper">
-                  <table className="modern-bookings-table">
+                <div className="overflow-x-auto w-full">
+                  <table className="w-full border-collapse min-w-[1000px]">
                     <thead>
-                      <tr>
+                      <tr className="bg-gray-50/50">
                         <th
-                          className="sortable"
+                          className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-600 transition-colors select-none"
                           onClick={() => handleSort("DeliveryID")}
                         >
-                          <div className="th-content">
+                          <div className="flex items-center gap-2">
                             <span>Delivery ID</span>
                             {sortField === "DeliveryID" && (
-                              <span className="sort-indicator">
+                              <span className="text-blue-500">
                                 {sortDirection === "asc" ? "▲" : "▼"}
                               </span>
                             )}
                           </div>
                         </th>
                         <th
-                          className="sortable"
+                          className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-600 transition-colors select-none"
                           onClick={() => handleSort("DeliveryDate")}
                         >
-                          <div className="th-content">
+                          <div className="flex items-center gap-2">
                             <FaCalendarAlt />
                             <span>Delivery Date</span>
                             {sortField === "DeliveryDate" && (
-                              <span className="sort-indicator">
+                              <span className="text-blue-500">
                                 {sortDirection === "asc" ? "▲" : "▼"}
                               </span>
                             )}
                           </div>
                         </th>
-                        <th>
-                          <div className="th-content">
+                        <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                          <div className="flex items-center gap-2">
                             <FaTruck />
                             <span>Truck</span>
                           </div>
                         </th>
                         <th
-                          className="sortable"
+                          className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200 cursor-pointer hover:bg-gray-100 hover:text-blue-600 transition-colors select-none"
                           onClick={() => handleSort("DeliveryStatus")}
                         >
-                          <div className="th-content">
+                          <div className="flex items-center gap-2">
                             <span>Status</span>
                             {sortField === "DeliveryStatus" && (
-                              <span className="sort-indicator">
+                              <span className="text-blue-500">
                                 {sortDirection === "asc" ? "▲" : "▼"}
                               </span>
                             )}
                           </div>
                         </th>
-                        <th className="actions-th">
-                          <div className="th-content">
+                        <th className="text-right py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                          <div className="flex items-center justify-end gap-2">
                             <span>Actions</span>
                           </div>
                         </th>
@@ -4216,42 +4327,42 @@ const ClientProfile = () => {
                       {getPaginatedDeliveries().map((delivery) => (
                         <tr
                           key={delivery.DeliveryID}
-                          className="modern-booking-row"
+                          className="group hover:bg-blue-50/30 transition-colors border-b border-gray-100 last:border-none"
                         >
-                          <td className="delivery-id-col">
-                            <div className="id-badge">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="font-mono font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-100 inline-block text-xs">
                               #{delivery.DeliveryID?.substring(0, 12) || "N/A"}
                             </div>
                           </td>
-                          <td className="date-col">
-                            <div className="date-value">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="text-gray-600 font-medium">
                               {formatDate(delivery.DeliveryDate, delivery)}
                             </div>
                           </td>
-                          <td className="truck-col">
-                            <div className="truck-info">
-                              <span className="truck-plate">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-bold text-gray-800 bg-gray-100 px-2 py-0.5 rounded text-xs border border-gray-200 w-fit">
                                 {delivery.TruckPlate || "N/A"}
                               </span>
                               {delivery.TruckBrand &&
                                 delivery.TruckBrand !== "Unknown" && (
-                                  <span className="truck-brand">
+                                  <span className="text-xs text-gray-500">
                                     {delivery.TruckBrand}
                                   </span>
                                 )}
                             </div>
                           </td>
-                          <td className="status-col">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
                             <span
-                              className={`modern-status-badge ${delivery.DeliveryStatus?.toLowerCase()}`}
+                              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${delivery.DeliveryStatus?.toLowerCase() === "pending" ? "bg-amber-100 text-amber-700" : delivery.DeliveryStatus?.toLowerCase() === "completed" ? "bg-emerald-100 text-emerald-700" : delivery.DeliveryStatus?.toLowerCase() === "cancelled" ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700"}`}
                             >
                               {delivery.DeliveryStatus}
                             </span>
                           </td>
-                          <td className="actions-col">
-                            <div className="modern-action-buttons">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="flex items-center justify-end gap-2">
                               <button
-                                className="modern-action-btn view"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 border border-transparent hover:border-blue-200"
                                 onClick={() => handleViewDetails(delivery)}
                                 title="View details"
                               >
@@ -4260,7 +4371,7 @@ const ClientProfile = () => {
 
                               {canRescheduleDelivery(delivery) && (
                                 <button
-                                  className="modern-action-btn reschedule"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-amber-100 hover:text-amber-600 border border-transparent hover:border-amber-200"
                                   onClick={() => handleRebookDelivery(delivery)}
                                   title="Reschedule"
                                 >
@@ -4270,7 +4381,7 @@ const ClientProfile = () => {
 
                               {canRescheduleDelivery(delivery) && (
                                 <button
-                                  className="modern-action-btn reroute"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-purple-100 hover:text-purple-600 border border-transparent hover:border-purple-200"
                                   onClick={() => handleChangeRoute(delivery)}
                                   title="Reroute"
                                 >
@@ -4280,7 +4391,7 @@ const ClientProfile = () => {
 
                               {canModifyDelivery(delivery) && (
                                 <button
-                                  className="modern-action-btn cancel"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 border border-transparent hover:border-red-200"
                                   onClick={() => handleCancelDelivery(delivery)}
                                   title="Cancel"
                                 >
@@ -4297,8 +4408,8 @@ const ClientProfile = () => {
 
                 {/* Pagination */}
                 {getTotalPagesForBookings() > 1 && (
-                  <div className="table-pagination">
-                    <div className="pagination-info">
+                  <div className="flex justify-between items-center p-6 border-t border-gray-200">
+                    <div className="text-sm text-gray-500">
                       Showing {(currentPage - 1) * itemsPerPage + 1} to{" "}
                       {Math.min(
                         currentPage * itemsPerPage,
@@ -4306,33 +4417,33 @@ const ClientProfile = () => {
                       )}{" "}
                       of {filteredDeliveries.length} bookings
                     </div>
-                    <div className="pagination-controls">
+                    <div className="flex items-center gap-2">
                       <button
-                        className="btn btn-pagination"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(1)}
                       >
                         First
                       </button>
                       <button
-                        className="btn btn-pagination"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         disabled={currentPage === 1}
                         onClick={() => setCurrentPage(currentPage - 1)}
                       >
                         Previous
                       </button>
-                      <span className="page-indicator">
+                      <span className="text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1.5 rounded-lg">
                         Page {currentPage} of {getTotalPagesForBookings()}
                       </span>
                       <button
-                        className="btn btn-pagination"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         disabled={currentPage === getTotalPagesForBookings()}
                         onClick={() => setCurrentPage(currentPage + 1)}
                       >
                         Next
                       </button>
                       <button
-                        className="btn btn-pagination"
+                        className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         disabled={currentPage === getTotalPagesForBookings()}
                         onClick={() =>
                           setCurrentPage(getTotalPagesForBookings())
@@ -4349,13 +4460,15 @@ const ClientProfile = () => {
         )}
 
         {activeTab === "trucks" && (
-          <div className="trucks-section">
-            <div className="section-header">
-              <h3>My Allocated Trucks ({allocatedTrucks.length})</h3>
-              <div className="section-actions">
+          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8 overflow-hidden">
+            <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center bg-white">
+              <h3 className="text-2xl font-bold text-blue-900 m-0">
+                My Allocated Trucks ({allocatedTrucks.length})
+              </h3>
+              <div className="flex gap-3">
                 <button
                   onClick={() => setShowBookingModal(true)}
-                  className="btn btn-primary"
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
                 >
                   <FaPlus /> Book Truck
                 </button>
@@ -4363,12 +4476,14 @@ const ClientProfile = () => {
             </div>
 
             {/* Modern Filters Section - Like Admin Pages */}
-            <div className="modern-filters">
-              <div className="filters-grid">
+            <div className="p-6 bg-white border-b border-gray-100">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                 {/* Search */}
-                <div className="search-container">
-                  <label className="search-label">Search</label>
-                  <div className="search-input-wrapper">
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Search
+                  </label>
+                  <div className="relative">
                     <input
                       type="text"
                       placeholder="Search trucks..."
@@ -4376,19 +4491,21 @@ const ClientProfile = () => {
                       onChange={(e) =>
                         handleFilterChange("search", e.target.value)
                       }
-                      className="modern-search-input"
+                      className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none placeholder-gray-400"
                     />
-                    <FaSearch className="search-icon" />
+                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
                   </div>
                 </div>
 
                 {/* Type Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Type</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Type
+                  </label>
                   <select
                     value={truckFilters.type}
                     onChange={(e) => handleFilterChange("type", e.target.value)}
-                    className="modern-filter-select"
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
                   >
                     <option value="all">All Types</option>
                     {getUniqueTypes().map((type) => (
@@ -4400,14 +4517,16 @@ const ClientProfile = () => {
                 </div>
 
                 {/* Status Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Status</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Status
+                  </label>
                   <select
                     value={truckFilters.status}
                     onChange={(e) =>
                       handleFilterChange("status", e.target.value)
                     }
-                    className="modern-filter-select"
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
                   >
                     <option value="all">All Status</option>
                     <option value="available">Available</option>
@@ -4416,15 +4535,17 @@ const ClientProfile = () => {
                 </div>
 
                 {/* Per Page Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Per Page</label>
+                <div className="flex flex-col gap-2">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
+                    Per Page
+                  </label>
                   <select
                     value={trucksPerPage}
                     onChange={(e) => {
                       setTrucksPerPage(Number(e.target.value));
                       setCurrentTruckPage(1);
                     }}
-                    className="modern-filter-select"
+                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
                   >
                     <option value={6}>6 per page</option>
                     <option value={12}>12 per page</option>
@@ -4434,12 +4555,15 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="filter-actions">
-                <button className="btn btn-secondary" onClick={resetFilters}>
+              <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 mt-2">
+                <button
+                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                  onClick={resetFilters}
+                >
                   Clear Filters
                 </button>
 
-                <div className="filter-summary">
+                <div className="text-sm font-medium text-gray-500">
                   Showing {getPaginatedTrucks().length} of{" "}
                   {getFilteredTrucks().length} trucks
                 </div>
@@ -4448,57 +4572,59 @@ const ClientProfile = () => {
 
             {/* Modern Trucks Table */}
             {getPaginatedTrucks().length === 0 ? (
-              <div className="trucks-empty-state">
-                <div className="empty-state-icon">🚛</div>
-                <h3 className="empty-state-title">No trucks found</h3>
-                <p className="empty-state-description">
+              <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 bg-white">
+                <div className="text-5xl mb-4 opacity-50">🚛</div>
+                <h3 className="text-lg font-bold text-gray-600 mb-2">
+                  No trucks found
+                </h3>
+                <p className="max-w-md mx-auto">
                   No trucks match your current filters. Try adjusting your
                   search criteria.
                 </p>
               </div>
             ) : (
-              <div className="modern-trucks-table-wrapper">
-                <table className="modern-trucks-table">
+              <div className="overflow-x-auto w-full">
+                <table className="w-full border-collapse min-w-[1000px]">
                   <thead>
-                    <tr>
-                      <th>
-                        <div className="th-content">
+                    <tr className="bg-gray-50/50">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <FaTruck />
                           <span>Truck Plate</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Type</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Brand</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Capacity</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Deliveries</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Total KM</span>
                         </div>
                       </th>
-                      <th>
-                        <div className="th-content">
+                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center gap-2">
                           <span>Status</span>
                         </div>
                       </th>
-                      <th className="actions-th">
-                        <div className="th-content">
+                      <th className="text-right py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                        <div className="flex items-center justify-end gap-2">
                           <span>Actions</span>
                         </div>
                       </th>
@@ -4540,45 +4666,48 @@ const ClientProfile = () => {
                         : "available";
 
                       return (
-                        <tr key={truck.TruckID} className="modern-truck-row">
-                          <td className="truck-plate-col">
-                            <div className="plate-badge">
+                        <tr
+                          key={truck.TruckID}
+                          className="group hover:bg-blue-50/30 transition-colors border-b border-gray-100 last:border-none"
+                        >
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="font-mono font-bold text-gray-800 bg-gray-100 px-2 py-1 rounded border border-gray-200 inline-block text-xs">
                               {truck.TruckPlate}
                             </div>
                           </td>
-                          <td className="truck-type-col">
-                            <span className="truck-type-badge">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs font-semibold border border-blue-100 uppercase tracking-wide">
                               {truck.TruckType}
                             </span>
                           </td>
-                          <td className="truck-brand-col">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
                             {truck.TruckBrand}
                           </td>
-                          <td className="truck-capacity-col">
-                            <span className="capacity-value">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <span className="font-semibold text-gray-700">
                               {truck.TruckCapacity} tons
                             </span>
                           </td>
-                          <td className="truck-deliveries-col">
-                            <span className="deliveries-count">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <span className="font-bold text-blue-600">
                               {truck.TotalCompletedDeliveries || 0}
                             </span>
                           </td>
-                          <td className="truck-km-col">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
                             {truck.TotalKilometers || 0} km
                           </td>
-                          <td className="truck-status-col">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
                             <span
-                              className={`modern-truck-status-badge ${statusClass}`}
+                              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${statusClass === "busy" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}
                             >
                               {displayStatus}
                             </span>
                           </td>
-                          <td className="truck-actions-col">
-                            <div className="modern-truck-action-buttons">
+                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
+                            <div className="flex items-center justify-end gap-2">
                               {isAvailable && (
                                 <button
-                                  className="modern-action-btn book"
+                                  className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 border border-transparent hover:border-blue-200"
                                   onClick={() => setShowBookingModal(true)}
                                   title={
                                     isInActiveDelivery
@@ -4590,7 +4719,7 @@ const ClientProfile = () => {
                                 </button>
                               )}
                               <button
-                                className="modern-action-btn view"
+                                className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 border border-transparent hover:border-blue-200"
                                 onClick={() => handleViewTruckDetails(truck)}
                                 title="View details"
                               >
@@ -4608,36 +4737,36 @@ const ClientProfile = () => {
 
             {/* Pagination */}
             {getTotalPages() > 1 && (
-              <div className="pagination-container">
-                <div className="pagination">
-                  <button
-                    className="btn btn-outline-secondary"
-                    disabled={currentTruckPage === 1}
-                    onClick={() => setCurrentTruckPage((prev) => prev - 1)}
-                  >
-                    Previous
-                  </button>
+              <div className="flex justify-center items-center p-6 border-t border-gray-200 gap-4">
+                <button
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={currentTruckPage === 1}
+                  onClick={() => setCurrentTruckPage((prev) => prev - 1)}
+                >
+                  Previous
+                </button>
 
-                  <div className="page-info">
-                    Page {currentTruckPage} of {getTotalPages()}
-                  </div>
-
-                  <button
-                    className="btn btn-outline-secondary"
-                    disabled={currentTruckPage === getTotalPages()}
-                    onClick={() => setCurrentTruckPage((prev) => prev + 1)}
-                  >
-                    Next
-                  </button>
+                <div className="text-sm font-medium text-gray-600">
+                  Page {currentTruckPage} of {getTotalPages()}
                 </div>
+
+                <button
+                  className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  disabled={currentTruckPage === getTotalPages()}
+                  onClick={() => setCurrentTruckPage((prev) => prev + 1)}
+                >
+                  Next
+                </button>
               </div>
             )}
 
             {allocatedTrucks.length === 0 && (
-              <div className="trucks-empty-state">
-                <div className="empty-state-icon">🚛</div>
-                <h3 className="empty-state-title">No Trucks Allocated</h3>
-                <p className="empty-state-description">
+              <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400 bg-white border-t border-gray-100">
+                <div className="text-5xl mb-4 opacity-50">🚛</div>
+                <h3 className="text-lg font-bold text-gray-600 mb-2">
+                  No Trucks Allocated
+                </h3>
+                <p className="max-w-md mx-auto">
                   Contact your account manager to allocate trucks to your
                   account.
                 </p>
@@ -4651,96 +4780,123 @@ const ClientProfile = () => {
         )}
 
         {activeTab === "profile" && (
-          <div className="profile-info-section">
+          <div className="flex flex-col gap-6 w-full max-w-[1400px] mx-auto">
             {/* Modern Profile Header Card */}
-            <div className="profile-card-modern">
-              <div className="profile-card-content">
-                <div className="profile-avatar-modern">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-400/20 w-full flex flex-col items-center text-center max-w-4xl mx-auto">
+              <div className="w-full">
+                <div className="w-24 h-24 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center text-4xl mb-4 border-4 border-white shadow-md mx-auto">
                   <FaUser />
                 </div>
-                <h2 className="profile-name-modern">
+                <h2 className="text-2xl font-bold text-gray-800 m-0 mb-1">
                   {clientData?.ClientName || "Client Name"}
                 </h2>
-                <p className="profile-role-modern">
+                <p className="text-sm text-gray-500 font-medium uppercase tracking-wide mb-6">
                   Transportation Client • ID:{" "}
                   {clientData?.ClientID?.substring(0, 8) || "Unknown"}
                 </p>
-                <div className="profile-stats-modern">
-                  <div className="profile-stat-modern">
-                    <span className="profile-stat-number">
+                <div className="flex gap-8 justify-center w-full border-t border-gray-100 pt-6">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xl font-bold text-blue-900">
                       {getActiveDeliveries().length}
                     </span>
-                    <span className="profile-stat-label">
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
                       Active Deliveries
                     </span>
                   </div>
-                  <div className="profile-stat-modern">
-                    <span className="profile-stat-number">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xl font-bold text-blue-900">
                       {getCompletedDeliveries().length}
                     </span>
-                    <span className="profile-stat-label">Completed</span>
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                      Completed
+                    </span>
                   </div>
-                  <div className="profile-stat-modern">
-                    <span className="profile-stat-number">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="text-xl font-bold text-blue-900">
                       {allocatedTrucks.length}
                     </span>
-                    <span className="profile-stat-label">Trucks</span>
+                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
+                      Trucks
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Account Information Card */}
-            <div className="info-card">
-              <button className="edit-btn" onClick={handleEditProfile}>
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-amber-400/20 w-full relative max-w-4xl mx-auto">
+              <button
+                className="absolute top-8 right-8 flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-bold text-sm transition-all hover:bg-blue-100 hover:text-blue-700"
+                onClick={handleEditProfile}
+              >
                 <FaEdit /> Edit Profile
               </button>
-              <div className="info-header">
-                <h3>Account Information</h3>
+              <div className="mb-6 pb-4 border-b border-gray-100">
+                <h3 className="m-0 text-xl font-bold text-blue-900">
+                  Account Information
+                </h3>
               </div>
-              <div className="info-grid">
-                <div className="info-item">
-                  <div className="info-icon">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaUser />
                   </div>
-                  <div className="info-details">
-                    <label>Full Name</label>
-                    <span>{clientData?.ClientName || "Not specified"}</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Full Name
+                    </label>
+                    <span className="text-base font-semibold text-gray-700 break-words">
+                      {clientData?.ClientName || "Not specified"}
+                    </span>
                   </div>
                 </div>
-                <div className="info-item">
-                  <div className="info-icon">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaEnvelope />
                   </div>
-                  <div className="info-details">
-                    <label>Email Address</label>
-                    <span>{clientData?.ClientEmail || "Not specified"}</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Email Address
+                    </label>
+                    <span className="text-base font-semibold text-gray-700 break-words">
+                      {clientData?.ClientEmail || "Not specified"}
+                    </span>
                   </div>
                 </div>
-                <div className="info-item">
-                  <div className="info-icon">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaPhone />
                   </div>
-                  <div className="info-details">
-                    <label>Phone Number</label>
-                    <span>{clientData?.ClientNumber || "Not specified"}</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Phone Number
+                    </label>
+                    <span className="text-base font-semibold text-gray-700 break-words">
+                      {clientData?.ClientNumber || "Not specified"}
+                    </span>
                   </div>
                 </div>
-                <div className="info-item">
-                  <div className="info-icon">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaBuilding />
                   </div>
-                  <div className="info-details">
-                    <label>Client ID</label>
-                    <span>{clientData?.ClientID || "Not specified"}</span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Client ID
+                    </label>
+                    <span className="text-base font-semibold text-gray-700 break-words">
+                      {clientData?.ClientID || "Not specified"}
+                    </span>
                   </div>
                 </div>
-                <div className="info-item">
-                  <div className="info-icon">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaMapMarkerAlt />
                   </div>
-                  <div className="info-details">
-                    <label>Account Status</label>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Account Status
+                    </label>
                     <span
                       style={{
                         color:
@@ -4755,13 +4911,15 @@ const ClientProfile = () => {
                     </span>
                   </div>
                 </div>
-                <div className="info-item">
-                  <div className="info-icon">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                     <FaCalendarAlt />
                   </div>
-                  <div className="info-details">
-                    <label>Member Since</label>
-                    <span>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Member Since
+                    </label>
+                    <span className="text-base font-semibold text-gray-700 break-words">
                       {clientData?.ClientCreationDate
                         ? formatDate(clientData.ClientCreationDate)
                         : "Not specified"}
@@ -4781,72 +4939,86 @@ const ClientProfile = () => {
           onClose={() => setShowEditModal(false)}
           size="medium"
         >
-          <form onSubmit={handleUpdateProfile} className="edit-profile-form">
-            <div className="form-group">
-              <label htmlFor="clientName">Full Name</label>
+          <form onSubmit={handleUpdateProfile} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="clientName"
+                className="text-sm font-bold text-gray-700"
+              >
+                Full Name
+              </label>
               <input
                 type="text"
                 id="clientName"
                 name="clientName"
                 value={editFormData.clientName}
                 onChange={handleEditFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="clientEmail">Email Address</label>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="clientEmail"
+                className="text-sm font-bold text-gray-700"
+              >
+                Email Address
+              </label>
               <input
                 type="email"
                 id="clientEmail"
                 name="clientEmail"
                 value={editFormData.clientEmail}
                 onChange={handleEditFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="clientNumber">Phone Number</label>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="clientNumber"
+                className="text-sm font-bold text-gray-700"
+              >
+                Phone Number
+              </label>
               <input
                 type="tel"
                 id="clientNumber"
                 name="clientNumber"
                 value={editFormData.clientNumber}
                 onChange={handleEditFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
               />
             </div>
 
-            <div className="form-actions">
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="btn btn-outline-secondary"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                 disabled={isUpdating}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 transition-all hover:-translate-y-0.5"
                 disabled={isUpdating}
               >
                 {isUpdating ? "Updating..." : "Update Profile"}
               </button>
             </div>
 
-            <div className="password-section">
-              <hr />
+            <div className="mt-2 pt-2 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => {
                   setShowEditModal(false);
                   setShowPasswordModal(true);
                 }}
-                className="btn btn-outline"
+                className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium w-full justify-center"
               >
                 <FaEdit /> Change Password
               </button>
@@ -4862,62 +5034,77 @@ const ClientProfile = () => {
           onClose={() => setShowPasswordModal(false)}
           size="medium"
         >
-          <form onSubmit={handleChangePassword} className="password-form">
-            <div className="form-group">
-              <label htmlFor="currentPassword">Current Password</label>
+          <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="currentPassword"
+                className="text-sm font-bold text-gray-700"
+              >
+                Current Password
+              </label>
               <input
                 type="password"
                 id="currentPassword"
                 name="currentPassword"
                 value={passwordFormData.currentPassword}
                 onChange={handlePasswordFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
               />
             </div>
 
-            <div className="form-group">
-              <label htmlFor="newPassword">New Password</label>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="newPassword"
+                className="text-sm font-bold text-gray-700"
+              >
+                New Password
+              </label>
               <input
                 type="password"
                 id="newPassword"
                 name="newPassword"
                 value={passwordFormData.newPassword}
                 onChange={handlePasswordFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 minLength="6"
                 required
               />
-              <small className="form-text">
+              <small className="text-xs text-gray-500">
                 Password must be at least 6 characters long
               </small>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm New Password</label>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="confirmPassword"
+                className="text-sm font-bold text-gray-700"
+              >
+                Confirm New Password
+              </label>
               <input
                 type="password"
                 id="confirmPassword"
                 name="confirmPassword"
                 value={passwordFormData.confirmPassword}
                 onChange={handlePasswordFormChange}
-                className="form-control"
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
               />
             </div>
 
-            <div className="form-actions">
+            <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => setShowPasswordModal(false)}
-                className="btn btn-outline-secondary"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                 disabled={isUpdating}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 transition-all hover:-translate-y-0.5"
                 disabled={isUpdating}
               >
                 {isUpdating ? "Changing..." : "Change Password"}
@@ -4934,41 +5121,57 @@ const ClientProfile = () => {
           onClose={() => setShowCancelModal(false)}
           size="medium"
         >
-          <div className="cancel-delivery-modal">
-            <div className="warning-message">
-              <FaExclamationTriangle className="warning-icon" />
-              <h4>Are you sure you want to cancel this delivery?</h4>
-              <p>
+          <div className="flex flex-col gap-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-6 flex flex-col items-center text-center gap-3">
+              <FaExclamationTriangle className="text-4xl text-red-500 mb-1" />
+              <h4 className="text-lg font-bold text-red-700 m-0">
+                Are you sure you want to cancel this delivery?
+              </h4>
+              <p className="text-sm text-red-600/80 m-0">
                 This action cannot be undone. The delivery will be marked as
                 cancelled and no payment will be required.
               </p>
             </div>
 
-            <div className="delivery-details">
-              <h5>Delivery Details:</h5>
-              <div className="detail-row">
-                <strong>ID:</strong> #{selectedDelivery.DeliveryID}
-              </div>
-              <div className="detail-row">
-                <strong>Route:</strong> {selectedDelivery.PickupLocation} →{" "}
-                {selectedDelivery.DropoffLocation ||
-                  selectedDelivery.DeliveryAddress}
-              </div>
-              <div className="detail-row">
-                <strong>Date:</strong>{" "}
-                {formatDate(selectedDelivery.DeliveryDate)}
-              </div>
-              <div className="detail-row">
-                <strong>Amount:</strong>{" "}
-                {formatCurrency(selectedDelivery.DeliveryRate || 0)}
+            <div className="bg-gray-50 rounded-xl p-5 border border-gray-200">
+              <h5 className="text-sm font-bold text-gray-700 uppercase tracking-wider mb-3">
+                Delivery Details:
+              </h5>
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none">
+                  <strong className="text-gray-600">ID:</strong>{" "}
+                  <span className="font-mono font-medium">
+                    #{selectedDelivery.DeliveryID}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none">
+                  <strong className="text-gray-600">Route:</strong>{" "}
+                  <span className="font-medium text-right max-w-[70%]">
+                    {selectedDelivery.PickupLocation} →{" "}
+                    {selectedDelivery.DropoffLocation ||
+                      selectedDelivery.DeliveryAddress}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none">
+                  <strong className="text-gray-600">Date:</strong>{" "}
+                  <span className="font-medium">
+                    {formatDate(selectedDelivery.DeliveryDate)}
+                  </span>
+                </div>
+                <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none">
+                  <strong className="text-gray-600">Amount:</strong>{" "}
+                  <span className="font-bold text-gray-800">
+                    {formatCurrency(selectedDelivery.DeliveryRate || 0)}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="form-actions">
+            <div className="flex justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => setShowCancelModal(false)}
-                className="btn btn-outline-secondary"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                 disabled={isLoading}
               >
                 Keep Delivery
@@ -4976,7 +5179,7 @@ const ClientProfile = () => {
               <button
                 type="button"
                 onClick={confirmCancelDelivery}
-                className="btn btn-danger"
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold shadow-md shadow-red-500/20 transition-all hover:-translate-y-0.5"
                 disabled={isLoading}
               >
                 {isLoading ? "Cancelling..." : "Yes, Cancel Delivery"}
@@ -4993,10 +5196,10 @@ const ClientProfile = () => {
           onClose={() => setShowChangeRouteModal(false)}
           size="large"
         >
-          <div className="change-route-modal">
-            <div className="info-message">
-              <FaInfoCircle className="info-icon" />
-              <p>
+          <div className="flex flex-col gap-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 text-blue-800">
+              <FaInfoCircle className="text-xl text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-sm m-0">
                 Update the pickup and dropoff locations. The billing will be
                 recalculated based on the new distance. Note: Route changes must
                 be made at least 3 days before delivery or with more than 24
@@ -5009,10 +5212,16 @@ const ClientProfile = () => {
                 e.preventDefault();
                 confirmChangeRoute();
               }}
+              className="flex flex-col gap-4"
             >
-              <div className="form-group">
-                <label htmlFor="newPickupLocation">New Pickup Location</label>
-                <div className="input-group">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="newPickupLocation"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  New Pickup Location
+                </label>
+                <div className="relative">
                   <input
                     type="text"
                     id="newPickupLocation"
@@ -5023,14 +5232,14 @@ const ClientProfile = () => {
                         pickupLocation: e.target.value,
                       }))
                     }
-                    className="form-control"
+                    className="w-full h-11 pl-4 pr-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder-gray-400"
                     placeholder="Enter new pickup address"
                     required
                   />
-                  <div className="input-group-append">
+                  <div className="absolute right-1 top-1 bottom-1">
                     <button
                       type="button"
-                      className="btn btn-outline-secondary"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                       onClick={() => openChangeRouteMapModal("pickup")}
                       title="Select pickup location on map"
                     >
@@ -5040,9 +5249,14 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="form-group">
-                <label htmlFor="newDropoffLocation">New Dropoff Location</label>
-                <div className="input-group">
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="newDropoffLocation"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  New Dropoff Location
+                </label>
+                <div className="relative">
                   <input
                     type="text"
                     id="newDropoffLocation"
@@ -5053,14 +5267,14 @@ const ClientProfile = () => {
                         dropoffLocation: e.target.value,
                       }))
                     }
-                    className="form-control"
+                    className="w-full h-11 pl-4 pr-12 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all placeholder-gray-400"
                     placeholder="Enter new dropoff address"
                     required
                   />
-                  <div className="input-group-append">
+                  <div className="absolute right-1 top-1 bottom-1">
                     <button
                       type="button"
-                      className="btn btn-outline-secondary"
+                      className="h-9 w-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
                       onClick={() => openChangeRouteMapModal("dropoff")}
                       title="Select dropoff location on map"
                     >
@@ -5070,11 +5284,11 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="form-group">
+              <div className="mt-2">
                 <button
                   type="button"
                   onClick={calculateNewRoute}
-                  className="btn btn-outline-primary"
+                  className="px-4 py-2 border border-blue-200 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg font-bold flex items-center gap-2 transition-colors text-sm"
                   disabled={
                     !changeRouteData.pickupLocation ||
                     !changeRouteData.dropoffLocation
@@ -5084,61 +5298,69 @@ const ClientProfile = () => {
                 </button>
               </div>
 
-              <div className="route-comparison">
-                <div className="current-route">
-                  <h5>Current Route:</h5>
-                  <p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                <div className="flex flex-col gap-2 p-3 bg-white rounded-lg border border-gray-100 shadow-sm">
+                  <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider m-0">
+                    Current Route:
+                  </h5>
+                  <p className="text-sm font-medium text-gray-700 m-0 break-words line-clamp-2">
                     {selectedDelivery.PickupLocation} →{" "}
                     {selectedDelivery.DropoffLocation ||
                       selectedDelivery.DeliveryAddress}
                   </p>
-                  <p>
-                    <strong>Distance:</strong>{" "}
-                    {selectedDelivery.DeliveryDistance
-                      ? parseFloat(selectedDelivery.DeliveryDistance).toFixed(2)
-                      : "0.00"}{" "}
-                    km
-                  </p>
-                  <p>
-                    <strong>Cost:</strong>{" "}
-                    {formatCurrency(selectedDelivery.DeliveryRate || 0)}
-                  </p>
+                  <div className="flex justify-between items-center mt-auto pt-2 border-t border-gray-100 text-xs">
+                    <span className="text-gray-500">
+                      <strong>Distance:</strong>{" "}
+                      {selectedDelivery.DeliveryDistance
+                        ? parseFloat(selectedDelivery.DeliveryDistance).toFixed(
+                            2,
+                          )
+                        : "0.00"}{" "}
+                      km
+                    </span>
+                    <span className="font-bold text-gray-700">
+                      {formatCurrency(selectedDelivery.DeliveryRate || 0)}
+                    </span>
+                  </div>
                 </div>
 
                 {changeRouteData.newDistance > 0 && (
-                  <div className="new-route">
-                    <h5>New Route:</h5>
-                    <p>
+                  <div className="flex flex-col gap-2 p-3 bg-blue-50/50 rounded-lg border border-blue-100 shadow-sm">
+                    <h5 className="text-sm font-bold text-blue-500 uppercase tracking-wider m-0">
+                      New Route:
+                    </h5>
+                    <p className="text-sm font-medium text-gray-700 m-0 break-words line-clamp-2">
                       {changeRouteData.pickupLocation} →{" "}
                       {changeRouteData.dropoffLocation}
                     </p>
-                    <p>
-                      <strong>Distance:</strong>{" "}
-                      {changeRouteData.newDistance
-                        ? changeRouteData.newDistance.toFixed(2)
-                        : "0.00"}{" "}
-                      km
-                    </p>
-                    <p>
-                      <strong>New Cost:</strong>{" "}
-                      {formatCurrency(changeRouteData.newCost)}
-                    </p>
+                    <div className="flex justify-between items-center mt-auto pt-2 border-t border-blue-100/50 text-xs">
+                      <span className="text-gray-500">
+                        <strong>Distance:</strong>{" "}
+                        {changeRouteData.newDistance
+                          ? changeRouteData.newDistance.toFixed(2)
+                          : "0.00"}{" "}
+                        km
+                      </span>
+                      <span className="font-bold text-blue-700">
+                        {formatCurrency(changeRouteData.newCost)}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="form-actions">
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setShowChangeRouteModal(false)}
-                  className="btn btn-outline-secondary"
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                   disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-warning"
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold shadow-md shadow-amber-500/20 transition-all hover:-translate-y-0.5"
                   disabled={
                     isLoading ||
                     !changeRouteData.pickupLocation ||
@@ -5160,18 +5382,20 @@ const ClientProfile = () => {
           onClose={() => setShowRebookModal(false)}
           size="medium"
         >
-          <div className="rebook-delivery-modal">
-            <div className="info-message">
-              <FaCalendar className="info-icon" />
-              <p>
+          <div className="flex flex-col gap-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3 text-blue-800">
+              <FaCalendar className="text-xl text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-sm m-0">
                 Choose a new date and time for your delivery. The driver and
                 staff will be notified of the change.
               </p>
             </div>
 
-            <div className="current-schedule">
-              <h5>Current Schedule:</h5>
-              <p>
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+              <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">
+                Current Schedule:
+              </h5>
+              <p className="m-0 text-sm text-gray-700">
                 <strong>Date:</strong>{" "}
                 {formatDate(selectedDelivery.DeliveryDate)}
               </p>
@@ -5182,9 +5406,15 @@ const ClientProfile = () => {
                 e.preventDefault();
                 confirmRebookDelivery();
               }}
+              className="flex flex-col gap-4"
             >
-              <div className="form-group">
-                <label htmlFor="newDeliveryDate">New Delivery Date</label>
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="newDeliveryDate"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  New Delivery Date
+                </label>
                 <input
                   type="date"
                   id="newDeliveryDate"
@@ -5195,14 +5425,19 @@ const ClientProfile = () => {
                       newDate: e.target.value,
                     }))
                   }
-                  className="form-control"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                   min={new Date().toISOString().split("T")[0]}
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label htmlFor="newDeliveryTime">Preferred Time</label>
+              <div className="flex flex-col gap-2">
+                <label
+                  htmlFor="newDeliveryTime"
+                  className="text-sm font-bold text-gray-700"
+                >
+                  Preferred Time
+                </label>
                 <select
                   id="newDeliveryTime"
                   value={rebookData.newTime}
@@ -5212,7 +5447,7 @@ const ClientProfile = () => {
                       newTime: e.target.value,
                     }))
                   }
-                  className="form-control"
+                  className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all cursor-pointer"
                   required
                 >
                   <option value="08:00">8:00 AM</option>
@@ -5228,31 +5463,40 @@ const ClientProfile = () => {
                 </select>
               </div>
 
-              <div className="delivery-details">
-                <h5>Delivery Details:</h5>
-                <div className="detail-row">
-                  <strong>Route:</strong> {selectedDelivery.PickupLocation} →{" "}
-                  {selectedDelivery.DropoffLocation ||
-                    selectedDelivery.DeliveryAddress}
-                </div>
-                <div className="detail-row">
-                  <strong>Amount:</strong>{" "}
-                  {formatCurrency(selectedDelivery.DeliveryRate || 0)}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h5 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">
+                  Delivery Details:
+                </h5>
+                <div className="flex flex-col gap-1 text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <strong className="text-gray-600">Route:</strong>
+                    <span className="text-right max-w-[70%]">
+                      {selectedDelivery.PickupLocation} →{" "}
+                      {selectedDelivery.DropoffLocation ||
+                        selectedDelivery.DeliveryAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between mt-1 pt-1 border-t border-gray-200/50">
+                    <strong className="text-gray-600">Amount:</strong>{" "}
+                    <span className="font-bold text-gray-800">
+                      {formatCurrency(selectedDelivery.DeliveryRate || 0)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-actions">
+              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
                 <button
                   type="button"
                   onClick={() => setShowRebookModal(false)}
-                  className="btn btn-outline-secondary"
+                  className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                   disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-info"
+                  className="px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-bold shadow-md shadow-cyan-500/20 transition-all hover:-translate-y-0.5"
                   disabled={
                     isLoading || !rebookData.newDate || !rebookData.newTime
                   }
@@ -5272,154 +5516,213 @@ const ClientProfile = () => {
           onClose={() => setShowViewDetailsModal(false)}
           size="large"
         >
-          <div className="view-details-modal">
-            <div className="details-grid">
-              <div className="detail-section">
-                <h4>📦 Delivery Information</h4>
-                <div className="detail-item">
-                  <label>Delivery ID:</label>
-                  <span>#{viewingDelivery.DeliveryID}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Status:</label>
-                  <span
-                    className={`status-badge modern ${viewingDelivery.DeliveryStatus?.toLowerCase()}`}
-                  >
-                    {viewingDelivery.DeliveryStatus}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Delivery Date:</label>
-                  <span>
-                    {formatDate(viewingDelivery.DeliveryDate, viewingDelivery)}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Amount:</label>
-                  <span className="amount-highlight">
-                    {formatCurrency(
-                      viewingDelivery.DeliveryRate ||
-                        viewingDelivery.deliveryRate ||
-                        0,
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              <div className="detail-section">
-                <h4>🗺️ Route Information</h4>
-                <div className="detail-item">
-                  <label>Pickup Location:</label>
-                  <span>{viewingDelivery.PickupLocation || "N/A"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Dropoff Location:</label>
-                  <span>
-                    {viewingDelivery.DropoffLocation ||
-                      viewingDelivery.DeliveryAddress ||
-                      "N/A"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Distance:</label>
-                  <span>
-                    {viewingDelivery.DeliveryDistance
-                      ? `${viewingDelivery.DeliveryDistance} km`
-                      : "N/A"}
-                  </span>
-                </div>
-                {((viewingDelivery.pickupCoordinates &&
-                  viewingDelivery.dropoffCoordinates) ||
-                  (viewingDelivery.PickupCoordinates &&
-                    viewingDelivery.DropoffCoordinates)) && (
-                  <button
-                    className="btn btn-outline"
-                    onClick={() => {
-                      viewDeliveryRoute(viewingDelivery);
-                      setShowViewDetailsModal(false);
-                    }}
-                  >
-                    <FaMapMarkerAlt /> View Route on Map
-                  </button>
-                )}
-              </div>
-
-              <div className="detail-section">
-                <h4>🚛 Truck & Driver Information</h4>
-                <div className="detail-item">
-                  <label>Truck Plate:</label>
-                  <span>{viewingDelivery.TruckPlate || "Not Assigned"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Truck Type:</label>
-                  <span>
-                    {viewingDelivery.TruckBrand ||
-                      viewingDelivery.TruckType ||
-                      "N/A"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Driver:</label>
-                  <span>{viewingDelivery.DriverName || "Not Assigned"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Helper:</label>
-                  <span>{viewingDelivery.HelperName || "Not Assigned"}</span>
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  📦 Delivery Information
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Delivery ID:
+                    </label>
+                    <span className="text-sm font-mono font-bold text-gray-700">
+                      #{viewingDelivery.DeliveryID}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Status:
+                    </label>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        viewingDelivery.DeliveryStatus === "pending"
+                          ? "bg-amber-100 text-amber-700"
+                          : viewingDelivery.DeliveryStatus === "in-progress"
+                            ? "bg-blue-100 text-blue-700"
+                            : viewingDelivery.DeliveryStatus === "completed"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : viewingDelivery.DeliveryStatus === "cancelled"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {viewingDelivery.DeliveryStatus}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Delivery Date:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {formatDate(
+                        viewingDelivery.DeliveryDate,
+                        viewingDelivery,
+                      )}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Amount:
+                    </label>
+                    <span className="text-lg font-bold text-emerald-600">
+                      {formatCurrency(
+                        viewingDelivery.DeliveryRate ||
+                          viewingDelivery.deliveryRate ||
+                          0,
+                      )}
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="detail-section">
-                <h4>📞 Contact Information</h4>
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  🗺️ Route Information
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-start">
+                    <label className="text-sm text-gray-500 font-medium whitespace-nowrap mr-2">
+                      Pickup:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700 text-right text-balance">
+                      {viewingDelivery.PickupLocation || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-start">
+                    <label className="text-sm text-gray-500 font-medium whitespace-nowrap mr-2">
+                      Dropoff:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700 text-right text-balance">
+                      {viewingDelivery.DropoffLocation ||
+                        viewingDelivery.DeliveryAddress ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Distance:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.DeliveryDistance
+                        ? `${viewingDelivery.DeliveryDistance} km`
+                        : "N/A"}
+                    </span>
+                  </div>
+                  {((viewingDelivery.pickupCoordinates &&
+                    viewingDelivery.dropoffCoordinates) ||
+                    (viewingDelivery.PickupCoordinates &&
+                      viewingDelivery.DropoffCoordinates)) && (
+                    <button
+                      className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
+                      onClick={() => {
+                        viewDeliveryRoute(viewingDelivery);
+                        setShowViewDetailsModal(false);
+                      }}
+                    >
+                      <FaMapMarkerAlt /> View Route on Map
+                    </button>
+                  )}
+                </div>
+              </div>
 
-                <div style={{ marginBottom: "15px" }}>
-                  <strong
-                    style={{
-                      color: "#2c5282",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  🚛 Truck & Driver Information
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Truck Plate:
+                    </label>
+                    <span className="font-mono font-bold text-gray-800 bg-white px-2 py-1 rounded border border-gray-200 text-xs">
+                      {viewingDelivery.TruckPlate || "Not Assigned"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Truck Type:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.TruckBrand ||
+                        viewingDelivery.TruckType ||
+                        "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Driver:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.DriverName || "Not Assigned"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Helper:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.HelperName || "Not Assigned"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  📞 Contact Information
+                </h4>
+
+                <div className="mb-4">
+                  <strong className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">
                     📍 Pickup Contact
                   </strong>
-                  <div className="detail-item">
-                    <label>Contact Person:</label>
-                    <span>
+                  <div className="flex justify-between py-1 items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Person:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
                       {viewingDelivery.PickupContactPerson || "Not specified"}
                     </span>
                   </div>
-                  <div className="detail-item">
-                    <label>Contact Number:</label>
-                    <span>{viewingDelivery.PickupContactNumber || "N/A"}</span>
+                  <div className="flex justify-between py-1 items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Phone:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.PickupContactNumber || "N/A"}
+                    </span>
                   </div>
                 </div>
 
                 <div>
-                  <strong
-                    style={{
-                      color: "#2c5282",
-                      display: "block",
-                      marginBottom: "8px",
-                    }}
-                  >
+                  <strong className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-2">
                     📍 Dropoff Contact
                   </strong>
-                  <div className="detail-item">
-                    <label>Contact Person:</label>
-                    <span>
+                  <div className="flex justify-between py-1 items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Person:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
                       {viewingDelivery.DropoffContactPerson || "Not specified"}
                     </span>
                   </div>
-                  <div className="detail-item">
-                    <label>Contact Number:</label>
-                    <span>{viewingDelivery.DropoffContactNumber || "N/A"}</span>
+                  <div className="flex justify-between py-1 items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Phone:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingDelivery.DropoffContactNumber || "N/A"}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="modal-actions">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
-                className="btn btn-secondary"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                 onClick={() => setShowViewDetailsModal(false)}
               >
                 Close
@@ -5428,7 +5731,7 @@ const ClientProfile = () => {
                 <>
                   {canRescheduleDelivery(viewingDelivery) && (
                     <button
-                      className="btn btn-primary"
+                      className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-bold shadow-md shadow-amber-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
                       onClick={() => {
                         setShowViewDetailsModal(false);
                         handleRebookDelivery(viewingDelivery);
@@ -5439,7 +5742,7 @@ const ClientProfile = () => {
                   )}
                   {canRescheduleDelivery(viewingDelivery) && (
                     <button
-                      className="btn btn-outline"
+                      className="px-4 py-2 border border-purple-200 text-purple-600 bg-purple-50 hover:bg-purple-100 rounded-lg font-bold flex items-center gap-2 transition-colors"
                       onClick={() => {
                         setShowViewDetailsModal(false);
                         handleChangeRoute(viewingDelivery);
@@ -5449,7 +5752,7 @@ const ClientProfile = () => {
                     </button>
                   )}
                   <button
-                    className="btn btn-danger"
+                    className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-bold shadow-md shadow-red-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
                     onClick={() => {
                       setShowViewDetailsModal(false);
                       handleCancelDelivery(viewingDelivery);
@@ -5471,80 +5774,112 @@ const ClientProfile = () => {
           onClose={() => setShowTruckDetailsModal(false)}
           size="medium"
         >
-          <div className="view-details-modal">
-            <div className="details-grid">
-              <div className="detail-section">
-                <h4>🚛 Truck Information</h4>
-                <div className="detail-item">
-                  <label>Truck Plate:</label>
-                  <span className="plate-badge">{viewingTruck.TruckPlate}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Type:</label>
-                  <span>{viewingTruck.TruckType || "N/A"}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Brand:</label>
-                  <span>{viewingTruck.TruckBrand}</span>
-                </div>
-                <div className="detail-item">
-                  <label>Capacity:</label>
-                  <span className="capacity-value">
-                    {viewingTruck.TruckCapacity} tons
-                  </span>
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  🚛 Truck Information
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Truck Plate:
+                    </label>
+                    <span className="font-mono font-bold text-gray-800 bg-white px-2 py-1 rounded border border-gray-200 text-xs">
+                      {viewingTruck.TruckPlate}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Type:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingTruck.TruckType || "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Brand:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingTruck.TruckBrand}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Capacity:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingTruck.TruckCapacity} tons
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              <div className="detail-section">
-                <h4>📊 Performance Statistics</h4>
-                <div className="detail-item">
-                  <label>Total Deliveries:</label>
-                  <span className="deliveries-count">
-                    {viewingTruck.TotalCompletedDeliveries || 0}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Total Kilometers:</label>
-                  <span>{viewingTruck.TotalKilometers || 0} km</span>
-                </div>
-                <div className="detail-item">
-                  <label>Allocation Status:</label>
-                  <span>
-                    {viewingTruck.allocationStatus ||
-                      viewingTruck.AllocationStatus ||
-                      "Allocated"}
-                  </span>
-                </div>
-                <div className="detail-item">
-                  <label>Current Status:</label>
-                  <span
-                    className={`modern-truck-status-badge ${
-                      deliveries.some(
+              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                  📊 Performance Statistics
+                </h4>
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Total Deliveries:
+                    </label>
+                    <span className="font-bold text-blue-600">
+                      {viewingTruck.TotalCompletedDeliveries || 0}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Total Kilometers:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingTruck.TotalKilometers || 0} km
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Allocation Status:
+                    </label>
+                    <span className="text-sm font-semibold text-gray-700">
+                      {viewingTruck.allocationStatus ||
+                        viewingTruck.AllocationStatus ||
+                        "Allocated"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                    <label className="text-sm text-gray-500 font-medium">
+                      Current Status:
+                    </label>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        deliveries.some(
+                          (delivery) =>
+                            delivery.TruckID === viewingTruck.TruckID &&
+                            (delivery.DeliveryStatus === "pending" ||
+                              delivery.DeliveryStatus === "in-progress"),
+                        )
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
+                    >
+                      {deliveries.some(
                         (delivery) =>
                           delivery.TruckID === viewingTruck.TruckID &&
                           (delivery.DeliveryStatus === "pending" ||
                             delivery.DeliveryStatus === "in-progress"),
                       )
-                        ? "busy"
-                        : "available"
-                    }`}
-                  >
-                    {deliveries.some(
-                      (delivery) =>
-                        delivery.TruckID === viewingTruck.TruckID &&
-                        (delivery.DeliveryStatus === "pending" ||
-                          delivery.DeliveryStatus === "in-progress"),
-                    )
-                      ? "In Use"
-                      : "Available"}
-                  </span>
+                        ? "In Use"
+                        : "Available"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="modal-actions">
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
-                className="btn btn-secondary"
+                className="px-4 py-2 border border-gray-200 rounded-lg text-gray-600 bg-white hover:bg-gray-50 transition-colors font-medium"
                 onClick={() => setShowTruckDetailsModal(false)}
               >
                 Close
@@ -5556,7 +5891,7 @@ const ClientProfile = () => {
                     delivery.DeliveryStatus === "in-progress"),
               ) && (
                 <button
-                  className="btn btn-primary"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
                   onClick={() => {
                     setShowTruckDetailsModal(false);
                     setShowBookingModal(true);

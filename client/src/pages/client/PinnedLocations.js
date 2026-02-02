@@ -13,7 +13,6 @@ import {
   FaStar,
   FaClock,
   FaSearch,
-  FaFilter,
   FaMapPin,
   FaPhone,
   FaStickyNote,
@@ -23,12 +22,11 @@ import {
 } from "react-icons/fa";
 import enhancedIsolatedMapModal from "../../components/maps/EnhancedIsolatedMapModal";
 import Loader from "../../components/common/Loader";
-import "./PinnedLocations.css";
-import "../../styles/ClientPage.css"; // Import standard styles
+// CSS imports removed in favor of Tailwind
 
 const PinnedLocations = () => {
   const { authUser } = useContext(AuthContext);
-  const { showSuccess, showError, showWarning, showInfo } = useModernToast();
+  const { showSuccess, showError } = useModernToast();
 
   // State management
   const [locations, setLocations] = useState([]);
@@ -251,7 +249,7 @@ const PinnedLocations = () => {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        await response.json();
         showSuccess(
           showEditModal ? "Location Updated" : "Location Saved",
           showEditModal
@@ -322,49 +320,58 @@ const PinnedLocations = () => {
     return <Loader message="Loading your saved locations..." />;
   }
 
+  // Common button styles
+  const btnBase =
+    "flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-base transition-all duration-300 border shadow-sm hover:-translate-y-px";
+  const btnPrimary = `${btnBase} bg-gradient-to-br from-primary-500 to-primary-700 text-white border-transparent hover:shadow-lg shadow-primary-500/30`;
+  const btnSecondary = `${btnBase} bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-200 hover:border-gray-300`;
+  const btnDanger = `${btnBase} bg-gradient-to-br from-danger-500 to-danger-600 text-white border-transparent hover:shadow-lg shadow-danger-500/30`;
+
+  // Icon Button
+  const actionBtn =
+    "w-8 h-8 flex items-center justify-center rounded-md border-none cursor-pointer text-sm transition-all duration-200 text-white hover:scale-110 shadow-sm";
+
+  // Form input styles
+  const inputClass =
+    "w-full px-4 py-3.5 border-2 border-gray-200 rounded-lg text-base bg-gray-50 transition-all duration-300 focus:outline-none focus:border-primary-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)]";
+  const labelClass = "block font-semibold text-gray-700 text-sm mb-2";
+
   return (
-    <div className="client-page-container">
+    <div className="w-full animate-fade-in block">
       {/* Header */}
-      <div className="client-page-header">
-        <h1>
-          <FaMapPin className="header-icon" />
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-200">
+        <h1 className="flex items-center gap-3 text-3xl font-bold text-primary-500 m-0">
+          <FaMapPin className="text-primary-300" />
           Pinned Locations
-          <span
-            className="location-count"
-            style={{
-              fontSize: "1rem",
-              marginLeft: "1rem",
-              color: "var(--secondary-color)",
-              fontWeight: "normal",
-            }}
-          >
+          <span className="bg-gradient-to-br from-primary-500 to-primary-700 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-md ml-4">
             {locations.length} saved
           </span>
         </h1>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={openAddModal}>
+        <div className="flex gap-4 mt-4 md:mt-0">
+          <button className={btnPrimary} onClick={openAddModal}>
             <FaPlus /> Add Location
           </button>
         </div>
       </div>
 
       {/* Search and Filter Bar */}
-      <div className="search-filter-bar" style={{ marginBottom: "1.5rem" }}>
-        <div className="search-box">
-          <FaSearch className="search-icon" />
+      <div className="flex flex-wrap gap-4 items-center mb-6">
+        <div className="flex-1 relative min-w-[300px]">
+          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10" />
           <input
             type="text"
+            className={`${inputClass} pl-12`}
             placeholder="Search locations..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
-        <div className="filter-controls">
+        <div className="flex gap-4 flex-wrap">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="category-filter"
+            className={`${inputClass} min-w-[150px] cursor-pointer`}
           >
             <option value="all">All Categories</option>
             {categories.map((cat) => (
@@ -377,7 +384,7 @@ const PinnedLocations = () => {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            className="sort-filter"
+            className={`${inputClass} min-w-[150px] cursor-pointer`}
           >
             <option value="name">Sort by Name</option>
             <option value="category">Sort by Category</option>
@@ -388,99 +395,123 @@ const PinnedLocations = () => {
       </div>
 
       {/* Locations Table */}
-      <div className="locations-container">
+      <div className="bg-white rounded-2xl p-8 w-full shadow-card border border-white/20">
         {filteredLocations.length === 0 ? (
-          <div className="empty-state">
-            <FaMapMarkerAlt className="empty-icon" />
-            <h3>No saved locations</h3>
-            <p>
+          <div className="text-center py-16 px-8 text-gray-500">
+            <FaMapMarkerAlt className="text-6xl text-gray-300 mb-6 mx-auto" />
+            <h3 className="text-2xl font-semibold text-gray-600 mb-2">
+              No saved locations
+            </h3>
+            <p className="text-base mb-8 max-w-lg mx-auto leading-relaxed">
               {searchTerm || categoryFilter !== "all"
                 ? "No locations match your search criteria."
                 : "Start by adding your frequently used pickup and dropoff locations."}
             </p>
             {!searchTerm && categoryFilter === "all" && (
-              <button className="btn-primary" onClick={openAddModal}>
+              <button
+                className={`${btnPrimary} mx-auto`}
+                onClick={openAddModal}
+              >
                 <FaPlus /> Add Your First Location
               </button>
             )}
           </div>
         ) : (
-          <div className="locations-table-wrapper">
-            <table className="locations-table">
+          <div className="w-full overflow-x-auto">
+            <table className="w-full border-separate border-spacing-0 min-w-[800px]">
               <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Address</th>
-                  <th>Contact</th>
-                  <th>Last Used</th>
-                  <th>Usage</th>
-                  <th>Actions</th>
+                <tr className="bg-gradient-to-br from-gray-50 to-gray-200">
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 rounded-tl-xl whitespace-nowrap">
+                    Name
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
+                    Category
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
+                    Address
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
+                    Contact
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
+                    Last Used
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
+                    Usage
+                  </th>
+                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 rounded-tr-xl whitespace-nowrap">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLocations.map((location) => {
                   const CategoryIcon = getCategoryIcon(location.category);
                   return (
-                    <tr key={location.id} className="location-row">
-                      <td>
-                        <div className="location-name-cell">
-                          <span className="location-name">{location.name}</span>
-                          {location.isDefault && (
-                            <FaStar
-                              className="default-star"
-                              title="Default location"
-                            />
-                          )}
+                    <tr
+                      key={location.id}
+                      className="bg-white transition-all duration-200 border-b border-gray-100 hover:bg-gray-50 hover:shadow-sm"
+                    >
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle first:rounded-bl-xl">
+                        <div className="flex flex-col gap-2">
+                          <span className="font-semibold text-base text-gray-800 flex items-center gap-2">
+                            {location.name}
+                            {location.isDefault && (
+                              <FaStar
+                                className="text-warning-500 text-sm"
+                                title="Default location"
+                              />
+                            )}
+                          </span>
                           {location.notes && (
-                            <div className="location-notes-preview">
-                              <FaStickyNote className="notes-icon" />
+                            <div className="flex items-center gap-2 text-xs text-gray-500 italic">
+                              <FaStickyNote className="text-gray-400" />
                               <span>{location.notes}</span>
                             </div>
                           )}
                         </div>
                       </td>
-                      <td>
-                        <div className="category-cell">
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
+                        <div className="flex items-center gap-2 px-3 py-2 bg-blue-50/50 rounded-lg w-fit">
                           <CategoryIcon
                             style={{
                               color: getCategoryColor(location.category),
                             }}
-                            className="category-icon"
+                            className="text-base"
                           />
-                          <span className="category-label">
+                          <span className="font-semibold text-xs">
                             {categories.find(
                               (c) => c.value === location.category,
                             )?.label || location.category}
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="address-cell">
-                          <FaMapMarkerAlt className="address-icon" />
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
+                        <div className="flex items-start gap-2 text-gray-600 max-w-[300px]">
+                          <FaMapMarkerAlt className="text-gray-500 mt-1 shrink-0 text-sm" />
                           <span>{location.address}</span>
                         </div>
                       </td>
-                      <td>
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
                         {location.contactPerson ? (
-                          <div className="contact-cell">
-                            <div className="contact-person">
+                          <div className="flex flex-col gap-1">
+                            <div className="font-medium text-gray-800">
                               {location.contactPerson}
                             </div>
                             {location.contactNumber && (
-                              <div className="contact-number">
-                                <FaPhone className="phone-icon" />
+                              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                                <FaPhone className="text-xs" />
                                 {location.contactNumber}
                               </div>
                             )}
                           </div>
                         ) : (
-                          <span className="no-data">-</span>
+                          <span className="text-gray-300 italic">-</span>
                         )}
                       </td>
-                      <td>
-                        <div className="date-cell">
-                          <FaClock className="clock-icon" />
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <FaClock className="text-gray-400 text-sm" />
                           <span>
                             {location.lastUsed
                               ? new Date(location.lastUsed).toLocaleDateString()
@@ -488,23 +519,23 @@ const PinnedLocations = () => {
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="usage-cell">
-                          <FaEye className="usage-icon" />
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
+                        <div className="flex items-center gap-2 text-gray-500">
+                          <FaEye className="text-gray-400 text-sm" />
                           <span>{location.usageCount || 0} times</span>
                         </div>
                       </td>
-                      <td>
-                        <div className="actions-cell">
+                      <td className="px-6 py-5 text-gray-800 text-sm align-middle last:rounded-br-xl">
+                        <div className="flex gap-2 justify-end">
                           <button
-                            className="action-btn edit-btn"
+                            className={`${actionBtn} bg-gradient-to-br from-warning-500 to-warning-600`}
                             onClick={() => openEditModal(location)}
                             title="Edit location"
                           >
                             <FaEdit />
                           </button>
                           <button
-                            className="action-btn delete-btn"
+                            className={`${actionBtn} bg-gradient-to-br from-danger-500 to-danger-600`}
                             onClick={() => openDeleteModal(location)}
                             title="Delete location"
                           >
@@ -524,7 +555,7 @@ const PinnedLocations = () => {
       {/* Add/Edit Location Modal */}
       {(showAddModal || showEditModal) && (
         <div
-          className="modal-overlay"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[10000] p-4"
           onClick={() => {
             setShowAddModal(false);
             setShowEditModal(false);
@@ -532,13 +563,15 @@ const PinnedLocations = () => {
           }}
         >
           <div
-            className="modal-content location-modal"
+            className="bg-white rounded-2xl w-full max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col shadow-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
-              <h2>{showEditModal ? "Edit Location" : "Add New Location"}</h2>
+            <div className="flex justify-between items-center px-8 py-6 border-b border-gray-200 bg-gradient-to-br from-gray-50 to-gray-200">
+              <h2 className="text-2xl font-bold text-gray-800 m-0">
+                {showEditModal ? "Edit Location" : "Add New Location"}
+              </h2>
               <button
-                className="modal-close"
+                className="w-9 h-9 border-none bg-gray-100 rounded-lg cursor-pointer flex items-center justify-center text-gray-500 transition-all duration-300 hover:bg-gray-200 hover:text-gray-600"
                 onClick={() => {
                   setShowAddModal(false);
                   setShowEditModal(false);
@@ -549,10 +582,10 @@ const PinnedLocations = () => {
               </button>
             </div>
 
-            <div className="modal-body">
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Location Name *</label>
+            <div className="p-8 flex-1 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                  <label className={labelClass}>Location Name *</label>
                   <input
                     type="text"
                     value={formData.name}
@@ -560,14 +593,16 @@ const PinnedLocations = () => {
                       setFormData((prev) => ({ ...prev, name: e.target.value }))
                     }
                     placeholder="e.g., Main Office, Home, Warehouse A"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group full-width">
-                  <label>Address *</label>
-                  <div className="address-input-group">
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                  <label className={labelClass}>Address *</label>
+                  <div className="flex gap-2 flex-col md:flex-row">
                     <input
                       type="text"
+                      className={`${inputClass} flex-1`}
                       value={formData.address}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -579,7 +614,7 @@ const PinnedLocations = () => {
                     />
                     <button
                       type="button"
-                      className="map-picker-btn"
+                      className="px-4 py-3.5 bg-gradient-to-br from-primary-500 to-primary-700 text-white border-none rounded-lg cursor-pointer flex items-center gap-2 font-semibold transition-all duration-300 hover:-translate-y-px shadow-sm whitespace-nowrap justify-center"
                       onClick={openMapPicker}
                     >
                       <FaMapMarkerAlt /> Map
@@ -587,8 +622,8 @@ const PinnedLocations = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label>Category</label>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>Category</label>
                   <select
                     value={formData.category}
                     onChange={(e) =>
@@ -597,6 +632,7 @@ const PinnedLocations = () => {
                         category: e.target.value,
                       }))
                     }
+                    className={inputClass}
                   >
                     {categories.map((cat) => (
                       <option key={cat.value} value={cat.value}>
@@ -606,8 +642,8 @@ const PinnedLocations = () => {
                   </select>
                 </div>
 
-                <div className="form-group">
-                  <label>Contact Person</label>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>Contact Person</label>
                   <input
                     type="text"
                     value={formData.contactPerson}
@@ -618,11 +654,12 @@ const PinnedLocations = () => {
                       }))
                     }
                     placeholder="Contact person name"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Contact Number</label>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>Contact Number</label>
                   <input
                     type="tel"
                     value={formData.contactNumber}
@@ -633,11 +670,12 @@ const PinnedLocations = () => {
                       }))
                     }
                     placeholder="+63 912 345 6789"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Operating Hours</label>
+                <div className="flex flex-col gap-2">
+                  <label className={labelClass}>Operating Hours</label>
                   <input
                     type="text"
                     value={formData.operatingHours}
@@ -648,11 +686,12 @@ const PinnedLocations = () => {
                       }))
                     }
                     placeholder="e.g., 8AM-6PM Mon-Fri"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group full-width">
-                  <label>Notes</label>
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                  <label className={labelClass}>Notes</label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) =>
@@ -663,11 +702,12 @@ const PinnedLocations = () => {
                     }
                     placeholder="Additional notes about this location..."
                     rows="3"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group full-width">
-                  <label>Access Instructions</label>
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                  <label className={labelClass}>Access Instructions</label>
                   <textarea
                     value={formData.accessInstructions}
                     onChange={(e) =>
@@ -678,13 +718,15 @@ const PinnedLocations = () => {
                     }
                     placeholder="Special instructions for accessing this location..."
                     rows="2"
+                    className={inputClass}
                   />
                 </div>
 
-                <div className="form-group full-width">
-                  <label className="checkbox-label">
+                <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                  <label className="flex items-center gap-3 cursor-pointer font-medium text-gray-700">
                     <input
                       type="checkbox"
+                      className="w-[18px] h-[18px] cursor-pointer accent-primary-500"
                       checked={formData.isDefault}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -693,17 +735,15 @@ const PinnedLocations = () => {
                         }))
                       }
                     />
-                    <span className="checkbox-text">
-                      Set as default location
-                    </span>
+                    <span>Set as default location</span>
                   </label>
                 </div>
               </div>
             </div>
 
-            <div className="modal-footer">
+            <div className="flex justify-end gap-4 px-8 py-6 border-t border-gray-200 bg-gray-50">
               <button
-                className="btn-secondary"
+                className={btnSecondary}
                 onClick={() => {
                   setShowAddModal(false);
                   setShowEditModal(false);
@@ -712,7 +752,7 @@ const PinnedLocations = () => {
               >
                 Cancel
               </button>
-              <button className="btn-primary" onClick={handleSaveLocation}>
+              <button className={btnPrimary} onClick={handleSaveLocation}>
                 <FaCheck />{" "}
                 {showEditModal ? "Update Location" : "Save Location"}
               </button>
@@ -724,39 +764,43 @@ const PinnedLocations = () => {
       {/* Delete Confirmation Modal */}
       {showDeleteModal && selectedLocation && (
         <div
-          className="modal-overlay"
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[10000] p-4"
           onClick={() => setShowDeleteModal(false)}
         >
           <div
-            className="modal-content delete-modal"
+            className="bg-white rounded-2xl w-full max-w-[400px] flex flex-col shadow-modal"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="modal-header">
-              <h2>Delete Location</h2>
+            <div className="flex justify-between items-center px-6 py-5 border-b border-gray-100 bg-gray-50 rounded-t-2xl">
+              <h2 className="text-xl font-bold text-gray-800 m-0">
+                Delete Location
+              </h2>
               <button
-                className="modal-close"
+                className="w-8 h-8 border-none bg-gray-200 rounded-full cursor-pointer flex items-center justify-center text-gray-500 hover:bg-gray-300"
                 onClick={() => setShowDeleteModal(false)}
               >
                 <FaTimes />
               </button>
             </div>
 
-            <div className="modal-body">
-              <p>
+            <div className="p-6">
+              <p className="text-base text-gray-600 mb-2">
                 Are you sure you want to delete{" "}
                 <strong>{selectedLocation.name}</strong>?
               </p>
-              <p className="delete-warning">This action cannot be undone.</p>
+              <p className="text-danger-600 text-sm italic m-0">
+                This action cannot be undone.
+              </p>
             </div>
 
-            <div className="modal-footer">
+            <div className="flex justify-end gap-3 px-6 py-5 bg-gray-50 rounded-b-2xl">
               <button
-                className="btn-secondary"
+                className={btnSecondary}
                 onClick={() => setShowDeleteModal(false)}
               >
                 Cancel
               </button>
-              <button className="btn-danger" onClick={handleDeleteLocation}>
+              <button className={btnDanger} onClick={handleDeleteLocation}>
                 <FaTrash /> Delete Location
               </button>
             </div>

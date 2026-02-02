@@ -1,43 +1,47 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { 
-  TbX, 
-  TbTruck, 
-  TbUser, 
-  TbUsers, 
-  TbPackage, 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  TbX,
+  TbTruck,
+  TbUser,
+  TbUsers,
+  TbPackage,
   TbBuilding,
   TbClipboard,
   TbDownload,
   TbRefresh,
-  TbReceipt
-} from 'react-icons/tb';
-import TruckFilters from './filters/TruckFilters';
-import DriverFilters from './filters/DriverFilters';
-import HelperFilters from './filters/HelperFilters';
-import DeliveryFilters from './filters/DeliveryFilters';
-import ClientFilters from './filters/ClientFilters';
-import StaffFilters from './filters/StaffFilters';
-import BillingFilters from './filters/BillingFilters';
-import { exportToPDFWithCharts } from '../../utils/pdfExportEnhanced';
-import './ExportReportModal.css';
+  TbReceipt,
+} from "react-icons/tb";
+import TruckFilters from "./filters/TruckFilters";
+import DriverFilters from "./filters/DriverFilters";
+import HelperFilters from "./filters/HelperFilters";
+import DeliveryFilters from "./filters/DeliveryFilters";
+import ClientFilters from "./filters/ClientFilters";
+import StaffFilters from "./filters/StaffFilters";
+import BillingFilters from "./filters/BillingFilters";
+import { exportToPDFWithCharts } from "../../utils/pdfExportEnhanced";
 
 const ExportReportModal = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
   const [filters, setFilters] = useState({});
   const [recordCount, setRecordCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [previewData, setPreviewData] = useState(null);
 
   const reportTabs = [
-    { id: 'all', label: 'All Records', icon: TbDownload, color: '#6366f1' },
-    { id: 'trucks', label: 'Trucks', icon: TbTruck, color: '#3b82f6' },
-    { id: 'drivers', label: 'Drivers', icon: TbUser, color: '#10b981' },
-    { id: 'helpers', label: 'Helpers', icon: TbUsers, color: '#8b5cf6' },
-    { id: 'deliveries', label: 'Deliveries', icon: TbPackage, color: '#f59e0b' },
-    { id: 'clients', label: 'Clients', icon: TbBuilding, color: '#ef4444' },
-    { id: 'staff', label: 'Staff', icon: TbClipboard, color: '#06b6d4' },
-    { id: 'billings', label: 'Billings', icon: TbReceipt, color: '#ec4899' }
+    { id: "all", label: "All Records", icon: TbDownload, color: "#6366f1" },
+    { id: "trucks", label: "Trucks", icon: TbTruck, color: "#3b82f6" },
+    { id: "drivers", label: "Drivers", icon: TbUser, color: "#10b981" },
+    { id: "helpers", label: "Helpers", icon: TbUsers, color: "#8b5cf6" },
+    {
+      id: "deliveries",
+      label: "Deliveries",
+      icon: TbPackage,
+      color: "#f59e0b",
+    },
+    { id: "clients", label: "Clients", icon: TbBuilding, color: "#ef4444" },
+    { id: "staff", label: "Staff", icon: TbClipboard, color: "#06b6d4" },
+    { id: "billings", label: "Billings", icon: TbReceipt, color: "#ec4899" },
   ];
 
   // Reset filters when tab changes
@@ -57,42 +61,55 @@ const ExportReportModal = ({ isOpen, onClose }) => {
   const fetchRecordCount = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+
       // Handle "All Records" tab
-      if (activeTab === 'all') {
+      if (activeTab === "all") {
         // Fetch counts for all entity types
-        const entityTypes = ['trucks', 'drivers', 'helpers', 'deliveries', 'clients', 'staff', 'billings'];
-        const promises = entityTypes.map(type => 
-          axios.get(`/api/reports/${type}/count`, { headers }).catch(() => ({ data: { count: 0 } }))
+        const entityTypes = [
+          "trucks",
+          "drivers",
+          "helpers",
+          "deliveries",
+          "clients",
+          "staff",
+          "billings",
+        ];
+        const promises = entityTypes.map((type) =>
+          axios
+            .get(`/api/reports/${type}/count`, { headers })
+            .catch(() => ({ data: { count: 0 } })),
         );
-        
+
         const results = await Promise.all(promises);
-        const totalCount = results.reduce((sum, res) => sum + (res.data.count || 0), 0);
-        
+        const totalCount = results.reduce(
+          (sum, res) => sum + (res.data.count || 0),
+          0,
+        );
+
         setRecordCount(totalCount);
         setPreviewData({
-          'Trucks': results[0].data.count || 0,
-          'Drivers': results[1].data.count || 0,
-          'Helpers': results[2].data.count || 0,
-          'Deliveries': results[3].data.count || 0,
-          'Clients': results[4].data.count || 0,
-          'Staff': results[5].data.count || 0,
-          'Billings': results[6].data.count || 0
+          Trucks: results[0].data.count || 0,
+          Drivers: results[1].data.count || 0,
+          Helpers: results[2].data.count || 0,
+          Deliveries: results[3].data.count || 0,
+          Clients: results[4].data.count || 0,
+          Staff: results[5].data.count || 0,
+          Billings: results[6].data.count || 0,
         });
       } else {
         const queryParams = new URLSearchParams(filters).toString();
         const response = await axios.get(
           `/api/reports/${activeTab}/count?${queryParams}`,
-          { headers }
+          { headers },
         );
-        
+
         setRecordCount(response.data.count || 0);
         setPreviewData(response.data.preview || null);
       }
     } catch (error) {
-      console.error('Error fetching record count:', error);
+      console.error("Error fetching record count:", error);
       setRecordCount(0);
     } finally {
       setIsLoading(false);
@@ -110,52 +127,65 @@ const ExportReportModal = ({ isOpen, onClose }) => {
   const handleExportPDF = async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      
+
       // Handle "All Records" export
-      if (activeTab === 'all') {
-        const entityTypes = ['trucks', 'drivers', 'helpers', 'deliveries', 'clients', 'staff', 'billings'];
-        const promises = entityTypes.map(type => 
-          axios.get(`/api/reports/${type}`, { headers }).catch(() => ({ data: { data: [] } }))
+      if (activeTab === "all") {
+        const entityTypes = [
+          "trucks",
+          "drivers",
+          "helpers",
+          "deliveries",
+          "clients",
+          "staff",
+          "billings",
+        ];
+        const promises = entityTypes.map((type) =>
+          axios
+            .get(`/api/reports/${type}`, { headers })
+            .catch(() => ({ data: { data: [] } })),
         );
-        
+
         const results = await Promise.all(promises);
-        
+
         // Generate separate PDFs for each entity type
         for (let i = 0; i < entityTypes.length; i++) {
           if (results[i].data.data && results[i].data.data.length > 0) {
             await exportToPDFWithCharts(results[i].data, {
               reportType: entityTypes[i],
               filters: {},
-              recordCount: results[i].data.data.length
+              recordCount: results[i].data.data.length,
             });
           }
         }
-        
-        alert(`✅ All records exported successfully! (${recordCount} total records across 7 PDFs)`);
+
+        alert(
+          `✅ All records exported successfully! (${recordCount} total records across 7 PDFs)`,
+        );
       } else {
         // Fetch full data with filters
         const queryParams = new URLSearchParams(filters).toString();
         const response = await axios.get(
           `/api/reports/${activeTab}?${queryParams}`,
-          { headers }
+          { headers },
         );
-        
+
         // Generate PDF with charts and graphs
         await exportToPDFWithCharts(response.data, {
           reportType: activeTab,
           filters: filters,
-          recordCount: recordCount
+          recordCount: recordCount,
         });
-        
+
         // Show success message
-        alert(`✅ ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report exported successfully! (${recordCount} records)`);
+        alert(
+          `✅ ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report exported successfully! (${recordCount} records)`,
+        );
       }
-      
     } catch (error) {
-      console.error('Error exporting PDF:', error);
-      alert('❌ Failed to export report. Please try again.');
+      console.error("Error exporting PDF:", error);
+      alert("❌ Failed to export report. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -164,16 +194,19 @@ const ExportReportModal = ({ isOpen, onClose }) => {
   const renderFilterForm = () => {
     const filterProps = {
       filters,
-      onChange: handleFilterChange
+      onChange: handleFilterChange,
     };
 
     switch (activeTab) {
-      case 'all':
+      case "all":
         return (
           <div className="all-records-info">
             <div className="info-icon">📊</div>
             <h3>Export All Records</h3>
-            <p>This will export <strong>all records</strong> from all entity types into separate PDF files.</p>
+            <p>
+              This will export <strong>all records</strong> from all entity
+              types into separate PDF files.
+            </p>
             <ul>
               <li>✅ Trucks Report</li>
               <li>✅ Drivers Report</li>
@@ -183,22 +216,24 @@ const ExportReportModal = ({ isOpen, onClose }) => {
               <li>✅ Staff Report</li>
               <li>✅ Billings Report</li>
             </ul>
-            <p className="note">Note: 7 PDF files will be generated and downloaded automatically.</p>
+            <p className="note">
+              Note: 7 PDF files will be generated and downloaded automatically.
+            </p>
           </div>
         );
-      case 'trucks':
+      case "trucks":
         return <TruckFilters {...filterProps} />;
-      case 'drivers':
+      case "drivers":
         return <DriverFilters {...filterProps} />;
-      case 'helpers':
+      case "helpers":
         return <HelperFilters {...filterProps} />;
-      case 'deliveries':
+      case "deliveries":
         return <DeliveryFilters {...filterProps} />;
-      case 'clients':
+      case "clients":
         return <ClientFilters {...filterProps} />;
-      case 'staff':
+      case "staff":
         return <StaffFilters {...filterProps} />;
-      case 'billings':
+      case "billings":
         return <BillingFilters {...filterProps} />;
       default:
         return null;
@@ -226,10 +261,10 @@ const ExportReportModal = ({ isOpen, onClose }) => {
             return (
               <button
                 key={tab.id}
-                className={`export-tab ${activeTab === tab.id ? 'active' : ''}`}
+                className={`export-tab ${activeTab === tab.id ? "active" : ""}`}
                 onClick={() => setActiveTab(tab.id)}
                 style={{
-                  '--tab-color': activeTab === tab.id ? tab.color : '#64748b'
+                  "--tab-color": activeTab === tab.id ? tab.color : "#64748b",
                 }}
               >
                 <Icon size={20} />
@@ -243,14 +278,15 @@ const ExportReportModal = ({ isOpen, onClose }) => {
           <div className="filter-section">
             <div className="filter-header">
               <h3>Filters</h3>
-              <button className="reset-filters-btn" onClick={handleResetFilters}>
+              <button
+                className="reset-filters-btn"
+                onClick={handleResetFilters}
+              >
                 <TbRefresh size={16} />
                 Reset
               </button>
             </div>
-            <div className="filter-form">
-              {renderFilterForm()}
-            </div>
+            <div className="filter-form">{renderFilterForm()}</div>
           </div>
 
           <div className="preview-section">
@@ -258,7 +294,7 @@ const ExportReportModal = ({ isOpen, onClose }) => {
               <div className="preview-stat">
                 <span className="stat-label">Records Found</span>
                 <span className="stat-value">
-                  {isLoading ? '...' : recordCount.toLocaleString()}
+                  {isLoading ? "..." : recordCount.toLocaleString()}
                 </span>
               </div>
               {previewData && (
@@ -280,13 +316,15 @@ const ExportReportModal = ({ isOpen, onClose }) => {
           <button className="btn-secondary" onClick={onClose}>
             Cancel
           </button>
-          <button 
-            className="btn-primary" 
+          <button
+            className="btn-primary"
             onClick={handleExportPDF}
             disabled={isLoading || recordCount === 0}
           >
             <TbDownload size={18} />
-            {isLoading ? 'Generating...' : `Export PDF (${recordCount} records)`}
+            {isLoading
+              ? "Generating..."
+              : `Export PDF (${recordCount} records)`}
           </button>
         </div>
       </div>

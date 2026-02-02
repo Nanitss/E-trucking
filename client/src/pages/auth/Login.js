@@ -1,8 +1,6 @@
 import React, { useState, useContext } from "react";
 import { useHistory } from "react-router-dom";
 import axios from "axios";
-import "./login.css";
-import "../../styles/DesignSystem.css";
 import { AuthContext } from "../../context/AuthContext";
 
 const Login = () => {

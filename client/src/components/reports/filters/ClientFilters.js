@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const ClientFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -16,16 +15,16 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by name"
-          value={filters.name || ''}
-          onChange={(e) => handleChange('name', e.target.value)}
+          value={filters.name || ""}
+          onChange={(e) => handleChange("name", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="active">Active</option>
@@ -37,8 +36,8 @@ const ClientFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Business Type</label>
         <select
-          value={filters.businessType || ''}
-          onChange={(e) => handleChange('businessType', e.target.value)}
+          value={filters.businessType || ""}
+          onChange={(e) => handleChange("businessType", e.target.value)}
         >
           <option value="">All Types</option>
           <option value="Construction">Construction</option>
@@ -56,8 +55,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by company"
-          value={filters.companyName || ''}
-          onChange={(e) => handleChange('companyName', e.target.value)}
+          value={filters.companyName || ""}
+          onChange={(e) => handleChange("companyName", e.target.value)}
         />
       </div>
 
@@ -65,8 +64,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <label>Registration Date From</label>
         <input
           type="date"
-          value={filters.registrationDateFrom || ''}
-          onChange={(e) => handleChange('registrationDateFrom', e.target.value)}
+          value={filters.registrationDateFrom || ""}
+          onChange={(e) => handleChange("registrationDateFrom", e.target.value)}
         />
       </div>
 
@@ -74,8 +73,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <label>Registration Date To</label>
         <input
           type="date"
-          value={filters.registrationDateTo || ''}
-          onChange={(e) => handleChange('registrationDateTo', e.target.value)}
+          value={filters.registrationDateTo || ""}
+          onChange={(e) => handleChange("registrationDateTo", e.target.value)}
         />
       </div>
 
@@ -84,8 +83,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="0"
-          value={filters.minDeliveries || ''}
-          onChange={(e) => handleChange('minDeliveries', e.target.value)}
+          value={filters.minDeliveries || ""}
+          onChange={(e) => handleChange("minDeliveries", e.target.value)}
         />
       </div>
 
@@ -94,8 +93,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="1000"
-          value={filters.maxDeliveries || ''}
-          onChange={(e) => handleChange('maxDeliveries', e.target.value)}
+          value={filters.maxDeliveries || ""}
+          onChange={(e) => handleChange("maxDeliveries", e.target.value)}
         />
       </div>
 
@@ -104,8 +103,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by email"
-          value={filters.email || ''}
-          onChange={(e) => handleChange('email', e.target.value)}
+          value={filters.email || ""}
+          onChange={(e) => handleChange("email", e.target.value)}
         />
       </div>
 
@@ -114,8 +113,8 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by contact"
-          value={filters.contact || ''}
-          onChange={(e) => handleChange('contact', e.target.value)}
+          value={filters.contact || ""}
+          onChange={(e) => handleChange("contact", e.target.value)}
         />
       </div>
 
@@ -124,16 +123,16 @@ const ClientFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by location"
-          value={filters.city || ''}
-          onChange={(e) => handleChange('city', e.target.value)}
+          value={filters.city || ""}
+          onChange={(e) => handleChange("city", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Credit Status</label>
         <select
-          value={filters.creditStatus || ''}
-          onChange={(e) => handleChange('creditStatus', e.target.value)}
+          value={filters.creditStatus || ""}
+          onChange={(e) => handleChange("creditStatus", e.target.value)}
         >
           <option value="">All</option>
           <option value="good">Good Standing</option>

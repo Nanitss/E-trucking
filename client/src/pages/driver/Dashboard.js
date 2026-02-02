@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
-import axios from 'axios';
-import { FaShippingFast, FaCheckCircle, FaClipboardList } from 'react-icons/fa';
-import { AuthContext } from '../../context/AuthContext';
-import Loader from '../../components/common/Loader';
-import StatusBadge from '../../components/common/StatusBadge';
-import '../../styles/DesignSystem.css';
+import React, { useState, useEffect, useContext } from "react";
+import axios from "axios";
+import { FaShippingFast, FaCheckCircle, FaClipboardList } from "react-icons/fa";
+import { AuthContext } from "../../context/AuthContext";
+import Loader from "../../components/common/Loader";
+import StatusBadge from "../../components/common/StatusBadge";
 
 const Dashboard = () => {
   const { authUser } = useContext(AuthContext);
@@ -17,27 +16,30 @@ const Dashboard = () => {
     const fetchDriverData = async () => {
       try {
         const [driverRes, deliveriesRes] = await Promise.all([
-          axios.get('/api/drivers/profile'),
-          axios.get('/api/drivers/deliveries')
+          axios.get("/api/drivers/profile"),
+          axios.get("/api/drivers/deliveries"),
         ]);
 
         setDriverData(driverRes.data);
-        
+
         const active = [];
         const completed = [];
-        deliveriesRes.data.forEach(delivery => {
-          if (delivery.DeliveryStatus === 'pending' || delivery.DeliveryStatus === 'in-progress') {
+        deliveriesRes.data.forEach((delivery) => {
+          if (
+            delivery.DeliveryStatus === "pending" ||
+            delivery.DeliveryStatus === "in-progress"
+          ) {
             active.push(delivery);
           } else {
             completed.push(delivery);
           }
         });
-        
+
         setActiveDeliveries(active);
         setCompletedDeliveries(completed);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching driver data:', error);
+        console.error("Error fetching driver data:", error);
         setIsLoading(false);
       }
     };
@@ -54,10 +56,10 @@ const Dashboard = () => {
       <div className="dashboard-header">
         <h1>Welcome, {driverData?.driverName || authUser.username}</h1>
       </div>
-      
+
       <div className="dashboard-stats">
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#F39C12' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#F39C12" }}>
             <FaShippingFast size={20} />
           </div>
           <div className="stat-info">
@@ -65,9 +67,9 @@ const Dashboard = () => {
             <p>Active Deliveries</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#2ECC71' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#2ECC71" }}>
             <FaCheckCircle size={20} />
           </div>
           <div className="stat-info">
@@ -75,9 +77,9 @@ const Dashboard = () => {
             <p>Completed Deliveries</p>
           </div>
         </div>
-        
+
         <div className="stat-card">
-          <div className="stat-icon" style={{ backgroundColor: '#0056b3' }}>
+          <div className="stat-icon" style={{ backgroundColor: "#0056b3" }}>
             <FaClipboardList size={20} />
           </div>
           <div className="stat-info">
@@ -86,7 +88,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="dashboard-content">
         <div className="card">
           <div className="card-header">
@@ -107,25 +109,39 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {activeDeliveries.map(delivery => (
+                    {activeDeliveries.map((delivery) => (
                       <tr key={delivery.DeliveryID || delivery.id}>
                         <td>{delivery.DeliveryID || delivery.id}</td>
                         <td>{delivery.ClientName || delivery.clientName}</td>
                         <td>{delivery.HelperName || delivery.helperName}</td>
-                        <td>{new Date(delivery.DeliveryDate || delivery.deliveryDate).toLocaleDateString()}</td>
-                        <td><StatusBadge status={delivery.DeliveryStatus || delivery.deliveryStatus} /></td>
-                        <td>{delivery.DeliveryAddress || delivery.deliveryAddress}</td>
+                        <td>
+                          {new Date(
+                            delivery.DeliveryDate || delivery.deliveryDate,
+                          ).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <StatusBadge
+                            status={
+                              delivery.DeliveryStatus || delivery.deliveryStatus
+                            }
+                          />
+                        </td>
+                        <td>
+                          {delivery.DeliveryAddress || delivery.deliveryAddress}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             ) : (
-              <p className="empty-state">No active deliveries assigned to you.</p>
+              <p className="empty-state">
+                No active deliveries assigned to you.
+              </p>
             )}
           </div>
         </div>
-        
+
         <div className="card">
           <div className="card-header">
             <h2 className="card-title">Recent Completed Deliveries</h2>
@@ -144,13 +160,27 @@ const Dashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {completedDeliveries.slice(0, 5).map(delivery => (
+                    {completedDeliveries.slice(0, 5).map((delivery) => (
                       <tr key={delivery.DeliveryID || delivery.id}>
                         <td>{delivery.DeliveryID || delivery.id}</td>
                         <td>{delivery.ClientName || delivery.clientName}</td>
-                        <td>{new Date(delivery.DeliveryDate || delivery.deliveryDate).toLocaleDateString()}</td>
-                        <td><StatusBadge status={delivery.DeliveryStatus || delivery.deliveryStatus} /></td>
-                        <td>{delivery.DeliveryDistance || delivery.deliveryDistance} km</td>
+                        <td>
+                          {new Date(
+                            delivery.DeliveryDate || delivery.deliveryDate,
+                          ).toLocaleDateString()}
+                        </td>
+                        <td>
+                          <StatusBadge
+                            status={
+                              delivery.DeliveryStatus || delivery.deliveryStatus
+                            }
+                          />
+                        </td>
+                        <td>
+                          {delivery.DeliveryDistance ||
+                            delivery.deliveryDistance}{" "}
+                          km
+                        </td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,9 +1,12 @@
 // src/pages/shared/ErrorPage.js - Improved error handling component
-import React from 'react';
-import { useHistory, useLocation } from 'react-router-dom';
-import './ErrorPage.css';
+import React from "react";
+import { useHistory, useLocation } from "react-router-dom";
 
-const ErrorPage = ({ error = null, title = 'Error', message = 'Something went wrong' }) => {
+const ErrorPage = ({
+  error = null,
+  title = "Error",
+  message = "Something went wrong",
+}) => {
   const history = useHistory();
   const location = useLocation();
 
@@ -15,7 +18,7 @@ const ErrorPage = ({ error = null, title = 'Error', message = 'Something went wr
     if (history.length > 1) {
       history.goBack();
     } else {
-      history.push('/admin/dashboard');
+      history.push("/admin/dashboard");
     }
   };
 
@@ -24,7 +27,7 @@ const ErrorPage = ({ error = null, title = 'Error', message = 'Something went wr
   };
 
   const handleGoHome = () => {
-    history.push('/admin/dashboard');
+    history.push("/admin/dashboard");
   };
 
   return (
@@ -32,7 +35,7 @@ const ErrorPage = ({ error = null, title = 'Error', message = 'Something went wr
       <div className="error-content">
         <h1 className="error-title">{errorTitle}</h1>
         <p className="error-message">{errorMessage}</p>
-        
+
         <div className="error-actions">
           <button onClick={handleGoBack} className="btn btn-secondary">
             Go Back
@@ -47,7 +50,7 @@ const ErrorPage = ({ error = null, title = 'Error', message = 'Something went wr
 
         <div className="error-details">
           <p>Path: {location.pathname}</p>
-          {process.env.NODE_ENV === 'development' && error && (
+          {process.env.NODE_ENV === "development" && error && (
             <pre>{JSON.stringify(error, null, 2)}</pre>
           )}
         </div>
@@ -71,7 +74,7 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ error, errorInfo });
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
   render() {

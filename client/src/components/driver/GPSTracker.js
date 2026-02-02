@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../../context/AuthContext';
-import gpsTrackingService from '../../services/GPSTrackingService';
-import './GPSTracker.css';
+import React, { useState, useEffect, useContext } from "react";
+import { AuthContext } from "../../context/AuthContext";
+import gpsTrackingService from "../../services/GPSTrackingService";
 
 const GPSTracker = () => {
   const { authUser } = useContext(AuthContext);
@@ -12,76 +11,88 @@ const GPSTracker = () => {
     lastUpdateTime: null,
     queuedUpdates: 0,
     isOnline: navigator.onLine,
-    updateFrequency: 30000
+    updateFrequency: 30000,
   });
-  const [permissionStatus, setPermissionStatus] = useState('unknown');
+  const [permissionStatus, setPermissionStatus] = useState("unknown");
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({
     updatesSuccess: 0,
     updatesFailed: 0,
     updatesQueued: 0,
-    sessionStartTime: null
+    sessionStartTime: null,
   });
 
   useEffect(() => {
     // Initialize component
     initializeTracker();
-    
+
     // Set up GPS service event listeners
     const handleTrackingStarted = (data) => {
-      console.log('🚀 Tracking started:', data);
+      console.log("🚀 Tracking started:", data);
       updateTrackingStatus();
-      setStats(prev => ({ ...prev, sessionStartTime: new Date() }));
+      setStats((prev) => ({ ...prev, sessionStartTime: new Date() }));
     };
 
     const handleTrackingStopped = (data) => {
-      console.log('🛑 Tracking stopped:', data);
+      console.log("🛑 Tracking stopped:", data);
       updateTrackingStatus();
-      setStats(prev => ({ ...prev, sessionStartTime: null }));
+      setStats((prev) => ({ ...prev, sessionStartTime: null }));
     };
 
     const handlePositionUpdate = (position) => {
-      console.log('📍 Position update:', position);
+      console.log("📍 Position update:", position);
       updateTrackingStatus();
     };
 
     const handlePositionError = (error) => {
-      console.error('❌ Position error:', error);
+      console.error("❌ Position error:", error);
       setError(error.message);
     };
 
     const handleUpdateSent = (data) => {
-      console.log('✅ Update sent:', data);
-      setStats(prev => ({ ...prev, updatesSuccess: prev.updatesSuccess + 1 }));
+      console.log("✅ Update sent:", data);
+      setStats((prev) => ({
+        ...prev,
+        updatesSuccess: prev.updatesSuccess + 1,
+      }));
       setError(null);
     };
 
     const handleUpdateFailed = (data) => {
-      console.log('❌ Update failed:', data);
-      setStats(prev => ({ ...prev, updatesFailed: prev.updatesFailed + 1 }));
+      console.log("❌ Update failed:", data);
+      setStats((prev) => ({ ...prev, updatesFailed: prev.updatesFailed + 1 }));
       setError(data.error);
     };
 
     const handleUpdateQueued = (data) => {
-      console.log('📝 Update queued:', data);
-      setStats(prev => ({ ...prev, updatesQueued: prev.updatesQueued + 1 }));
+      console.log("📝 Update queued:", data);
+      setStats((prev) => ({ ...prev, updatesQueued: prev.updatesQueued + 1 }));
     };
 
     const handleNetworkStatusChanged = (data) => {
-      console.log('🌐 Network status changed:', data);
+      console.log("🌐 Network status changed:", data);
       updateTrackingStatus();
     };
 
     // Add event listeners
-    gpsTrackingService.addEventListener('trackingStarted', handleTrackingStarted);
-    gpsTrackingService.addEventListener('trackingStopped', handleTrackingStopped);
-    gpsTrackingService.addEventListener('positionUpdate', handlePositionUpdate);
-    gpsTrackingService.addEventListener('positionError', handlePositionError);
-    gpsTrackingService.addEventListener('updateSent', handleUpdateSent);
-    gpsTrackingService.addEventListener('updateFailed', handleUpdateFailed);
-    gpsTrackingService.addEventListener('updateQueued', handleUpdateQueued);
-    gpsTrackingService.addEventListener('networkStatusChanged', handleNetworkStatusChanged);
+    gpsTrackingService.addEventListener(
+      "trackingStarted",
+      handleTrackingStarted,
+    );
+    gpsTrackingService.addEventListener(
+      "trackingStopped",
+      handleTrackingStopped,
+    );
+    gpsTrackingService.addEventListener("positionUpdate", handlePositionUpdate);
+    gpsTrackingService.addEventListener("positionError", handlePositionError);
+    gpsTrackingService.addEventListener("updateSent", handleUpdateSent);
+    gpsTrackingService.addEventListener("updateFailed", handleUpdateFailed);
+    gpsTrackingService.addEventListener("updateQueued", handleUpdateQueued);
+    gpsTrackingService.addEventListener(
+      "networkStatusChanged",
+      handleNetworkStatusChanged,
+    );
 
     // Cleanup on unmount
     return () => {
@@ -99,28 +110,27 @@ const GPSTracker = () => {
   const initializeTracker = async () => {
     try {
       setLoading(true);
-      
+
       // Check if geolocation is supported
       if (!gpsTrackingService.constructor.isSupported()) {
-        setError('GPS tracking is not supported on this device');
-        setPermissionStatus('unsupported');
+        setError("GPS tracking is not supported on this device");
+        setPermissionStatus("unsupported");
         return;
       }
 
       // Check permissions
       try {
         await gpsTrackingService.requestPermissions();
-        setPermissionStatus('granted');
+        setPermissionStatus("granted");
       } catch (permError) {
-        setPermissionStatus('denied');
+        setPermissionStatus("denied");
         setError(permError.message);
       }
 
       // Update initial status
       updateTrackingStatus();
-      
     } catch (error) {
-      console.error('❌ Error initializing GPS tracker:', error);
+      console.error("❌ Error initializing GPS tracker:", error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -142,12 +152,11 @@ const GPSTracker = () => {
         trackingOptions: {
           enableHighAccuracy: true,
           timeout: 15000,
-          maximumAge: 30000
-        }
+          maximumAge: 30000,
+        },
       });
-
     } catch (error) {
-      console.error('❌ Error starting tracking:', error);
+      console.error("❌ Error starting tracking:", error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -160,9 +169,8 @@ const GPSTracker = () => {
       setError(null);
 
       gpsTrackingService.stopTracking();
-
     } catch (error) {
-      console.error('❌ Error stopping tracking:', error);
+      console.error("❌ Error stopping tracking:", error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -180,10 +188,9 @@ const GPSTracker = () => {
       setError(null);
 
       const location = await gpsTrackingService.getCurrentLocation();
-      console.log('📍 Current location:', location);
-
+      console.log("📍 Current location:", location);
     } catch (error) {
-      console.error('❌ Error getting current location:', error);
+      console.error("❌ Error getting current location:", error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -191,15 +198,15 @@ const GPSTracker = () => {
   };
 
   const formatCoordinate = (coord) => {
-    return coord ? coord.toFixed(6) : 'N/A';
+    return coord ? coord.toFixed(6) : "N/A";
   };
 
   const formatTime = (timestamp) => {
-    return timestamp ? new Date(timestamp).toLocaleTimeString() : 'Never';
+    return timestamp ? new Date(timestamp).toLocaleTimeString() : "Never";
   };
 
   const formatSessionDuration = () => {
-    if (!stats.sessionStartTime) return 'Not active';
+    if (!stats.sessionStartTime) return "Not active";
     const duration = Date.now() - new Date(stats.sessionStartTime).getTime();
     const minutes = Math.floor(duration / 60000);
     const seconds = Math.floor((duration % 60000) / 1000);
@@ -207,17 +214,17 @@ const GPSTracker = () => {
   };
 
   const getStatusColor = () => {
-    if (!trackingStatus.isSupported) return 'red';
-    if (permissionStatus === 'denied') return 'red';
-    if (trackingStatus.isTracking) return 'green';
-    return 'orange';
+    if (!trackingStatus.isSupported) return "red";
+    if (permissionStatus === "denied") return "red";
+    if (trackingStatus.isTracking) return "green";
+    return "orange";
   };
 
   const getStatusText = () => {
-    if (!trackingStatus.isSupported) return '❌ Not Supported';
-    if (permissionStatus === 'denied') return '🚫 Permission Denied';
-    if (trackingStatus.isTracking) return '🟢 Active';
-    return '🟡 Inactive';
+    if (!trackingStatus.isSupported) return "❌ Not Supported";
+    if (permissionStatus === "denied") return "🚫 Permission Denied";
+    if (trackingStatus.isTracking) return "🟢 Active";
+    return "🟡 Inactive";
   };
 
   return (
@@ -233,10 +240,7 @@ const GPSTracker = () => {
         <div className="error-message">
           <span className="error-icon">⚠️</span>
           <span>{error}</span>
-          <button 
-            className="error-dismiss"
-            onClick={() => setError(null)}
-          >
+          <button className="error-dismiss" onClick={() => setError(null)}>
             ×
           </button>
         </div>
@@ -249,9 +253,9 @@ const GPSTracker = () => {
             <button
               className="btn btn-start"
               onClick={handleStartTracking}
-              disabled={loading || permissionStatus !== 'granted'}
+              disabled={loading || permissionStatus !== "granted"}
             >
-              {loading ? '⏳ Starting...' : '🚀 Start Tracking'}
+              {loading ? "⏳ Starting..." : "🚀 Start Tracking"}
             </button>
           ) : (
             <button
@@ -259,16 +263,16 @@ const GPSTracker = () => {
               onClick={handleStopTracking}
               disabled={loading}
             >
-              {loading ? '⏳ Stopping...' : '🛑 Stop Tracking'}
+              {loading ? "⏳ Stopping..." : "🛑 Stop Tracking"}
             </button>
           )}
 
           <button
             className="btn btn-locate"
             onClick={handleGetCurrentLocation}
-            disabled={loading || permissionStatus !== 'granted'}
+            disabled={loading || permissionStatus !== "granted"}
           >
-            {loading ? '⏳ Locating...' : '🎯 Get Location'}
+            {loading ? "⏳ Locating..." : "🎯 Get Location"}
           </button>
         </div>
 
@@ -277,7 +281,9 @@ const GPSTracker = () => {
           <label>Update Frequency:</label>
           <select
             value={trackingStatus.updateFrequency}
-            onChange={(e) => handleUpdateFrequencyChange(parseInt(e.target.value))}
+            onChange={(e) =>
+              handleUpdateFrequencyChange(parseInt(e.target.value))
+            }
             disabled={loading}
           >
             <option value={10000}>10 seconds (High frequency)</option>
@@ -293,7 +299,7 @@ const GPSTracker = () => {
         <div className="status-card">
           <h3>🌐 Connection</h3>
           <div className="status-value">
-            {trackingStatus.isOnline ? '🟢 Online' : '🔴 Offline'}
+            {trackingStatus.isOnline ? "🟢 Online" : "🔴 Offline"}
           </div>
           {trackingStatus.queuedUpdates > 0 && (
             <div className="status-detail">
@@ -307,15 +313,21 @@ const GPSTracker = () => {
           {trackingStatus.currentPosition ? (
             <div className="location-info">
               <div className="coordinates">
-                <div>Lat: {formatCoordinate(trackingStatus.currentPosition.lat)}</div>
-                <div>Lng: {formatCoordinate(trackingStatus.currentPosition.lng)}</div>
+                <div>
+                  Lat: {formatCoordinate(trackingStatus.currentPosition.lat)}
+                </div>
+                <div>
+                  Lng: {formatCoordinate(trackingStatus.currentPosition.lng)}
+                </div>
               </div>
               <div className="accuracy">
-                Accuracy: ±{Math.round(trackingStatus.currentPosition.accuracy)}m
+                Accuracy: ±{Math.round(trackingStatus.currentPosition.accuracy)}
+                m
               </div>
               {trackingStatus.currentPosition.speed > 0 && (
                 <div className="speed">
-                  Speed: {Math.round(trackingStatus.currentPosition.speed * 3.6)} km/h
+                  Speed:{" "}
+                  {Math.round(trackingStatus.currentPosition.speed * 3.6)} km/h
                 </div>
               )}
             </div>
@@ -358,15 +370,15 @@ const GPSTracker = () => {
       <div className="driver-info">
         <h3>👤 Driver Information</h3>
         <div className="driver-details">
-          <div>Name: {authUser?.username || 'Unknown'}</div>
-          <div>Role: {authUser?.role || 'Unknown'}</div>
+          <div>Name: {authUser?.username || "Unknown"}</div>
+          <div>Role: {authUser?.role || "Unknown"}</div>
           <div>Device: {navigator.platform}</div>
-          <div>Browser: {navigator.userAgent.split(' ')[0]}</div>
+          <div>Browser: {navigator.userAgent.split(" ")[0]}</div>
         </div>
       </div>
 
       {/* Permission Help */}
-      {permissionStatus === 'denied' && (
+      {permissionStatus === "denied" && (
         <div className="permission-help">
           <h3>🔧 Enable Location Permissions</h3>
           <ol>
@@ -381,4 +393,4 @@ const GPSTracker = () => {
   );
 };
 
-export default GPSTracker; 
+export default GPSTracker;

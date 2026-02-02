@@ -1,11 +1,10 @@
-import React from 'react';
-import './FilterForm.css';
+import React from "react";
 
 const TruckFilters = ({ filters, onChange }) => {
   const handleChange = (field, value) => {
     onChange({
       ...filters,
-      [field]: value
+      [field]: value,
     });
   };
 
@@ -16,16 +15,16 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="e.g., Isuzu, Hino, Fuso"
-          value={filters.brand || ''}
-          onChange={(e) => handleChange('brand', e.target.value)}
+          value={filters.brand || ""}
+          onChange={(e) => handleChange("brand", e.target.value)}
         />
       </div>
 
       <div className="filter-group">
         <label>Truck Type</label>
         <select
-          value={filters.truckType || ''}
-          onChange={(e) => handleChange('truckType', e.target.value)}
+          value={filters.truckType || ""}
+          onChange={(e) => handleChange("truckType", e.target.value)}
         >
           <option value="">All Types</option>
           <option value="Dump Truck">Dump Truck</option>
@@ -40,8 +39,8 @@ const TruckFilters = ({ filters, onChange }) => {
       <div className="filter-group">
         <label>Status</label>
         <select
-          value={filters.status || ''}
-          onChange={(e) => handleChange('status', e.target.value)}
+          value={filters.status || ""}
+          onChange={(e) => handleChange("status", e.target.value)}
         >
           <option value="">All Status</option>
           <option value="available">Available</option>
@@ -56,8 +55,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="text"
           placeholder="Search by plate number"
-          value={filters.plateNumber || ''}
-          onChange={(e) => handleChange('plateNumber', e.target.value)}
+          value={filters.plateNumber || ""}
+          onChange={(e) => handleChange("plateNumber", e.target.value)}
         />
       </div>
 
@@ -65,8 +64,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <label>Manufacture Date From</label>
         <input
           type="date"
-          value={filters.manufactureDateFrom || ''}
-          onChange={(e) => handleChange('manufactureDateFrom', e.target.value)}
+          value={filters.manufactureDateFrom || ""}
+          onChange={(e) => handleChange("manufactureDateFrom", e.target.value)}
         />
       </div>
 
@@ -74,8 +73,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <label>Manufacture Date To</label>
         <input
           type="date"
-          value={filters.manufactureDateTo || ''}
-          onChange={(e) => handleChange('manufactureDateTo', e.target.value)}
+          value={filters.manufactureDateTo || ""}
+          onChange={(e) => handleChange("manufactureDateTo", e.target.value)}
         />
       </div>
 
@@ -84,8 +83,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="0"
-          value={filters.minCapacity || ''}
-          onChange={(e) => handleChange('minCapacity', e.target.value)}
+          value={filters.minCapacity || ""}
+          onChange={(e) => handleChange("minCapacity", e.target.value)}
         />
       </div>
 
@@ -94,8 +93,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="100"
-          value={filters.maxCapacity || ''}
-          onChange={(e) => handleChange('maxCapacity', e.target.value)}
+          value={filters.maxCapacity || ""}
+          onChange={(e) => handleChange("maxCapacity", e.target.value)}
         />
       </div>
 
@@ -104,8 +103,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="0"
-          value={filters.minKilometers || ''}
-          onChange={(e) => handleChange('minKilometers', e.target.value)}
+          value={filters.minKilometers || ""}
+          onChange={(e) => handleChange("minKilometers", e.target.value)}
         />
       </div>
 
@@ -114,8 +113,8 @@ const TruckFilters = ({ filters, onChange }) => {
         <input
           type="number"
           placeholder="1000000"
-          value={filters.maxKilometers || ''}
-          onChange={(e) => handleChange('maxKilometers', e.target.value)}
+          value={filters.maxKilometers || ""}
+          onChange={(e) => handleChange("maxKilometers", e.target.value)}
         />
       </div>
     </div>

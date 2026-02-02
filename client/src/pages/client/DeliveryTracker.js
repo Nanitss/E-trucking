@@ -13,10 +13,6 @@ import {
 import Loader from "../../components/common/Loader";
 import StatusBadge from "../../components/common/StatusBadge";
 import LiveMapTracker from "../../components/tracking/LiveMapTracker";
-import "./DeliveryTracker.css";
-import "../../styles/DesignSystem.css";
-import "../../styles/ClientPage.css";
-import "../../components/common/DeliveryTrackerAdjust.css";
 import { AuthContext } from "../../context/AuthContext";
 
 const DeliveryTracker = () => {
@@ -323,185 +319,215 @@ const DeliveryTracker = () => {
   }
 
   return (
-    <div className="client-page-container">
-      <div className="client-page-header">
-        <h1>
-          <FaTruck style={{ marginRight: "10px" }} /> Delivery Tracker
+    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-6 font-sans text-gray-800">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-3 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-600/20">
+          <FaTruck className="text-xl" />
+        </div>
+        <h1 className="text-2xl font-bold text-gray-800 m-0">
+          Delivery Tracker
         </h1>
       </div>
 
-      <div className="section-container">
-        <div className="section-header-row">
-          <h2 className="section-title">In-Progress Deliveries</h2>
+      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mb-6 overflow-hidden">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
+          <h2 className="text-xl font-bold text-gray-800 m-0">
+            In-Progress Deliveries
+          </h2>
+          <div className="text-sm text-gray-500 font-medium bg-gray-100 px-3 py-1 rounded-full">
+            Showing {filteredDeliveries.length} of {deliveries.length}{" "}
+            deliveries
+          </div>
         </div>
 
-        <div className="filters-section">
-          <div className="filter-group">
-            <label className="filter-label">SEARCH</label>
-            <div className="search-box">
-              <FaSearch />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-200/60">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Search
+            </label>
+            <div className="relative">
+              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 name="search"
-                placeholder="Search bookings"
+                placeholder="Search bookings..."
                 value={filters.search}
                 onChange={handleFilterChange}
-                className="form-control"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white"
               />
             </div>
           </div>
 
-          <div className="filter-group">
-            <label className="filter-label">STATUS</label>
-            <select
-              name="status"
-              value={filters.status}
-              onChange={handleFilterChange}
-              className="form-control"
-            >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="in-progress">In Progress</option>
-              <option value="started">Started</option>
-              <option value="picked-up">Picked Up</option>
-            </select>
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Status
+            </label>
+            <div className="relative">
+              <select
+                name="status"
+                value={filters.status}
+                onChange={handleFilterChange}
+                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
+              >
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="in-progress">In Progress</option>
+                <option value="started">Started</option>
+                <option value="picked-up">Picked Up</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
+                ▼
+              </div>
+            </div>
           </div>
 
-          <div className="filter-group">
-            <label className="filter-label">DATE RANGE</label>
-            <div className="date-range-inputs">
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+              Date Range
+            </label>
+            <div className="flex gap-2">
               <input
                 type="date"
                 name="dateFrom"
                 value={filters.dateFrom}
                 onChange={handleFilterChange}
-                className="form-control"
-                placeholder="From Date"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white text-sm"
+                placeholder="From"
               />
               <input
                 type="date"
                 name="dateTo"
                 value={filters.dateTo}
                 onChange={handleFilterChange}
-                className="form-control"
-                placeholder="To Date"
+                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white text-sm"
+                placeholder="To"
               />
             </div>
           </div>
         </div>
 
-        <div className="filter-summary">
-          Showing {filteredDeliveries.length} of {deliveries.length} deliveries
-        </div>
-      </div>
-
-      <div className="modern-deliveries-table-wrapper">
-        {filteredDeliveries.length > 0 ? (
-          <table className="modern-deliveries-table">
-            <thead>
-              <tr>
-                <th>Delivery ID</th>
-                <th>
-                  <div className="th-content">
-                    <FaCalendarAlt />
-                    <span>Delivery Date</span>
-                  </div>
-                </th>
-                <th>
-                  <div className="th-content">
-                    <FaTruck />
-                    <span>Truck</span>
-                  </div>
-                </th>
-                <th>
-                  <div className="th-content">
-                    <FaMapMarkerAlt />
-                    <span>Route</span>
-                  </div>
-                </th>
-                <th>Status</th>
-                <th className="actions-th">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDeliveries.map((delivery) => (
-                <tr key={delivery.deliveryId} className="modern-delivery-row">
-                  <td className="delivery-id-col">
-                    <div className="id-badge">
-                      #{delivery.deliveryId.substring(0, 12)}
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          {filteredDeliveries.length > 0 ? (
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    Delivery ID
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaCalendarAlt /> <span>Date</span>
                     </div>
-                  </td>
-                  <td className="date-col">
-                    <div className="date-value">
-                      {formatDeliveryDate(delivery.deliveryDate)}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaTruck /> <span>Truck</span>
                     </div>
-                  </td>
-                  <td className="truck-col">
-                    <div className="truck-info">
-                      <span className="truck-plate">
-                        {delivery.truckPlate || "N/A"}
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-2">
+                      <FaMapMarkerAlt /> <span>Route</span>
+                    </div>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-center text-xs font-bold text-gray-500 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-100">
+                {filteredDeliveries.map((delivery) => (
+                  <tr
+                    key={delivery.deliveryId}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="bg-blue-50 text-blue-700 px-3 py-1 rounded-lg font-mono text-xs font-bold border border-blue-100">
+                        #{delivery.deliveryId.substring(0, 12)}
                       </span>
-                      {delivery.driverName && (
-                        <span className="truck-brand">
-                          {delivery.driverName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 font-medium">
+                      {formatDeliveryDate(delivery.deliveryDate)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-800">
+                          {delivery.truckPlate || "N/A"}
+                        </span>
+                        {delivery.driverName && (
+                          <span className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                            {delivery.driverName}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {delivery.pickupLocation || delivery.deliveryAddress ? (
+                        <div className="flex items-center gap-2 max-w-[300px]">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <FaMapMarkerAlt className="text-emerald-500 flex-shrink-0 text-xs" />
+                            <span
+                              className="truncate text-gray-600"
+                              title={delivery.pickupLocation}
+                            >
+                              {delivery.pickupLocation
+                                ? delivery.pickupLocation.split(",")[0]
+                                : "N/A"}
+                            </span>
+                          </div>
+                          <span className="text-gray-300 font-bold">→</span>
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            <FaMapMarkerAlt className="text-red-500 flex-shrink-0 text-xs" />
+                            <span
+                              className="truncate text-gray-600"
+                              title={delivery.deliveryAddress}
+                            >
+                              {delivery.deliveryAddress
+                                ? delivery.deliveryAddress.split(",")[0]
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 italic text-xs">
+                          No route info
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td className="route-col-compact">
-                    {delivery.pickupLocation || delivery.deliveryAddress ? (
-                      <div className="route-compact">
-                        <div className="route-location-compact">
-                          <FaMapMarkerAlt className="pickup-icon-small" />
-                          <span className="location-text">
-                            {delivery.pickupLocation
-                              ? delivery.pickupLocation.split(",")[0]
-                              : "N/A"}
-                          </span>
-                        </div>
-                        <div className="route-arrow-compact">→</div>
-                        <div className="route-location-compact">
-                          <FaMapMarkerAlt className="dropoff-icon-small" />
-                          <span className="location-text">
-                            {delivery.deliveryAddress
-                              ? delivery.deliveryAddress.split(",")[0]
-                              : "N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    ) : (
-                      <span className="no-route">No route</span>
-                    )}
-                  </td>
-                  <td className="status-col">
-                    <StatusBadge status={delivery.deliveryStatus} />
-                  </td>
-                  <td className="actions-col">
-                    <div className="modern-action-buttons">
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <StatusBadge status={delivery.deliveryStatus} />
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-center">
                       <button
-                        className="modern-action-btn view"
+                        className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 transition-all flex items-center justify-center mx-auto shadow-sm hover:shadow-md hover:shadow-blue-500/20"
                         onClick={() => {
                           const truckIdentifier =
                             delivery.truckPlate || delivery.TruckPlate;
-                          console.log(
-                            "🚚 Opening tracking for delivery:",
-                            delivery.deliveryId,
-                          );
-                          console.log("🚚 Truck Plate/ID:", truckIdentifier);
-                          console.log(
-                            "📍 Pickup Location:",
-                            delivery.pickupLocation,
-                          );
-                          console.log(
-                            "📍 Dropoff Location:",
-                            delivery.deliveryAddress,
-                          );
-
                           if (!truckIdentifier) {
                             alert("No truck assigned to this delivery");
                             return;
                           }
-
                           setSelectedDeliveryId(delivery.deliveryId);
                           setSelectedTruckId(truckIdentifier);
                           window.currentDeliveryData = delivery;
@@ -511,22 +537,26 @@ const DeliveryTracker = () => {
                       >
                         <FaEye />
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="trucks-empty-state">
-            <div className="empty-state-icon">📦</div>
-            <h3 className="empty-state-title">No active deliveries found</h3>
-            <p className="empty-state-description">
-              No active deliveries match your current filters. Try adjusting
-              your search criteria.
-            </p>
-          </div>
-        )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-4xl text-gray-300">
+                <FaTruck />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">
+                No active deliveries found
+              </h3>
+              <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                No active deliveries match your current filters. Try adjusting
+                your search criteria.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Live GPS Tracking Modal */}

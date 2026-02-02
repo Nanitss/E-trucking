@@ -1,20 +1,19 @@
-import React from 'react';
-import '../styles/DesignSystem.css';
+import React from "react";
 
 /**
  * Modern Form Component - Standardized Design
  * Uses your exact navy blue and yellow color scheme
  */
-const ModernForm = ({ 
-  title, 
-  subtitle, 
-  children, 
-  onSubmit, 
-  className = '',
-  gridColumns = 1 
+const ModernForm = ({
+  title,
+  subtitle,
+  children,
+  onSubmit,
+  className = "",
+  gridColumns = 1,
 }) => {
-  const gridClass = gridColumns === 2 ? 'form-grid-2' : 
-                   gridColumns === 3 ? 'form-grid-3' : '';
+  const gridClass =
+    gridColumns === 2 ? "form-grid-2" : gridColumns === 3 ? "form-grid-3" : "";
 
   return (
     <div className={`form-container ${className}`}>
@@ -24,11 +23,9 @@ const ModernForm = ({
           {subtitle && <p className="form-subtitle">{subtitle}</p>}
         </div>
       )}
-      
+
       <form onSubmit={onSubmit}>
-        <div className={`form-grid ${gridClass}`}>
-          {children}
-        </div>
+        <div className={`form-grid ${gridClass}`}>{children}</div>
       </form>
     </div>
   );
@@ -37,13 +34,13 @@ const ModernForm = ({
 /**
  * Modern Form Group - Standardized Input Container
  */
-const FormGroup = ({ 
-  label, 
-  required = false, 
-  error, 
-  help, 
-  children, 
-  className = '' 
+const FormGroup = ({
+  label,
+  required = false,
+  error,
+  help,
+  children,
+  className = "",
 }) => {
   return (
     <div className={`form-group ${className}`}>
@@ -60,9 +57,7 @@ const FormGroup = ({
           {error}
         </div>
       )}
-      {help && !error && (
-        <div className="form-help">{help}</div>
-      )}
+      {help && !error && <div className="form-help">{help}</div>}
     </div>
   );
 };
@@ -70,8 +65,8 @@ const FormGroup = ({
 /**
  * Modern Input - Standardized Input Field
  */
-const ModernInput = ({ 
-  type = 'text',
+const ModernInput = ({
+  type = "text",
   name,
   value,
   onChange,
@@ -79,8 +74,8 @@ const ModernInput = ({
   required = false,
   disabled = false,
   error = false,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   return (
     <input
@@ -91,7 +86,7 @@ const ModernInput = ({
       placeholder={placeholder}
       required={required}
       disabled={disabled}
-      className={`form-control ${error ? 'error' : ''} ${className}`}
+      className={`form-control ${error ? "error" : ""} ${className}`}
       {...props}
     />
   );
@@ -100,16 +95,16 @@ const ModernInput = ({
 /**
  * Modern Select - Standardized Select Field
  */
-const ModernSelect = ({ 
+const ModernSelect = ({
   name,
   value,
   onChange,
   required = false,
   disabled = false,
   error = false,
-  className = '',
+  className = "",
   children,
-  ...props 
+  ...props
 }) => {
   return (
     <select
@@ -118,7 +113,7 @@ const ModernSelect = ({
       onChange={onChange}
       required={required}
       disabled={disabled}
-      className={`form-select ${error ? 'error' : ''} ${className}`}
+      className={`form-select ${error ? "error" : ""} ${className}`}
       {...props}
     >
       {children}
@@ -129,7 +124,7 @@ const ModernSelect = ({
 /**
  * Modern Textarea - Standardized Textarea Field
  */
-const ModernTextarea = ({ 
+const ModernTextarea = ({
   name,
   value,
   onChange,
@@ -138,8 +133,8 @@ const ModernTextarea = ({
   disabled = false,
   error = false,
   rows = 4,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   return (
     <textarea
@@ -150,7 +145,7 @@ const ModernTextarea = ({
       required={required}
       disabled={disabled}
       rows={rows}
-      className={`form-textarea ${error ? 'error' : ''} ${className}`}
+      className={`form-textarea ${error ? "error" : ""} ${className}`}
       {...props}
     />
   );
@@ -159,38 +154,37 @@ const ModernTextarea = ({
 /**
  * Modern Form Actions - Standardized Button Container
  */
-const FormActions = ({ 
-  children, 
-  className = '' 
-}) => {
-  return (
-    <div className={`form-actions ${className}`}>
-      {children}
-    </div>
-  );
+const FormActions = ({ children, className = "" }) => {
+  return <div className={`form-actions ${className}`}>{children}</div>;
 };
 
 /**
  * Modern Button - Standardized Button Component
  */
-const ModernButton = ({ 
-  type = 'button',
-  variant = 'primary',
-  size = 'md',
+const ModernButton = ({
+  type = "button",
+  variant = "primary",
+  size = "md",
   children,
   onClick,
   disabled = false,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
-  const sizeClass = size === 'sm' ? 'btn-sm' : 
-                   size === 'lg' ? 'btn-lg' : '';
-  
-  const variantClass = variant === 'primary' ? 'btn-primary' :
-                      variant === 'secondary' ? 'btn-secondary' :
-                      variant === 'accent' ? 'btn-accent' :
-                      variant === 'success' ? 'btn-success' :
-                      variant === 'danger' ? 'btn-danger' : 'btn-primary';
+  const sizeClass = size === "sm" ? "btn-sm" : size === "lg" ? "btn-lg" : "";
+
+  const variantClass =
+    variant === "primary"
+      ? "btn-primary"
+      : variant === "secondary"
+        ? "btn-secondary"
+        : variant === "accent"
+          ? "btn-accent"
+          : variant === "success"
+            ? "btn-success"
+            : variant === "danger"
+              ? "btn-danger"
+              : "btn-primary";
 
   return (
     <button
@@ -208,14 +202,14 @@ const ModernButton = ({
 /**
  * Modern Checkbox - Standardized Checkbox Component
  */
-const ModernCheckbox = ({ 
+const ModernCheckbox = ({
   name,
   checked,
   onChange,
   label,
   disabled = false,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   return (
     <label className={`d-flex align-items-center ${className}`}>
@@ -236,15 +230,15 @@ const ModernCheckbox = ({
 /**
  * Modern Radio - Standardized Radio Component
  */
-const ModernRadio = ({ 
+const ModernRadio = ({
   name,
   value,
   checked,
   onChange,
   label,
   disabled = false,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   return (
     <label className={`d-flex align-items-center ${className}`}>
@@ -266,14 +260,14 @@ const ModernRadio = ({
 /**
  * Modern File Upload - Standardized File Upload Component
  */
-const ModernFileUpload = ({ 
+const ModernFileUpload = ({
   name,
   onChange,
   accept,
   multiple = false,
   disabled = false,
-  className = '',
-  ...props 
+  className = "",
+  ...props
 }) => {
   return (
     <input
@@ -300,7 +294,7 @@ export {
   ModernButton,
   ModernCheckbox,
   ModernRadio,
-  ModernFileUpload
+  ModernFileUpload,
 };
 
 export default ModernForm;
