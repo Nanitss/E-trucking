@@ -41,6 +41,7 @@ import DeliveryDetails from "./pages/client/DeliveryDetails";
 import DeliveriesList from "./pages/client/DeliveriesList";
 import PaymentManagement from "./pages/client/PaymentManagement";
 import PinnedLocations from "./pages/client/PinnedLocations";
+import BookTruck from "./pages/client/BookTruck";
 
 // Admin pages with explicit paths matching sidebar
 import TruckList from "./pages/admin/trucks/TruckList";
@@ -323,6 +324,12 @@ function App() {
                   <ProtectedRoute path="/client/locations">
                     <ClientLayout>
                       <PinnedLocations />
+                    </ClientLayout>
+                  </ProtectedRoute>
+
+                  <ProtectedRoute path="/client/book-truck">
+                    <ClientLayout>
+                      <BookTruck />
                     </ClientLayout>
                   </ProtectedRoute>
 

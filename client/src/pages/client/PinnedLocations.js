@@ -19,6 +19,7 @@ import {
   FaEye,
   FaCheck,
   FaTimes,
+  FaFilter,
 } from "react-icons/fa";
 import enhancedIsolatedMapModal from "../../components/maps/EnhancedIsolatedMapModal";
 import Loader from "../../components/common/Loader";
@@ -39,6 +40,7 @@ const PinnedLocations = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
+  const [showFilters, setShowFilters] = useState(false);
 
   // Form state for add/edit modal
   const [formData, setFormData] = useState({
@@ -354,44 +356,108 @@ const PinnedLocations = () => {
         </div>
       </div>
 
-      {/* Search and Filter Bar */}
-      <div className="flex flex-wrap gap-4 items-center mb-6">
-        <div className="flex-1 relative min-w-[300px]">
-          <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10" />
-          <input
-            type="text"
-            className={`${inputClass} pl-12`}
-            placeholder="Search locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {/* Modern Filter Bar - Popup Style */}
+      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm mb-6 relative">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+          {/* Search */}
+          <div className="relative flex-1 max-w-lg w-full">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search locations by name, address..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Filter Toggle Button */}
+            <button
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <FaFilter size={14} />
+              Filters
+              {(categoryFilter !== "all" || sortBy !== "name") && (
+                <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                  {[categoryFilter !== "all", sortBy !== "name"].filter(Boolean).length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-4 flex-wrap">
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className={`${inputClass} min-w-[150px] cursor-pointer`}
-          >
-            <option value="all">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat.value} value={cat.value}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className={`${inputClass} min-w-[150px] cursor-pointer`}
-          >
-            <option value="name">Sort by Name</option>
-            <option value="category">Sort by Category</option>
-            <option value="lastUsed">Sort by Last Used</option>
-            <option value="usageCount">Sort by Usage</option>
-          </select>
+        <div className="mt-3 text-gray-500 text-sm font-medium">
+          Showing {filteredLocations.length} of {locations.length} locations
         </div>
+
+        {/* Filter Popup */}
+        {showFilters && (
+          <div className="absolute top-full mt-2 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-[360px] max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="font-bold text-gray-900 text-lg">Filter Options</h4>
+              <button
+                className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                onClick={() => setShowFilters(false)}
+              >
+                <FaTimes size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 mb-6">
+              {/* Category Filter */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase">Category</label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value="all">All Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-semibold text-gray-500 uppercase">Sort By</label>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value="name">Sort by Name</option>
+                  <option value="category">Sort by Category</option>
+                  <option value="lastUsed">Sort by Last Used</option>
+                  <option value="usageCount">Sort by Usage</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+              <button
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                onClick={() => {
+                  setSearchTerm("");
+                  setCategoryFilter("all");
+                  setSortBy("name");
+                  setShowFilters(false);
+                }}
+              >
+                Reset
+              </button>
+              <button
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
+                onClick={() => setShowFilters(false)}
+              >
+                Apply Filters
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Locations Table */}

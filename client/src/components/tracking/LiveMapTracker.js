@@ -52,9 +52,8 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
 
       const script = document.createElement("script");
       // Add callback parameter to prevent postMessage errors and use async loading
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${
-        import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-      }&callback=initGoogleMap&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+        }&callback=initGoogleMap&loading=async`;
       script.async = true;
       script.defer = true;
       script.onerror = () => {
@@ -263,9 +262,9 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in kilometers
   };
@@ -622,11 +621,11 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       pathCoordinates.current.length === 0 ||
       Math.abs(
         pathCoordinates.current[pathCoordinates.current.length - 1].lat -
-          newPosition.lat,
+        newPosition.lat,
       ) > 0.0001 ||
       Math.abs(
         pathCoordinates.current[pathCoordinates.current.length - 1].lng -
-          newPosition.lng,
+        newPosition.lng,
       ) > 0.0001
     ) {
       pathCoordinates.current.push(newPosition);
@@ -662,14 +661,14 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       <div style="padding: 10px;">
         <h3 style="margin: 0 0 10px 0;">🚚 Truck Location</h3>
         <p style="margin: 5px 0;"><strong>Speed:</strong> ${Math.round(
-          locationData.speed * 3.6,
-        )} km/h</p>
+      locationData.speed * 3.6,
+    )} km/h</p>
         <p style="margin: 5px 0;"><strong>Accuracy:</strong> ±${Math.round(
-          locationData.accuracy,
-        )}m</p>
+      locationData.accuracy,
+    )}m</p>
         <p style="margin: 5px 0;"><strong>Updated:</strong> ${new Date(
-          locationData.timestamp,
-        ).toLocaleTimeString()}</p>
+      locationData.timestamp,
+    ).toLocaleTimeString()}</p>
       </div>
     `;
 
@@ -769,52 +768,73 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
   };
 
   return (
-    <div className="live-map-tracker-modal">
-      <div className="modal-overlay" onClick={onClose}></div>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>🚚 Live GPS Tracking - Delivery #{deliveryId}</h2>
-          <button className="close-btn" onClick={onClose}>
-            ✕
-          </button>
-          <div style={{ fontSize: "12px", color: "#666", marginTop: "5px" }}>
-            📡 Using main GPS device (truck_12345) - Shared by all deliveries
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+      {/* Modern Backdrop */}
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-slate-900/80 via-slate-900/70 to-blue-900/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal Container */}
+      <div
+        className="relative w-full max-w-6xl h-[90vh] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-300"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+              <span className="text-2xl">🚚</span>
+            </div>
+            <div>
+              <h2 className="text-xl font-bold m-0">Live GPS Tracking</h2>
+              <p className="text-blue-100 text-sm m-0 mt-0.5">
+                Delivery #{deliveryId?.substring(0, 12)}...
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="px-3 py-1.5 bg-white/10 rounded-lg text-xs text-blue-100 backdrop-blur-sm">
+              📡 GPS Device: truck_12345
+            </div>
+            <button
+              className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-200"
+              onClick={onClose}
+            >
+              <span className="text-xl">✕</span>
+            </button>
           </div>
         </div>
 
+        {/* Loading State */}
         {loading && (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Connecting to GPS...</p>
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50/30">
+            <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Connecting to GPS...</p>
+            <p className="text-gray-400 text-sm mt-1">Establishing real-time connection</p>
           </div>
         )}
 
+        {/* Error State - Modern Design */}
         {error && (
-          <div className="error-state">
-            <div className="error-icon">⚠️</div>
-            <p
-              style={{
-                whiteSpace: "pre-wrap",
-                textAlign: "left",
-                maxWidth: "600px",
-                margin: "0 auto",
-              }}
-            >
+          <div className="flex-1 flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-red-50/30 p-8">
+            <div className="w-20 h-20 bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-100">
+              <span className="text-4xl">⚠️</span>
+            </div>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">GPS Connection Issue</h3>
+            <p className="text-gray-600 text-center max-w-md whitespace-pre-wrap leading-relaxed text-sm bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
               {error}
             </p>
-            <div
-              style={{
-                marginTop: "20px",
-                display: "flex",
-                gap: "10px",
-                justifyContent: "center",
-              }}
-            >
-              <button className="btn btn-primary" onClick={onClose}>
+            <div className="flex gap-3 mt-6">
+              <button
+                className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all"
+                onClick={onClose}
+              >
                 Close
               </button>
               <button
-                className="btn btn-secondary"
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium rounded-xl shadow-lg shadow-blue-500/25 transition-all"
                 onClick={() => window.location.reload()}
               >
                 Refresh Page
@@ -823,113 +843,118 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
           </div>
         )}
 
+        {/* Map and Controls - Success State */}
         {!loading && !error && (
           <>
-            <div className="map-controls">
-              <div className="location-info">
+            {/* Info Bar */}
+            <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/50 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6">
                 {location && (
                   <>
-                    <div className="info-item">
-                      <span className="label">📍 Position:</span>
-                      <span className="value">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">📍</span>
+                      <span className="text-gray-700 font-mono text-sm">
                         {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
                       </span>
                     </div>
-                    <div className="info-item">
-                      <span className="label">🚗 Speed:</span>
-                      <span className="value">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">🚗</span>
+                      <span className="text-gray-700 font-semibold text-sm">
                         {Math.round(location.speed * 3.6)} km/h
                       </span>
                     </div>
-                    <div className="info-item">
-                      <span className="label">⏰ Last Update:</span>
-                      <span className="value">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">⏰</span>
+                      <span className="text-gray-700 text-sm">
                         {lastUpdate ? lastUpdate.toLocaleTimeString() : "Never"}
                       </span>
                     </div>
-                    <div className="info-item">
-                      <span className="label">🎯 Accuracy:</span>
-                      <span className="value">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400 text-sm">🎯</span>
+                      <span className="text-gray-700 text-sm">
                         ±{Math.round(location.accuracy)}m
                       </span>
                     </div>
                   </>
                 )}
               </div>
-              <div className="control-buttons">
+
+              {/* Control Buttons */}
+              <div className="flex items-center gap-2">
                 <button
-                  className="btn btn-secondary"
+                  className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-all flex items-center gap-2"
                   onClick={handleViewFullRoute}
                   title="View complete delivery route"
                 >
                   🗺️ Full Route
                 </button>
                 <button
-                  className="btn btn-secondary"
+                  className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-all flex items-center gap-2"
                   onClick={handleCenterMap}
                   title="Center map on truck"
                 >
-                  🎯 Center Truck
+                  🎯 Center
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-all flex items-center gap-2"
                   onClick={handleOpenInGoogleMaps}
                   title="Open in Google Maps app"
                 >
-                  📱 Open in Google Maps
+                  📱 Google Maps
                 </button>
               </div>
             </div>
 
-            <div className="map-container" ref={mapRef}></div>
+            {/* Map Container */}
+            <div className="flex-1 relative bg-gray-100">
+              <div ref={mapRef} className="absolute inset-0" />
 
-            <div className="live-indicator">
-              <span className="pulse"></span>
-              <span>LIVE</span>
-            </div>
+              {/* Live Indicator */}
+              <div className="absolute top-4 left-4 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center gap-2 shadow-lg shadow-red-500/30 z-10">
+                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                LIVE
+              </div>
 
-            {/* GPS Quality Warning */}
-            {rejectedGPSCount > 0 && (
-              <div className="gps-quality-warning">
-                <span className="warning-icon">⚠️</span>
-                <div className="warning-text">
-                  <strong>GPS Filtering Active</strong>
-                  <div className="warning-detail">
-                    Rejected {rejectedGPSCount} bad GPS reading
-                    {rejectedGPSCount > 1 ? "s" : ""}
-                  </div>
-                  <div
-                    className="warning-detail"
-                    style={{ fontSize: "10px", marginTop: "2px" }}
-                  >
-                    (Showing last valid location)
+              {/* GPS Quality Warning */}
+              {rejectedGPSCount > 0 && (
+                <div className="absolute top-4 right-4 px-4 py-2 bg-amber-500/90 backdrop-blur-sm text-white text-sm rounded-xl flex items-center gap-2 shadow-lg z-10">
+                  <span className="text-lg">⚠️</span>
+                  <div>
+                    <div className="font-semibold">GPS Filtering Active</div>
+                    <div className="text-amber-100 text-xs">
+                      Rejected {rejectedGPSCount} bad reading{rejectedGPSCount > 1 ? "s" : ""}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Route Legend */}
-            <div className="route-legend">
-              <h4>🗺️ Delivery Route</h4>
-              <div className="legend-item">
-                <div className="legend-marker pickup">A</div>
-                <span>Pickup Location</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-marker dropoff">B</div>
-                <span>Dropoff Location</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-marker truck">🚚</div>
-                <span>Truck (Live GPS)</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-line"></div>
-                <span>Planned Route</span>
-              </div>
-              <div className="legend-item">
-                <div className="legend-trail"></div>
-                <span>Truck Trail</span>
+              {/* Route Legend */}
+              <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-xl border border-gray-100 z-10">
+                <h4 className="font-bold text-gray-800 text-sm mb-3 flex items-center gap-2">
+                  🗺️ Delivery Route
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 bg-emerald-500 text-white rounded-full flex items-center justify-center text-xs font-bold">A</div>
+                    <span className="text-gray-600">Pickup Location</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">B</div>
+                    <span className="text-gray-600">Dropoff Location</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-6 bg-blue-100 text-lg flex items-center justify-center rounded">🚚</div>
+                    <span className="text-gray-600">Truck (Live)</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-1 bg-gray-400 rounded" style={{ backgroundImage: 'linear-gradient(90deg, #9ca3af 50%, transparent 50%)', backgroundSize: '8px 100%' }} />
+                    <span className="text-gray-600">Planned Route</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-6 h-1 bg-blue-500 rounded" />
+                    <span className="text-gray-600">Truck Trail</span>
+                  </div>
+                </div>
               </div>
             </div>
           </>

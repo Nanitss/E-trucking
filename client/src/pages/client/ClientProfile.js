@@ -658,7 +658,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 const ClientProfile = () => {
   const { authUser, logout } = useContext(AuthContext) || {
     authUser: null,
-    logout: () => {},
+    logout: () => { },
   };
   const history = useHistory();
   const location = useLocation();
@@ -712,12 +712,14 @@ const ClientProfile = () => {
   });
   const [trucksPerPage, setTrucksPerPage] = useState(12);
   const [currentTruckPage, setCurrentTruckPage] = useState(1);
+  const [showTruckFilters, setShowTruckFilters] = useState(false);
 
   // Transaction filtering states
   const [transactionSearchQuery, setTransactionSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [filteredDeliveries, setFilteredDeliveries] = useState([]);
+  const [showTransactionFilters, setShowTransactionFilters] = useState(false);
 
   // Table pagination and sorting states
   const [currentPage, setCurrentPage] = useState(1);
@@ -1234,13 +1236,13 @@ const ClientProfile = () => {
     const otherSelectedLocation =
       type === "pickup"
         ? {
-            address: bookingData.dropoffLocation,
-            coordinates: bookingData.dropoffCoordinates,
-          }
+          address: bookingData.dropoffLocation,
+          coordinates: bookingData.dropoffCoordinates,
+        }
         : {
-            address: bookingData.pickupLocation,
-            coordinates: bookingData.pickupCoordinates,
-          };
+          address: bookingData.pickupLocation,
+          coordinates: bookingData.pickupCoordinates,
+        };
 
     enhancedIsolatedMapModal.init({
       locationType: type,
@@ -2430,9 +2432,9 @@ const ClientProfile = () => {
       const averageTruckCapacity =
         allocatedTrucks.length > 0
           ? allocatedTrucks.reduce(
-              (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
-              0,
-            ) / allocatedTrucks.length
+            (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
+            0,
+          ) / allocatedTrucks.length
           : 5; // Default assumption of 5 tons per truck
 
       const estimatedAdditionalTrucks = Math.ceil(
@@ -2555,11 +2557,10 @@ const ClientProfile = () => {
               />
               <button
                 type="button"
-                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${
-                  !bookingData.weight || parseFloat(bookingData.weight) <= 0
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
-                }`}
+                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${!bookingData.weight || parseFloat(bookingData.weight) <= 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
+                  }`}
                 onClick={async () => {
                   const weight = parseFloat(bookingData.weight);
                   if (weight && weight > 0) {
@@ -3182,13 +3183,12 @@ const ClientProfile = () => {
                       return (
                         <div
                           key={truck.TruckID}
-                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${
-                            isSelected
-                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                              : isRecommended
-                                ? "border-amber-400 bg-amber-50"
-                                : "border-gray-200 bg-white hover:bg-gray-50"
-                          }`}
+                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${isSelected
+                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                            : isRecommended
+                              ? "border-amber-400 bg-amber-50"
+                              : "border-gray-200 bg-white hover:bg-gray-50"
+                            }`}
                           onClick={() =>
                             handleTruckSelectionWithAvailability(truck.TruckID)
                           }
@@ -3236,11 +3236,10 @@ const ClientProfile = () => {
 
                           <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                utilizationPercentage > 100
-                                  ? "bg-red-500"
-                                  : "bg-emerald-500"
-                              }`}
+                              className={`h-full rounded-full transition-all duration-500 ${utilizationPercentage > 100
+                                ? "bg-red-500"
+                                : "bg-emerald-500"
+                                }`}
                               style={{
                                 width: `${Math.min(100, utilizationPercentage)}%`,
                               }}
@@ -3480,11 +3479,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === deliveryId
               ? {
-                  ...delivery,
-                  clientConfirmed: true,
-                  confirmedAt: new Date().toISOString(),
-                  DeliveryStatus: "completed", // Mark as completed after client confirmation
-                }
+                ...delivery,
+                clientConfirmed: true,
+                confirmedAt: new Date().toISOString(),
+                DeliveryStatus: "completed", // Mark as completed after client confirmation
+              }
               : delivery,
           ),
         );
@@ -3624,9 +3623,9 @@ const ClientProfile = () => {
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
           Math.cos((pickup.lat * Math.PI) / 180) *
-            Math.cos((dropoff.lat * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+          Math.cos((dropoff.lat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         estimatedDistance = Math.round(R * c * 100) / 100; // Round to 2 decimal places
       } else {
@@ -3742,12 +3741,12 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                  ...delivery,
-                  PickupLocation: changeRouteData.pickupLocation,
-                  DropoffLocation: changeRouteData.dropoffLocation,
-                  DeliveryDistance: changeRouteData.newDistance,
-                  DeliveryRate: changeRouteData.newCost,
-                }
+                ...delivery,
+                PickupLocation: changeRouteData.pickupLocation,
+                DropoffLocation: changeRouteData.dropoffLocation,
+                DeliveryDistance: changeRouteData.newDistance,
+                DeliveryRate: changeRouteData.newCost,
+              }
               : delivery,
           ),
         );
@@ -3789,11 +3788,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                  ...delivery,
-                  DeliveryDate: new Date(
-                    `${rebookData.newDate}T${rebookData.newTime}`,
-                  ),
-                }
+                ...delivery,
+                DeliveryDate: new Date(
+                  `${rebookData.newDate}T${rebookData.newTime}`,
+                ),
+              }
               : delivery,
           ),
         );
@@ -3948,15 +3947,15 @@ const ClientProfile = () => {
       const updatedData =
         changeRouteMapType === "pickup"
           ? {
-              ...changeRouteData,
-              pickupLocation: address,
-              pickupCoordinates: coordinates,
-            }
+            ...changeRouteData,
+            pickupLocation: address,
+            pickupCoordinates: coordinates,
+          }
           : {
-              ...changeRouteData,
-              dropoffLocation: address,
-              dropoffCoordinates: coordinates,
-            };
+            ...changeRouteData,
+            dropoffLocation: address,
+            dropoffCoordinates: coordinates,
+          };
 
       if (updatedData.pickupLocation && updatedData.dropoffLocation) {
         calculateNewRoute();
@@ -4043,7 +4042,7 @@ const ClientProfile = () => {
                     }
                     pickupAddress={selectedDeliveryRoute.pickupLocation}
                     dropoffAddress={selectedDeliveryRoute.dropoffLocation}
-                    onRouteCalculated={() => {}} // No need to handle route calculation for viewing
+                    onRouteCalculated={() => { }} // No need to handle route calculation for viewing
                   />
                 </div>
               )}
@@ -4173,81 +4172,109 @@ const ClientProfile = () => {
               </h3>
             </div>
 
-            {/* Modern Filters Section - Like Admin Pages */}
-            <div className="p-6 bg-white border-b border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {/* Modern Filter Bar - Popup Style Like Admin Pages */}
+            <div className="p-4 bg-white border-b border-gray-100 relative">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 {/* Search */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search bookings..."
-                      value={transactionSearchQuery || ""}
-                      onChange={(e) =>
-                        setTransactionSearchQuery(e.target.value)
-                      }
-                      className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none placeholder-gray-400"
-                    />
-                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
+                <div className="relative flex-1 max-w-lg w-full">
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search bookings by ID, truck, location..."
+                    value={transactionSearchQuery || ""}
+                    onChange={(e) => setTransactionSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  {/* Filter Toggle Button */}
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showTransactionFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                    onClick={() => setShowTransactionFilters(!showTransactionFilters)}
+                  >
+                    <FaFilter size={14} />
+                    Filters
+                    {(statusFilter !== "all" || dateFilter !== "all") && (
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                        {[statusFilter !== "all", dateFilter !== "all"].filter(Boolean).length}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 text-gray-500 text-sm font-medium">
+                Showing {filteredDeliveries.length} of {deliveries.length} bookings
+              </div>
+
+              {/* Filter Popup */}
+              {showTransactionFilters && (
+                <div className="absolute top-full mt-2 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-[360px] max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-gray-900 text-lg">Filter Options</h4>
+                    <button
+                      className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                      onClick={() => setShowTransactionFilters(false)}
+                    >
+                      <FaTimes size={16} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 mb-6">
+                    {/* Status Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Status</label>
+                      <select
+                        value={statusFilter || "all"}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="delivered">Delivered</option>
+                      </select>
+                    </div>
+
+                    {/* Date Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Date Range</label>
+                      <select
+                        value={dateFilter || "all"}
+                        onChange={(e) => setDateFilter(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                        <option value="year">This Year</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                      onClick={() => {
+                        setTransactionSearchQuery("");
+                        setStatusFilter("all");
+                        setDateFilter("all");
+                        setShowTransactionFilters(false);
+                      }}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
+                      onClick={() => setShowTransactionFilters(false)}
+                    >
+                      Apply Filters
+                    </button>
                   </div>
                 </div>
-
-                {/* Status Filter */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Status
-                  </label>
-                  <select
-                    value={statusFilter || "all"}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="cancelled">Cancelled</option>
-                    <option value="delivered">Delivered</option>
-                  </select>
-                </div>
-
-                {/* Date Filter */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Date Range
-                  </label>
-                  <select
-                    value={dateFilter || "all"}
-                    onChange={(e) => setDateFilter(e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="today">Today</option>
-                    <option value="week">This Week</option>
-                    <option value="month">This Month</option>
-                    <option value="year">This Year</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 mt-2">
-                <button
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                  onClick={() => {
-                    setTransactionSearchQuery("");
-                    setStatusFilter("all");
-                    setDateFilter("all");
-                  }}
-                >
-                  Clear Filters
-                </button>
-
-                <div className="text-sm font-medium text-gray-500">
-                  Showing {filteredDeliveries.length} of {deliveries.length}{" "}
-                  bookings
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Modern Bookings Table */}
@@ -4467,7 +4494,7 @@ const ClientProfile = () => {
               </h3>
               <div className="flex gap-3">
                 <button
-                  onClick={() => setShowBookingModal(true)}
+                  onClick={() => history.push('/client/book-truck')}
                   className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2 rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
                 >
                   <FaPlus /> Book Truck
@@ -4475,77 +4502,45 @@ const ClientProfile = () => {
               </div>
             </div>
 
-            {/* Modern Filters Section - Like Admin Pages */}
-            <div className="p-6 bg-white border-b border-gray-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+
+            {/* Modern Filter Bar - Popup Style Like Admin Pages */}
+            <div className="p-4 bg-white border-b border-gray-100 relative">
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 {/* Search */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Search trucks..."
-                      value={truckFilters.search}
-                      onChange={(e) =>
-                        handleFilterChange("search", e.target.value)
-                      }
-                      className="w-full h-11 pl-11 pr-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none placeholder-gray-400"
-                    />
-                    <FaSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg pointer-events-none" />
-                  </div>
+                <div className="relative flex-1 max-w-lg w-full">
+                  <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search trucks by plate, type, brand..."
+                    value={truckFilters.search}
+                    onChange={(e) => handleFilterChange("search", e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+                  />
                 </div>
 
-                {/* Type Filter */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Type
-                  </label>
-                  <select
-                    value={truckFilters.type}
-                    onChange={(e) => handleFilterChange("type", e.target.value)}
-                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                  {/* Filter Toggle Button */}
+                  <button
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showTruckFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                    onClick={() => setShowTruckFilters(!showTruckFilters)}
                   >
-                    <option value="all">All Types</option>
-                    {getUniqueTypes().map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <FaFilter size={14} />
+                    Filters
+                    {(truckFilters.type !== "all" || truckFilters.status !== "all") && (
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                        {[truckFilters.type !== "all", truckFilters.status !== "all"].filter(Boolean).length}
+                      </span>
+                    )}
+                  </button>
 
-                {/* Status Filter */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Status
-                  </label>
-                  <select
-                    value={truckFilters.status}
-                    onChange={(e) =>
-                      handleFilterChange("status", e.target.value)
-                    }
-                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="available">Available</option>
-                    <option value="busy">In Use</option>
-                  </select>
-                </div>
-
-                {/* Per Page Filter */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider pl-1">
-                    Per Page
-                  </label>
+                  {/* Per Page Select */}
                   <select
                     value={trucksPerPage}
                     onChange={(e) => {
                       setTrucksPerPage(Number(e.target.value));
                       setCurrentTruckPage(1);
                     }}
-                    className="w-full h-11 px-4 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 text-sm font-medium cursor-pointer transition-all focus:bg-white focus:border-blue-400 focus:ring-4 focus:ring-blue-100/50 focus:outline-none"
+                    className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value={6}>6 per page</option>
                     <option value={12}>12 per page</option>
@@ -4555,19 +4550,73 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="flex justify-between items-center pt-2 border-t border-dashed border-gray-200 mt-2">
-                <button
-                  className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                  onClick={resetFilters}
-                >
-                  Clear Filters
-                </button>
-
-                <div className="text-sm font-medium text-gray-500">
-                  Showing {getPaginatedTrucks().length} of{" "}
-                  {getFilteredTrucks().length} trucks
-                </div>
+              <div className="mt-3 text-gray-500 text-sm font-medium">
+                Showing {getPaginatedTrucks().length} of {getFilteredTrucks().length} trucks
               </div>
+
+              {/* Filter Popup */}
+              {showTruckFilters && (
+                <div className="absolute top-full mt-2 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-[360px] max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-bold text-gray-900 text-lg">Filter Options</h4>
+                    <button
+                      className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                      onClick={() => setShowTruckFilters(false)}
+                    >
+                      <FaTimes size={16} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 mb-6">
+                    {/* Type Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Type</label>
+                      <select
+                        value={truckFilters.type}
+                        onChange={(e) => handleFilterChange("type", e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        <option value="all">All Types</option>
+                        {getUniqueTypes().map((type) => (
+                          <option key={type} value={type}>{type}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Status Filter */}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-500 uppercase">Status</label>
+                      <select
+                        value={truckFilters.status}
+                        onChange={(e) => handleFilterChange("status", e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        <option value="all">All Status</option>
+                        <option value="available">Available</option>
+                        <option value="busy">In Use</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                    <button
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                      onClick={() => {
+                        resetFilters();
+                        setShowTruckFilters(false);
+                      }}
+                    >
+                      Reset
+                    </button>
+                    <button
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
+                      onClick={() => setShowTruckFilters(false)}
+                    >
+                      Apply Filters
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Modern Trucks Table */}
@@ -4708,7 +4757,7 @@ const ClientProfile = () => {
                               {isAvailable && (
                                 <button
                                   className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-100 text-gray-500 hover:bg-blue-100 hover:text-blue-600 border border-transparent hover:border-blue-200"
-                                  onClick={() => setShowBookingModal(true)}
+                                  onClick={() => history.push('/client/book-truck')}
                                   title={
                                     isInActiveDelivery
                                       ? "Book this truck (has active delivery but can be booked on different dates)"
@@ -5313,8 +5362,8 @@ const ClientProfile = () => {
                       <strong>Distance:</strong>{" "}
                       {selectedDelivery.DeliveryDistance
                         ? parseFloat(selectedDelivery.DeliveryDistance).toFixed(
-                            2,
-                          )
+                          2,
+                        )
                         : "0.00"}{" "}
                       km
                     </span>
@@ -5536,17 +5585,16 @@ const ClientProfile = () => {
                       Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        viewingDelivery.DeliveryStatus === "pending"
-                          ? "bg-amber-100 text-amber-700"
-                          : viewingDelivery.DeliveryStatus === "in-progress"
-                            ? "bg-blue-100 text-blue-700"
-                            : viewingDelivery.DeliveryStatus === "completed"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : viewingDelivery.DeliveryStatus === "cancelled"
-                                ? "bg-red-100 text-red-700"
-                                : "bg-gray-100 text-gray-700"
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${viewingDelivery.DeliveryStatus === "pending"
+                        ? "bg-amber-100 text-amber-700"
+                        : viewingDelivery.DeliveryStatus === "in-progress"
+                          ? "bg-blue-100 text-blue-700"
+                          : viewingDelivery.DeliveryStatus === "completed"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : viewingDelivery.DeliveryStatus === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-100 text-gray-700"
+                        }`}
                     >
                       {viewingDelivery.DeliveryStatus}
                     </span>
@@ -5569,8 +5617,8 @@ const ClientProfile = () => {
                     <span className="text-lg font-bold text-emerald-600">
                       {formatCurrency(
                         viewingDelivery.DeliveryRate ||
-                          viewingDelivery.deliveryRate ||
-                          0,
+                        viewingDelivery.deliveryRate ||
+                        0,
                       )}
                     </span>
                   </div>
@@ -5614,16 +5662,16 @@ const ClientProfile = () => {
                     viewingDelivery.dropoffCoordinates) ||
                     (viewingDelivery.PickupCoordinates &&
                       viewingDelivery.DropoffCoordinates)) && (
-                    <button
-                      className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-                      onClick={() => {
-                        viewDeliveryRoute(viewingDelivery);
-                        setShowViewDetailsModal(false);
-                      }}
-                    >
-                      <FaMapMarkerAlt /> View Route on Map
-                    </button>
-                  )}
+                      <button
+                        className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
+                        onClick={() => {
+                          viewDeliveryRoute(viewingDelivery);
+                          setShowViewDetailsModal(false);
+                        }}
+                      >
+                        <FaMapMarkerAlt /> View Route on Map
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -5774,14 +5822,14 @@ const ClientProfile = () => {
           onClose={() => setShowTruckDetailsModal(false)}
           size="medium"
         >
-          <div className="flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
-                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+          <div className="flex flex-col gap-8 p-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-5 pb-3 border-b border-gray-200">
                   🚛 Truck Information
                 </h4>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Truck Plate:
                     </label>
@@ -5789,7 +5837,7 @@ const ClientProfile = () => {
                       {viewingTruck.TruckPlate}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Type:
                     </label>
@@ -5797,7 +5845,7 @@ const ClientProfile = () => {
                       {viewingTruck.TruckType || "N/A"}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Brand:
                     </label>
@@ -5805,7 +5853,7 @@ const ClientProfile = () => {
                       {viewingTruck.TruckBrand}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Capacity:
                     </label>
@@ -5816,12 +5864,12 @@ const ClientProfile = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-5 border border-gray-200 h-full">
-                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+              <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 h-full">
+                <h4 className="flex items-center gap-2 text-base font-bold text-gray-800 mb-5 pb-3 border-b border-gray-200">
                   📊 Performance Statistics
                 </h4>
-                <div className="flex flex-col gap-2">
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                <div className="flex flex-col gap-1">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Total Deliveries:
                     </label>
@@ -5829,7 +5877,7 @@ const ClientProfile = () => {
                       {viewingTruck.TotalCompletedDeliveries || 0}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Total Kilometers:
                     </label>
@@ -5837,7 +5885,7 @@ const ClientProfile = () => {
                       {viewingTruck.TotalKilometers || 0} km
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Allocation Status:
                     </label>
@@ -5847,27 +5895,26 @@ const ClientProfile = () => {
                         "Allocated"}
                     </span>
                   </div>
-                  <div className="flex justify-between py-2 border-b border-gray-200/50 last:border-none items-center">
+                  <div className="flex justify-between py-3 border-b border-gray-200/50 last:border-none items-center">
                     <label className="text-sm text-gray-500 font-medium">
                       Current Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        deliveries.some(
-                          (delivery) =>
-                            delivery.TruckID === viewingTruck.TruckID &&
-                            (delivery.DeliveryStatus === "pending" ||
-                              delivery.DeliveryStatus === "in-progress"),
-                        )
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${deliveries.some(
+                        (delivery) =>
+                          delivery.TruckID === viewingTruck.TruckID &&
+                          (delivery.DeliveryStatus === "pending" ||
+                            delivery.DeliveryStatus === "in-progress")
+                      )
                           ? "bg-amber-100 text-amber-700"
                           : "bg-emerald-100 text-emerald-700"
-                      }`}
+                        }`}
                     >
                       {deliveries.some(
                         (delivery) =>
                           delivery.TruckID === viewingTruck.TruckID &&
                           (delivery.DeliveryStatus === "pending" ||
-                            delivery.DeliveryStatus === "in-progress"),
+                            delivery.DeliveryStatus === "in-progress")
                       )
                         ? "In Use"
                         : "Available"}
@@ -5890,16 +5937,16 @@ const ClientProfile = () => {
                   (delivery.DeliveryStatus === "pending" ||
                     delivery.DeliveryStatus === "in-progress"),
               ) && (
-                <button
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
-                  onClick={() => {
-                    setShowTruckDetailsModal(false);
-                    setShowBookingModal(true);
-                  }}
-                >
-                  <FaCalendarPlus /> Book This Truck
-                </button>
-              )}
+                  <button
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+                    onClick={() => {
+                      setShowTruckDetailsModal(false);
+                      history.push('/client/book-truck');
+                    }}
+                  >
+                    <FaCalendarPlus /> Book This Truck
+                  </button>
+                )}
             </div>
           </div>
         </Modal>

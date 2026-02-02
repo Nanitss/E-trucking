@@ -311,6 +311,39 @@
   .empty-state {
     @apply p-5 text-center text-gray-500 bg-gray-50 rounded-lg my-5;
   }
+
+  /* Modal Component */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center opacity-100 transition-opacity duration-300 backdrop-blur-sm;
+  }
+  
+  .modal-overlay.closing {
+    @apply opacity-0 pointer-events-none;
+  }
+
+  .modal-content {
+    @apply bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all duration-300 scale-100;
+  }
+  
+  .modal-large {
+    @apply max-w-4xl;
+  }
+  
+  .modal-header {
+    @apply flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50;
+  }
+  
+  .modal-header h2 {
+    @apply text-lg font-bold text-gray-800 m-0;
+  }
+  
+  .modal-close {
+    @apply p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors;
+  }
+  
+  .modal-body {
+    @apply p-0 overflow-y-auto max-h-[80vh];
+  }
 }
 
 /* Utility extensions */

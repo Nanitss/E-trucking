@@ -9,6 +9,8 @@ import {
   FaClock,
   FaSearch,
   FaEye,
+  FaFilter,
+  FaTimes,
 } from "react-icons/fa";
 import Loader from "../../components/common/Loader";
 import StatusBadge from "../../components/common/StatusBadge";
@@ -16,7 +18,7 @@ import LiveMapTracker from "../../components/tracking/LiveMapTracker";
 import { AuthContext } from "../../context/AuthContext";
 
 const DeliveryTracker = () => {
-  const { logout } = useContext(AuthContext) || { logout: () => {} };
+  const { logout } = useContext(AuthContext) || { logout: () => { } };
   const history = useHistory();
   const [deliveries, setDeliveries] = useState([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState([]);
@@ -24,6 +26,7 @@ const DeliveryTracker = () => {
   const [selectedDeliveryId, setSelectedDeliveryId] = useState(null);
   const [selectedTruckId, setSelectedTruckId] = useState(null);
   const [showTrackingModal, setShowTrackingModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     status: "",
@@ -225,7 +228,7 @@ const DeliveryTracker = () => {
         (delivery) =>
           delivery.deliveryStatus &&
           delivery.deliveryStatus.toLowerCase() ===
-            filters.status.toLowerCase(),
+          filters.status.toLowerCase(),
       );
     }
 
@@ -340,70 +343,115 @@ const DeliveryTracker = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 bg-gray-50 p-5 rounded-2xl border border-gray-200/60">
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Search
-            </label>
-            <div className="relative">
+        {/* Modern Filter Bar - Popup Style */}
+        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200/60 mb-6 relative">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            {/* Search */}
+            <div className="relative flex-1 max-w-lg w-full">
               <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 name="search"
-                placeholder="Search bookings..."
+                placeholder="Search by ID, driver, truck, location..."
                 value={filters.search}
                 onChange={handleFilterChange}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
               />
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              {/* Filter Toggle Button */}
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <FaFilter size={14} />
+                Filters
+                {(filters.status || filters.dateFrom || filters.dateTo) && (
+                  <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                    {[filters.status, filters.dateFrom, filters.dateTo].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Status
-            </label>
-            <div className="relative">
-              <select
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white appearance-none cursor-pointer"
-              >
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in-progress">In Progress</option>
-                <option value="started">Started</option>
-                <option value="picked-up">Picked Up</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
-                ▼
+          <div className="mt-3 text-gray-500 text-sm font-medium">
+            Showing {filteredDeliveries.length} of {deliveries.length} deliveries
+          </div>
+
+          {/* Filter Popup */}
+          {showFilters && (
+            <div className="absolute top-full mt-2 right-4 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-[400px] max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-gray-900 text-lg">Filter Options</h4>
+                <button
+                  className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                  onClick={() => setShowFilters(false)}
+                >
+                  <FaTimes size={16} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 mb-6">
+                {/* Status Filter */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Status</label>
+                  <select
+                    name="status"
+                    value={filters.status}
+                    onChange={handleFilterChange}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="started">Started</option>
+                    <option value="picked-up">Picked Up</option>
+                  </select>
+                </div>
+
+                {/* Date Range */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Date Range</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      name="dateFrom"
+                      value={filters.dateFrom}
+                      onChange={handleFilterChange}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                    <input
+                      type="date"
+                      name="dateTo"
+                      value={filters.dateTo}
+                      onChange={handleFilterChange}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                  onClick={() => {
+                    setFilters({ search: "", status: "", dateFrom: "", dateTo: "" });
+                    setShowFilters(false);
+                  }}
+                >
+                  Reset
+                </button>
+                <button
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
+                  onClick={() => setShowFilters(false)}
+                >
+                  Apply Filters
+                </button>
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Date Range
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="date"
-                name="dateFrom"
-                value={filters.dateFrom}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white text-sm"
-                placeholder="From"
-              />
-              <input
-                type="date"
-                name="dateTo"
-                value={filters.dateTo}
-                onChange={handleFilterChange}
-                className="w-full px-3 py-2.5 rounded-xl border border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all bg-white text-sm"
-                placeholder="To"
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="overflow-x-auto rounded-xl border border-gray-200">

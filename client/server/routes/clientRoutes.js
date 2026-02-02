@@ -30,6 +30,90 @@ router.post('/deliveries/test/change-route', (req, res) => {
   res.json({ message: 'Change route endpoint is accessible!' });
 });
 
+// ========== Truck Availability Routes (MUST be before /:id routes) ==========
+// Check which trucks are available for a specific date - matches frontend API call
+router.get('/trucks/availability', authenticateJWT, requireClientOrAdmin, async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ success: false, message: 'Date parameter is required' });
+    }
+
+    console.log(`🔍 Checking truck availability for date: ${date}`);
+
+    const { db } = require('../config/firebase');
+
+    // Get client ID from authenticated user
+    const clientsSnapshot = await db.collection('clients')
+      .where('userId', '==', req.user.id)
+      .limit(1)
+      .get();
+
+    if (clientsSnapshot.empty) {
+      return res.status(404).json({ success: false, message: 'Client not found' });
+    }
+
+    const clientId = clientsSnapshot.docs[0].id;
+    console.log(`🔍 Client ID: ${clientId}`);
+
+    // Get all active allocations for this client
+    const activeAllocationsSnapshot = await db.collection('allocations')
+      .where('clientId', '==', clientId)
+      .where('status', '==', 'active')
+      .get();
+
+    const allocatedTruckIds = activeAllocationsSnapshot.docs.map(doc => doc.data().truckId);
+    console.log(`🔍 Allocated truck IDs: ${allocatedTruckIds.length}`);
+
+    // Get all deliveries for this client
+    const deliveriesSnapshot = await db.collection('deliveries')
+      .where('clientId', '==', req.user.id)
+      .get();
+
+    // Filter deliveries that are on the selected date and are active
+    const selectedDateObj = new Date(date);
+    const busyTruckIds = [];
+
+    deliveriesSnapshot.docs.forEach(doc => {
+      const delivery = doc.data();
+      let deliveryDate;
+
+      if (delivery.deliveryDate) {
+        if (delivery.deliveryDate.seconds) {
+          deliveryDate = new Date(delivery.deliveryDate.seconds * 1000);
+        } else if (delivery.deliveryDate.toDate) {
+          deliveryDate = delivery.deliveryDate.toDate();
+        } else {
+          deliveryDate = new Date(delivery.deliveryDate);
+        }
+
+        const isSameDay = deliveryDate.toDateString() === selectedDateObj.toDateString();
+        const isActive = ['pending', 'in-progress', 'booked'].includes(delivery.deliveryStatus?.toLowerCase());
+
+        if (isSameDay && isActive && delivery.truckId) {
+          busyTruckIds.push(delivery.truckId);
+        }
+      }
+    });
+
+    console.log(`🔍 Busy truck IDs on ${date}: ${busyTruckIds.length}`);
+
+    // Filter out trucks that are busy on this date
+    const availableTruckIds = allocatedTruckIds.filter(truckId => !busyTruckIds.includes(truckId));
+
+    res.json({
+      success: true,
+      availableTruckIds,
+      date,
+      totalAllocated: allocatedTruckIds.length,
+      totalAvailable: availableTruckIds.length
+    });
+  } catch (error) {
+    console.error('Error checking truck availability:', error);
+    res.status(500).json({ success: false, message: 'Server error checking availability' });
+  }
+});
+
 // ========== Client Profile Routes ==========
 // IMPORTANT: These routes must be defined BEFORE the /:id routes to avoid conflicts
 
@@ -37,10 +121,10 @@ router.post('/deliveries/test/change-route', (req, res) => {
 router.get('/vehicle-rates', authenticateJWT, requireClientOrAdmin, async (req, res) => {
   try {
     console.log('GET /api/clients/vehicle-rates - Fetching vehicle rates for client');
-    
+
     const StaffService = require('../services/StaffService');
     const rates = await StaffService.getVehicleRates();
-    
+
     // Return simplified rate information for clients
     const clientRates = rates.map(rate => ({
       vehicleType: rate.vehicleType,
@@ -48,7 +132,7 @@ router.get('/vehicle-rates', authenticateJWT, requireClientOrAdmin, async (req, 
       baseRate: rate.baseRate,
       description: rate.description
     }));
-    
+
     res.json({
       success: true,
       data: clientRates

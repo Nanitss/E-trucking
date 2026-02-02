@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation, useHistory } from 'react-router-dom';
-import { 
-  FaChartLine, 
-  FaHistory, 
-  FaTruck, 
-  FaFileInvoiceDollar, 
-  FaUser, 
-  FaEye, 
+import {
+  FaChartLine,
+  FaHistory,
+  FaTruck,
+  FaFileInvoiceDollar,
+  FaUser,
+  FaEye,
   FaSignOutAlt,
   FaPlus,
   FaMapPin
@@ -17,8 +17,8 @@ import './ClientSidebar.css';
 const ClientSidebar = () => {
   const location = useLocation();
   const history = useHistory();
-  const { authUser, logout } = useContext(AuthContext) || { authUser: null, logout: () => {} };
-  
+  const { authUser, logout } = useContext(AuthContext) || { authUser: null, logout: () => { } };
+
   // State for storing client counts
   const [counts, setCounts] = useState({
     allocatedTrucks: 0,
@@ -46,7 +46,7 @@ const ClientSidebar = () => {
           <span>Trucking MS</span>
         </div>
       </div>
-      
+
       <div className="user-info">
         <div className="avatar">
           {authUser?.username ? authUser.username.charAt(0).toUpperCase() : 'C'}
@@ -56,7 +56,7 @@ const ClientSidebar = () => {
           <p>Client Account</p>
         </div>
       </div>
-      
+
       <div className="sidebar-menu">
         {/* Main sections */}
         <Link to="/client/profile" className={`menu-item ${isActive('/client/profile')}`}>
@@ -65,70 +65,62 @@ const ClientSidebar = () => {
           </span>
           <span className="menu-label">Overview</span>
         </Link>
-        
+
         <Link to="/client/profile?tab=transactions" className={`menu-item ${location.search.includes('tab=transactions') ? 'active' : ''}`}>
           <span className="menu-icon">
             <FaHistory />
           </span>
           <span className="menu-label">Transaction History</span>
         </Link>
-        
+
         <Link to="/client/profile?tab=trucks" className={`menu-item ${location.search.includes('tab=trucks') ? 'active' : ''}`}>
           <span className="menu-icon">
             <FaTruck />
           </span>
           <span className="menu-label">My Trucks</span>
         </Link>
-        
+
         <Link to="/client/profile?tab=billing" className={`menu-item ${location.search.includes('tab=billing') ? 'active' : ''}`}>
           <span className="menu-icon">
             <FaFileInvoiceDollar />
           </span>
           <span className="menu-label">Billing</span>
         </Link>
-        
+
         <Link to="/client/profile?tab=profile" className={`menu-item ${location.search.includes('tab=profile') ? 'active' : ''}`}>
           <span className="menu-icon">
             <FaUser />
           </span>
           <span className="menu-label">Profile Info</span>
         </Link>
-        
+
         <Link to="/client/locations" className={`menu-item ${isActive('/client/locations')}`}>
           <span className="menu-icon">
             <FaMapPin />
           </span>
           <span className="menu-label">Saved Locations</span>
         </Link>
-        
+
         <div className="menu-divider"></div>
-        
+
         {/* Quick Actions */}
         <div className="menu-group-label">Quick Actions</div>
-        
+
         <Link to="/client/delivery-tracker" className={`menu-item ${isActive('/client/delivery-tracker')}`}>
           <span className="menu-icon">
             <FaEye />
           </span>
           <span className="menu-label">Track Orders</span>
         </Link>
-        
-        <button className="menu-item book-truck-btn" onClick={() => {
-          // If we're on profile page, trigger booking modal
-          if (location.pathname === '/client/profile') {
-            window.dispatchEvent(new CustomEvent('openBookingModal'));
-          } else {
-            // Otherwise navigate to profile page
-            window.location.href = '/client/profile';
-          }
-        }}>
+
+        <Link to="/client/book-truck" className={`menu-item book-truck-btn ${isActive('/client/book-truck')}`}>
           <span className="menu-icon">
             <FaPlus />
           </span>
           <span className="menu-label">Book Truck</span>
-        </button>
+        </Link>
       </div>
-      
+
       <div className="sidebar-footer">
         <button className="logout-btn" onClick={handleLogout}>
           <span className="menu-icon">
