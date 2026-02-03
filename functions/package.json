@@ -1,0 +1,31 @@
+{
+    "name": "e-trucking-functions",
+    "version": "1.0.0",
+    "description": "E-Trucking API Cloud Functions",
+    "main": "index.js",
+    "scripts": {
+        "serve": "firebase emulators:start --only functions",
+        "deploy": "firebase deploy --only functions"
+    },
+    "engines": {
+        "node": "20"
+    },
+    "dependencies": {
+        "@types/markdown-it": "^14.1.2",
+        "acorn": "^8.15.0",
+        "axios": "^1.9.0",
+        "bcrypt": "^5.1.0",
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.0.3",
+        "express": "^4.18.2",
+        "express-fileupload": "^1.4.0",
+        "firebase-admin": "^11.11.1",
+        "firebase-functions": "^7.0.5",
+        "geolib": "^3.3.3",
+        "jsonwebtoken": "^9.0.0",
+        "markdown-it": "^14.1.0",
+        "multer": "^2.0.2",
+        "node-cron": "^3.0.2"
+    }
+}

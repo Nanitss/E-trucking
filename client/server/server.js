@@ -88,12 +88,12 @@ app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (mobile apps, Postman, etc.)
     if (!origin) return callback(null, true);
-    
+
     // Allow localhost development
     if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
       return callback(null, true);
     }
-    
+
     // Allow mobile app requests (they don't have an origin)
     // You can add your production domains here
     const allowedOrigins = [
@@ -102,7 +102,7 @@ app.use(cors({
       'https://your-production-domain.com', // Add your production domain
       // Mobile apps don't send origin, so null is allowed above
     ];
-    
+
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
@@ -137,14 +137,14 @@ app.post('/api/test-upload', (req, res) => {
     console.log('🧪 Test upload endpoint called');
     console.log('📄 Files received:', req.files ? Object.keys(req.files) : 'No files');
     console.log('📋 Request body:', req.body);
-    
+
     if (req.files && Object.keys(req.files).length > 0) {
       const fileNames = Object.keys(req.files);
-      
+
       // Use the project uploads folder
       const DOCUMENTS_BASE_PATH = path.join(process.cwd(), 'uploads');
       console.log('📁 Documents base path:', DOCUMENTS_BASE_PATH);
-      
+
       // Test write access to base folder
       try {
         const testFile = path.join(DOCUMENTS_BASE_PATH, 'test-write-access.txt');
@@ -154,55 +154,55 @@ app.post('/api/test-upload', (req, res) => {
       } catch (error) {
         console.error('❌ Write access test failed:', error);
       }
-      
+
       const documentTypes = {
         orDocument: { folder: 'OR-CR-Files', prefix: 'OR' },
         crDocument: { folder: 'OR-CR-Files', prefix: 'CR' },
         insuranceDocument: { folder: 'Insurance-Papers', prefix: 'INSURANCE' }
       };
-      
+
       const uploadedFiles = [];
       const errors = [];
-      
+
       console.log('🔄 Starting file processing...');
-      
+
       Object.entries(req.files).forEach(([docType, file]) => {
         console.log(`📄 Processing ${docType}:`, file.name, file.size, 'bytes');
-        
+
         if (documentTypes[docType]) {
           const config = documentTypes[docType];
           // Use Truck-Documents level but save OR/CR files directly in OR-CR-Files folder
           const folderPath = path.join(DOCUMENTS_BASE_PATH, 'Truck-Documents', config.folder);
-          
+
           console.log(`📁 Checking folder: ${folderPath}`);
           console.log(`📁 Full absolute path: ${path.resolve(folderPath)}`);
-          
+
           if (fs.existsSync(folderPath)) {
             console.log(`✅ Folder exists: ${folderPath}`);
-            
+
             // Use original filename with prefix to avoid conflicts
             const originalName = path.basename(file.name, path.extname(file.name));
             const cleanPlate = (req.body.truckPlate || 'TEST').replace(/[^a-zA-Z0-9]/g, '');
             const fileExtension = path.extname(file.name);
             const fileName = `${originalName}_${config.prefix}${fileExtension}`;
             const filePath = path.join(folderPath, fileName);
-            
+
             console.log(`📄 Saving file: ${fileName} to ${filePath}`);
-            
+
             try {
               console.log(`📄 Moving file to: ${filePath}`);
               file.mv(filePath);
               console.log(`✅ File moved successfully to: ${filePath}`);
-              
+
               // Add to uploaded files list without complex verification
-              uploadedFiles.push({ 
-                docType, 
-                fileName, 
+              uploadedFiles.push({
+                docType,
+                fileName,
                 path: filePath,
-                size: file.size 
+                size: file.size
               });
               console.log(`✅ File saved: ${fileName} (${file.size} bytes)`);
-              
+
             } catch (error) {
               console.error(`❌ Failed to save ${docType}:`, error);
               errors.push(`Failed to save ${docType}: ${error.message}`);
@@ -215,11 +215,11 @@ app.post('/api/test-upload', (req, res) => {
           console.log(`⚠️ Unknown document type: ${docType}`);
         }
       });
-      
+
       console.log(`📄 Upload summary: ${uploadedFiles.length} files saved, ${errors.length} errors`);
-      
-      res.json({ 
-        message: errors.length > 0 ? 'Files received but some failed to save' : 'Files received and saved successfully', 
+
+      res.json({
+        message: errors.length > 0 ? 'Files received but some failed to save' : 'Files received and saved successfully',
         files: fileNames,
         fileCount: fileNames.length,
         uploadedFiles: uploadedFiles,
@@ -227,17 +227,17 @@ app.post('/api/test-upload', (req, res) => {
       });
     } else {
       console.log('⚠️ No files received in request');
-      res.json({ 
-        message: 'No files received', 
+      res.json({
+        message: 'No files received',
         files: [],
         fileCount: 0
       });
     }
   } catch (error) {
     console.error('❌ Test upload endpoint error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error in test upload', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Internal server error in test upload',
+      error: error.message
     });
   }
 });
@@ -247,7 +247,7 @@ app.post('/api/test-truck-create', uploadTruckDocuments, (req, res) => {
   try {
     console.log('🧪 Test truck creation called');
     console.log('📄 Uploaded documents:', req.uploadedDocuments);
-    
+
     // Create a test truck
     const testTruck = {
       id: 'test-truck-' + Date.now(),
@@ -266,9 +266,9 @@ app.post('/api/test-truck-create', uploadTruckDocuments, (req, res) => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
-    
+
     console.log('✅ Test truck created:', testTruck);
-    
+
     res.json({
       message: 'Test truck created successfully',
       truck: testTruck,
@@ -289,7 +289,7 @@ app.put('/api/test-truck-update/:id', uploadTruckDocuments, (req, res) => {
     console.log('📝 Request body:', req.body);
     console.log('📄 Files received:', req.files ? Object.keys(req.files) : 'No files');
     console.log('📄 Uploaded documents:', req.uploadedDocuments ? Object.keys(req.uploadedDocuments) : 'No uploaded documents');
-    
+
     // Simulate truck update response
     const updatedTruckData = {
       id: req.params.id,
@@ -307,21 +307,21 @@ app.put('/api/test-truck-update/:id', uploadTruckDocuments, (req, res) => {
       documents: req.uploadedDocuments || {},
       updated_at: new Date().toISOString()
     };
-    
+
     console.log('🚛 Updated test truck data:', updatedTruckData);
-    
+
     res.json({
       message: 'Test truck updated successfully',
       truck: updatedTruckData,
       filesProcessed: req.files ? Object.keys(req.files) : [],
       documentsStored: req.uploadedDocuments ? Object.keys(req.uploadedDocuments) : []
     });
-    
+
   } catch (error) {
     console.error('❌ Test truck update error:', error);
-    res.status(500).json({ 
-      message: 'Internal server error in test truck update', 
-      error: error.message 
+    res.status(500).json({
+      message: 'Internal server error in test truck update',
+      error: error.message
     });
   }
 });
@@ -330,25 +330,25 @@ app.put('/api/test-truck-update/:id', uploadTruckDocuments, (req, res) => {
 app.get('/api/test-file-scanning', async (req, res) => {
   try {
     console.log('🔍 Test file scanning endpoint called');
-    
+
     // Simple file scanning without TruckService dependencies
     const fs = require('fs');
     const path = require('path');
     const os = require('os');
-    
+
     const documentsPath = path.join(os.homedir(), 'Documents', 'TruckingApp-Files');
     const truckDocsPath = path.join(documentsPath, 'Truck-Documents');
-    
+
     if (!fs.existsSync(truckDocsPath)) {
       return res.json({
         message: 'Truck documents folder not found',
         path: truckDocsPath
       });
     }
-    
+
     const subfolders = fs.readdirSync(truckDocsPath);
     const results = [];
-    
+
     subfolders.forEach(folder => {
       const folderPath = path.join(truckDocsPath, folder);
       if (fs.statSync(folderPath).isDirectory()) {
@@ -360,21 +360,21 @@ app.get('/api/test-file-scanning', async (req, res) => {
         });
       }
     });
-    
+
     console.log(`✅ File scanning completed, found ${results.length} folders`);
-    
+
     res.json({
       message: 'File scanning test completed successfully',
       basePath: documentsPath,
       truckDocsPath: truckDocsPath,
       folders: results
     });
-    
+
   } catch (error) {
     console.error('❌ Error in test file scanning:', error);
-    res.status(500).json({ 
-      message: 'File scanning test failed', 
-      error: error.message 
+    res.status(500).json({
+      message: 'File scanning test failed',
+      error: error.message
     });
   }
 });
@@ -410,42 +410,42 @@ app.use((req, res, next) => {
   const originalEnd = res.end;
 
   // Override the end method to log actions after response is sent
-  res.end = function() {
+  res.end = function () {
     // Call the original end method first
     originalEnd.apply(this, arguments);
 
     // Only log actions for specific endpoints and methods
-    const skipLogging = 
-      req.path.startsWith('/debug') || 
-      req.path === '/api/firestore-test' || 
+    const skipLogging =
+      req.path.startsWith('/debug') ||
+      req.path === '/api/firestore-test' ||
       req.path === '/api/test' ||
       req.path.startsWith('/api/audit') || // Avoid recursive logging
       req.path === '/' || // Skip health check
       req.path.startsWith('/static/') || // Skip static assets
       req.path.startsWith('/uploads/'); // Skip file uploads
-      
+
     // Log successful API operations with authenticated users
-    const isLoggedAction = 
-      req.path.startsWith('/api/') && 
+    const isLoggedAction =
+      req.path.startsWith('/api/') &&
       (res.statusCode >= 200 && res.statusCode < 300) &&
       (req.user || req.driver); // Log actions from authenticated users or drivers
-      
+
     if (!skipLogging && isLoggedAction) {
       // Extract entity type and ID from the URL
       const urlParts = req.path.split('/').filter(Boolean);
       const entityType = urlParts[1]; // The first part after /api/
       const entityId = urlParts[2] || (req.body?.id || req.params?.id || ''); // ID from URL or body
-      
+
       // Determine the action type
       let action = 'unknown';
-      
+
       // Set action based on HTTP method
       if (req.method === 'GET') action = 'view';
       if (req.method === 'POST') action = 'create';
       if (req.method === 'PUT') action = 'update';
       if (req.method === 'DELETE') action = 'delete';
       if (req.method === 'PATCH') action = 'patch';
-      
+
       // Add specific action overrides based on the URL
       if (req.path.includes('/complete')) action = 'delivery_completed';
       if (req.path.includes('/status')) action = 'status_change';
@@ -455,11 +455,11 @@ app.use((req, res, next) => {
       if (req.path.includes('/accept')) action = 'delivery_accepted';
       if (req.path.includes('/start')) action = 'delivery_started';
       if (req.path.includes('/location')) action = 'location_update';
-      
+
       // Get user info (could be web user or mobile driver)
       const userId = req.user?.id || req.driver?.id || 'unknown';
       const username = req.user?.username || req.driver?.username || 'unknown';
-      
+
       // Log the action
       AuditService.logAction(
         userId,
@@ -467,7 +467,7 @@ app.use((req, res, next) => {
         action,
         entityType,
         entityId,
-        { 
+        {
           path: req.path,
           method: req.method,
           statusCode: res.statusCode,
@@ -531,13 +531,13 @@ app.use('/api/deliveries', (req, res, next) => {
   // Add driver assignment hook for new deliveries
   if (req.method === 'POST' && req.path === '/') {
     const originalEnd = res.end;
-    res.end = function() {
+    res.end = function () {
       originalEnd.apply(this, arguments);
-      
+
       // If delivery was created successfully, assign a driver
       if (res.statusCode >= 200 && res.statusCode < 300 && req.deliveryId) {
         console.log('🚛 New delivery created, attempting driver assignment...');
-        
+
         // Async driver assignment (don't wait for it)
         setTimeout(async () => {
           try {
@@ -585,13 +585,13 @@ app.use('/api/migrations', migrationRoutes);
 app.get('/payments/success', async (req, res) => {
   const { deliveryId } = req.query;
   console.log('✅ Payment success for delivery:', deliveryId);
-  
+
   // Mark delivery as paid in the database
   if (deliveryId) {
     try {
       const { db, admin } = require('./config/firebase');
       const deliveryRef = db.collection('deliveries').doc(deliveryId);
-      
+
       // Update the delivery status to paid
       await deliveryRef.update({
         paymentStatus: 'paid',
@@ -599,13 +599,13 @@ app.get('/payments/success', async (req, res) => {
         paymentCompletedVia: 'paymongo_success_redirect',
         updated_at: admin.firestore.FieldValue.serverTimestamp()
       });
-      
+
       console.log('✅ Delivery marked as paid:', deliveryId);
     } catch (error) {
       console.error('❌ Error marking delivery as paid:', error);
     }
   }
-  
+
   res.send(`
     <html>
       <head>
@@ -715,7 +715,7 @@ app.get('/payments/success', async (req, res) => {
           <div class="delivery-id">Delivery ID: ${deliveryId || 'N/A'}</div>
           <div class="mode-badge">REAL PAYMONGO INTEGRATION</div>
           <p>Thank you for using our trucking service! Your delivery payment is confirmed.</p>
-          <a href="http://localhost:3000/client/payment-management" class="return-btn">Return to Dashboard</a>
+          <a href="/client/payment-management" class="return-btn">Return to Dashboard</a>
           <button class="close-btn" onclick="window.close()">Close Window</button>
         </div>
         <script>
@@ -725,7 +725,7 @@ app.get('/payments/success', async (req, res) => {
               window.opener.location.reload();
               window.close();
             } else {
-              window.location.href = 'http://localhost:3000/client/payment-management';
+              window.location.href = '/client/payment-management';
             }
           }, 10000);
         </script>
@@ -737,7 +737,7 @@ app.get('/payments/success', async (req, res) => {
 app.get('/payments/failed', (req, res) => {
   const { deliveryId } = req.query;
   console.log('❌ Payment failed for delivery:', deliveryId);
-  
+
   res.send(`
     <html>
       <head>
@@ -841,7 +841,7 @@ app.get('/payments/failed', (req, res) => {
           <div class="delivery-id">Delivery ID: ${deliveryId || 'N/A'}</div>
           <div class="mode-badge">REAL PAYMONGO INTEGRATION</div>
           <p>You can retry the payment from your dashboard or contact support if the issue persists.</p>
-          <a href="http://localhost:3000/client/payment-management" class="retry-btn">Return to Dashboard</a>
+          <a href="/client/payment-management" class="retry-btn">Return to Dashboard</a>
           <button class="close-btn" onclick="window.close()">Close Window</button>
         </div>
         <script>
@@ -851,7 +851,7 @@ app.get('/payments/failed', (req, res) => {
               window.opener.location.reload();
               window.close();
             } else {
-              window.location.href = 'http://localhost:3000/client/payment-management';
+              window.location.href = '/client/payment-management';
             }
           }, 15000);
         </script>
@@ -861,8 +861,8 @@ app.get('/payments/failed', (req, res) => {
 });
 
 // Health check
-app.get('/', (req, res) => res.json({ 
-  status: 'ok', 
+app.get('/', (req, res) => res.json({
+  status: 'ok',
   message: '🚚 Trucking API up and running (Firebase Edition with Mobile Support)',
   timestamp: new Date().toISOString(),
   database: 'Firebase Firestore',
@@ -874,7 +874,7 @@ app.get('/api/firestore-test', async (req, res) => {
   try {
     // Attempt to access a Firestore collection
     const testDoc = await db.collection('_test_connection').doc('test').get();
-    
+
     if (!testDoc.exists) {
       // Create test document if it doesn't exist
       await db.collection('_test_connection').doc('test').set({
@@ -882,7 +882,7 @@ app.get('/api/firestore-test', async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     res.json({
       status: 'success',
       message: 'Firebase Firestore connection is working properly'
@@ -914,7 +914,7 @@ app.get('/debug/client-routes', (req, res) => {
 // List all available routes for debugging
 app.get('/debug/routes', (req, res) => {
   const routes = [];
-  
+
   app._router.stack.forEach((middleware) => {
     if (middleware.route) {
       routes.push({
@@ -938,7 +938,7 @@ app.get('/debug/routes', (req, res) => {
       });
     }
   });
-  
+
   res.json({ routes });
 });
 
@@ -952,7 +952,7 @@ app.get('/api/test', (req, res) => {
 // Serve static files if in production
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/build')));
-  
+
   // Handle React routing
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
@@ -984,40 +984,42 @@ app.use('/api/*', (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-  res.status(err.status || 500).json({ 
+  res.status(err.status || 500).json({
     message: err.message || 'Internal server error',
     error: process.env.NODE_ENV === 'development' ? err : {}
   });
 });
 
-// Start server
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server listening on http://localhost:${PORT}`);
-  console.log(`📝 API documentation available at http://localhost:${PORT}/api-docs`);
-  console.log(`🔍 Debug routes available at http://localhost:${PORT}/debug/routes`);
-  console.log(`🔍 Client routes debug at http://localhost:${PORT}/debug/client-routes`);
-  console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔥 Database: Firebase Firestore`);
-  
-  // Log all registered routes after server starts
-  console.log('\n📋 Registered API routes:');
-  app._router.stack.forEach((middleware) => {
-    if (middleware.route) {
-      console.log(`   ${middleware.route.path}`);
-    } else if (middleware.name === 'router') {
-      console.log(`   Router middleware: ${middleware.regexp}`);
-    }
-  });
-  console.log('\n');
-});
+// Start server only if this file is run directly (not imported by Cloud Functions)
+if (require.main === module) {
+  const server = app.listen(PORT, () => {
+    console.log(`🚀 Server listening on http://localhost:${PORT}`);
+    console.log(`📝 API documentation available at http://localhost:${PORT}/api-docs`);
+    console.log(`🔍 Debug routes available at http://localhost:${PORT}/debug/routes`);
+    console.log(`🔍 Client routes debug at http://localhost:${PORT}/debug/client-routes`);
+    console.log(`⚡ Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔥 Database: Firebase Firestore`);
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Closing HTTP server...');
-  server.close(() => {
-    console.log('HTTP server closed.');
-    process.exit(0);
+    // Log all registered routes after server starts
+    console.log('\n📋 Registered API routes:');
+    app._router.stack.forEach((middleware) => {
+      if (middleware.route) {
+        console.log(`   ${middleware.route.path}`);
+      } else if (middleware.name === 'router') {
+        console.log(`   Router middleware: ${middleware.regexp}`);
+      }
+    });
+    console.log('\n');
   });
-});
+
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Closing HTTP server...');
+    server.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+    });
+  });
+}
 
 module.exports = app

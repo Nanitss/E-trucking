@@ -2,23 +2,28 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
+// Configure the base URL for API requests - same pattern as AuthContext
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5007'
+  : '';
+
 export const NotificationContext = createContext();
 
 export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  
+
   // Fetch notifications when component mounts
   useEffect(() => {
     fetchNotifications();
     // Set up a timer to periodically check for new notifications
     const intervalId = setInterval(fetchNotifications, 60000); // Every minute
-    
+
     // Clean up interval on unmount
     return () => clearInterval(intervalId);
   }, []);
-  
+
   // Fetch notifications from API
   const fetchNotifications = async () => {
     try {
@@ -33,17 +38,17 @@ export const NotificationProvider = ({ children }) => {
         setLoading(false);
         return;
       }
-      
+
       if (!token) {
         setLoading(false);
         return;
       }
-      
-      // Use the main server for notifications (port 5007)
-      const response = await axios.get('http://localhost:5007/api/notifications', {
+
+      // Use the main server for notifications
+      const response = await axios.get(`${API_BASE_URL}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       setNotifications(response.data.notifications || []);
       setUnreadCount(response.data.unreadCount || 0);
       setLoading(false);
@@ -53,41 +58,41 @@ export const NotificationProvider = ({ children }) => {
       setLoading(false);
     }
   };
-  
+
   // Mark a notification as read
   const markAsRead = async (notificationId) => {
     try {
       await axios.put(`/api/notifications/${notificationId}/read`);
-      
+
       // Update the state locally
-      setNotifications(prevNotifications => 
-        prevNotifications.map(notif => 
+      setNotifications(prevNotifications =>
+        prevNotifications.map(notif =>
           notif.id === notificationId ? { ...notif, read: true } : notif
         )
       );
-      
+
       setUnreadCount(prevCount => Math.max(0, prevCount - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
-  
+
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
       await axios.put('/api/notifications/read-all');
-      
+
       // Update the state locally
-      setNotifications(prevNotifications => 
+      setNotifications(prevNotifications =>
         prevNotifications.map(notif => ({ ...notif, read: true }))
       );
-      
+
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
     }
   };
-  
+
   // Add a local notification (for immediate feedback before API sync)
   const addLocalNotification = (notification) => {
     const newNotification = {
@@ -97,15 +102,15 @@ export const NotificationProvider = ({ children }) => {
       local: true,
       time: 'Just now'
     };
-    
+
     setNotifications(prev => [newNotification, ...prev]);
     setUnreadCount(prev => prev + 1);
   };
-  
+
   return (
-    <NotificationContext.Provider value={{ 
-      notifications, 
-      unreadCount, 
+    <NotificationContext.Provider value={{
+      notifications,
+      unreadCount,
       loading,
       fetchNotifications,
       markAsRead,
