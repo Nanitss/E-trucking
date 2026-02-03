@@ -3,46 +3,59 @@ const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
 
 // Initialize Firebase Admin SDK
-// You'll need to replace this with your actual Firebase service account details
-// Download this from Firebase Console > Project Settings > Service Accounts
+// Cloud Functions automatically provides credentials via Application Default Credentials
 try {
   if (!admin.apps.length) {
-    // Check if Firebase credentials are available
-    const hasFirebaseCredentials = process.env.FIREBASE_PROJECT_ID &&
-      process.env.FIREBASE_CLIENT_EMAIL &&
-      process.env.FIREBASE_PRIVATE_KEY;
+    // Check if running in Firebase Cloud Functions (FUNCTION_TARGET is set by Cloud Functions)
+    const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE || process.env.GCLOUD_PROJECT;
 
-    if (hasFirebaseCredentials) {
-      // Production/Development with real Firebase
+    // Check for explicit credentials with either prefix
+    const projectId = process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
+    const clientEmail = process.env.FB_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FB_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
+    const databaseURL = process.env.FB_DATABASE_URL || process.env.FIREBASE_DATABASE_URL;
+
+    const hasExplicitCredentials = projectId && clientEmail && privateKey;
+
+    if (hasExplicitCredentials) {
+      // Use explicit credentials from environment
       admin.initializeApp({
         credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').replace(/"/g, '')
+          projectId: projectId,
+          clientEmail: clientEmail,
+          privateKey: privateKey?.replace(/\\n/g, '\n').replace(/"/g, '')
         }),
-        databaseURL: process.env.FIREBASE_DATABASE_URL
+        databaseURL: databaseURL
       });
-      console.log('✅ Firebase Admin SDK initialized successfully with credentials');
-    } else {
-      // Development mode without Firebase credentials
-      console.log('⚠️ Firebase credentials not found in environment variables');
-      console.log('🔧 Running in development mode - some features may not work');
-      console.log('📝 To fix this, set these environment variables:');
-      console.log('   - FIREBASE_PROJECT_ID');
-      console.log('   - FIREBASE_CLIENT_EMAIL');
-      console.log('   - FIREBASE_PRIVATE_KEY');
-
-      // Initialize with minimal config for development
+      console.log('✅ Firebase Admin SDK initialized with explicit credentials');
+    } else if (isCloudFunctions) {
+      // Running in Cloud Functions - use Application Default Credentials
+      console.log('🔧 Running in Cloud Functions environment, using default credentials');
       admin.initializeApp({
-        projectId: 'trucking-dev-mode',
-        // Use application default credentials or emulator
+        databaseURL: databaseURL
       });
-      console.log('✅ Firebase Admin SDK initialized in development mode');
+      console.log('✅ Firebase Admin SDK initialized with Application Default Credentials');
+    } else {
+      // Local development mode
+      console.log('⚠️ Firebase credentials not found in environment variables');
+      console.log('🔧 Running in local development mode');
+
+      // Try to initialize with just the project ID if available
+      if (projectId) {
+        admin.initializeApp({
+          projectId: projectId,
+          databaseURL: databaseURL
+        });
+        console.log('✅ Firebase Admin SDK initialized in development mode with project ID');
+      } else {
+        admin.initializeApp();
+        console.log('✅ Firebase Admin SDK initialized in development mode');
+      }
     }
   }
 } catch (error) {
   console.error('❌ Firebase initialization error:', error);
-  console.log('🔧 Attempting to continue in development mode...');
+  console.log('🔧 Attempting to continue...');
 }
 
 // Initialize Firestore

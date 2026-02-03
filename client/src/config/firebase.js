@@ -16,19 +16,42 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-let app;
-let database;
-let analytics;
+// Check if Firebase config is properly set
+const hasFirebaseConfig = firebaseConfig.projectId && firebaseConfig.apiKey;
 
-try {
-  app = initializeApp(firebaseConfig);
-  database = getDatabase(app); // ✅ This connects to Realtime Database for GPS tracking
-  analytics = getAnalytics(app);
-  console.log("✅ Firebase initialized successfully");
-  console.log("✅ Realtime Database connected for GPS tracking");
-} catch (error) {
-  console.error("❌ Firebase initialization error:", error);
+// Initialize Firebase
+let app = null;
+let database = null;
+let analytics = null;
+
+if (hasFirebaseConfig) {
+  try {
+    app = initializeApp(firebaseConfig);
+
+    // Only initialize Realtime Database if databaseURL is provided
+    if (firebaseConfig.databaseURL) {
+      database = getDatabase(app);
+      console.log("✅ Realtime Database connected for GPS tracking");
+    } else {
+      console.log("⚠️ Firebase Realtime Database not configured - GPS tracking may not work");
+    }
+
+    // Only initialize analytics in browser environment
+    if (typeof window !== 'undefined') {
+      try {
+        analytics = getAnalytics(app);
+      } catch (analyticsError) {
+        console.log("⚠️ Firebase Analytics not available");
+      }
+    }
+
+    console.log("✅ Firebase initialized successfully");
+  } catch (error) {
+    console.error("❌ Firebase initialization error:", error);
+  }
+} else {
+  console.log("⚠️ Firebase configuration not found - running in API-only mode");
+  console.log("📝 This is normal if you're using the backend API without client-side Firebase features");
 }
 
 export { app, database, analytics };

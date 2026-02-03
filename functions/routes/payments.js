@@ -1,24 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const realPayMongoService = require('../services/RealPayMongoService');
+const realPayMongoService = require('../services/PaymentService');
 const { authenticateJWT } = require('../middleware/auth');
 
 // Get all payment records for admin dashboard
 router.get('/', authenticateJWT, async (req, res) => {
   try {
     console.log('🔥 Getting all payment records for admin dashboard');
-    
+
     // Get all payments from the database
     const { db } = require('../config/firebase');
     const deliveriesRef = db.collection('deliveries');
-    
+
     // Get deliveries with payment information
     const snapshot = await deliveriesRef.get();
     const payments = [];
-    
+
     snapshot.forEach(doc => {
       const delivery = doc.data();
-      
+
       // Only include deliveries that have payment information
       if (delivery.amount && delivery.amount > 0) {
         payments.push({
@@ -45,16 +45,16 @@ router.get('/', authenticateJWT, async (req, res) => {
         });
       }
     });
-    
+
     // Sort by creation date (newest first)
     payments.sort((a, b) => {
       const dateA = a.createdAt?.toDate?.() || new Date(a.createdAt) || new Date(0);
       const dateB = b.createdAt?.toDate?.() || new Date(b.createdAt) || new Date(0);
       return dateB - dateA;
     });
-    
+
     console.log(`✅ Retrieved ${payments.length} payment records`);
-    
+
     res.json({
       success: true,
       data: payments,
@@ -62,7 +62,7 @@ router.get('/', authenticateJWT, async (req, res) => {
       payMongoEnabled: true,
       mode: 'REAL PAYMONGO - TEST MODE'
     });
-    
+
   } catch (error) {
     console.error('❌ Error getting payment records:', error);
     res.status(500).json({
@@ -78,16 +78,16 @@ router.get('/client/:clientId/summary', authenticateJWT, async (req, res) => {
   try {
     const { clientId } = req.params;
     console.log(`🔥 Getting real PayMongo payment summary for client: ${clientId}`);
-    
+
     const summary = await realPayMongoService.getClientPaymentSummary(clientId);
-    
+
     res.json({
       success: true,
       data: summary,
       payMongoEnabled: true,
       mode: 'REAL PAYMONGO - TEST MODE'
     });
-    
+
   } catch (error) {
     console.error('❌ Error getting client payment summary:', error);
     res.status(500).json({
@@ -102,16 +102,16 @@ router.get('/client/:clientId', authenticateJWT, async (req, res) => {
   try {
     const { clientId } = req.params;
     console.log(`🔥 Getting real PayMongo payment summary for client: ${clientId}`);
-    
+
     const summary = await realPayMongoService.getClientPaymentSummary(clientId);
-    
+
     res.json({
       success: true,
       data: summary,
       payMongoEnabled: true,
       mode: 'REAL PAYMONGO - TEST MODE'
     });
-    
+
   } catch (error) {
     console.error('❌ Error getting client payment summary:', error);
     res.status(500).json({
@@ -125,9 +125,9 @@ router.get('/client/:clientId', authenticateJWT, async (req, res) => {
 router.post('/process-ewallet', authenticateJWT, async (req, res) => {
   try {
     const { deliveryId, paymentMethod, billingDetails } = req.body;
-    
+
     console.log('🔥 Processing real e-wallet payment:', { deliveryId, paymentMethod });
-    
+
     // Get payment info
     const payment = await realPayMongoService.getPayment(deliveryId);
     if (!payment) {
@@ -139,7 +139,7 @@ router.post('/process-ewallet', authenticateJWT, async (req, res) => {
 
     // Convert amount to cents (PayMongo requirement)
     const amountInCents = Math.round(payment.amount * 100);
-    
+
     // Create PayMongo source
     const sourceData = {
       amount: amountInCents,
@@ -164,9 +164,9 @@ router.post('/process-ewallet', authenticateJWT, async (req, res) => {
     };
 
     const source = await realPayMongoService.createSource(sourceData);
-    
+
     console.log('✅ Real PayMongo source created:', source.id);
-    
+
     res.json({
       success: true,
       data: {
@@ -196,11 +196,11 @@ router.post('/process-ewallet', authenticateJWT, async (req, res) => {
 router.post('/process-card', authenticateJWT, async (req, res) => {
   try {
     const { deliveryId, cardDetails, billingDetails } = req.body;
-    
+
     console.log('🔥 Processing real card payment for delivery:', deliveryId);
     console.log('Card details provided:', cardDetails ? 'Yes' : 'No');
     console.log('Billing details provided:', billingDetails ? 'Yes' : 'No');
-    
+
     // Validate input
     if (!deliveryId) {
       return res.status(400).json({
@@ -228,7 +228,7 @@ router.post('/process-card', authenticateJWT, async (req, res) => {
     // Convert amount to cents
     const amountInCents = Math.round(payment.amount * 100);
     console.log('💰 Amount in cents:', amountInCents);
-    
+
     // Create PayMongo payment intent (simplified)
     const paymentIntentData = {
       amount: amountInCents,
@@ -245,16 +245,16 @@ router.post('/process-card', authenticateJWT, async (req, res) => {
 
     console.log('📄 Creating payment intent with data:', paymentIntentData);
     const paymentIntent = await realPayMongoService.createPaymentIntent(paymentIntentData);
-    
+
     console.log('✅ Real PayMongo payment intent created for card payment:', paymentIntent.id);
-    
+
     // For now, we'll mark the payment as completed immediately for testing
     // In production, you'd typically use PayMongo's card form or client-side processing
     try {
       // Mark delivery as paid immediately for card payments in test mode
       const { db, admin } = require('../config/firebase');
       const deliveryRef = db.collection('deliveries').doc(deliveryId);
-      
+
       // Check if delivery exists first
       const deliveryDoc = await deliveryRef.get();
       if (!deliveryDoc.exists) {
@@ -268,7 +268,7 @@ router.post('/process-card', authenticateJWT, async (req, res) => {
           paymentCompletedVia: 'card_test_mode',
           updated_at: admin.firestore.FieldValue.serverTimestamp()
         });
-        
+
         console.log('✅ Card payment - Delivery marked as paid:', deliveryId);
       }
     } catch (dbError) {
@@ -296,7 +296,7 @@ router.post('/process-card', authenticateJWT, async (req, res) => {
   } catch (error) {
     console.error('❌ Error processing card payment:', error);
     console.error('Error stack:', error.stack);
-    
+
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to process card payment',
@@ -310,27 +310,27 @@ router.post('/process-card', authenticateJWT, async (req, res) => {
 });
 
 // PayMongo webhook endpoint
-router.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   try {
     console.log('🔥 Received real PayMongo webhook');
-    
+
     const signature = req.headers['paymongo-signature'];
     const payload = req.body;
-    
+
     // Parse webhook data
     const webhookData = JSON.parse(payload.toString());
-    
+
     // Process webhook with real PayMongo service
     const result = await realPayMongoService.processWebhook(webhookData);
-    
+
     console.log('✅ Real PayMongo webhook processed:', result.eventType);
-    
-    res.status(200).json({ 
-      success: true, 
+
+    res.status(200).json({
+      success: true,
       processed: result.processed,
-      eventType: result.eventType 
+      eventType: result.eventType
     });
-    
+
   } catch (error) {
     console.error('❌ Error processing PayMongo webhook:', error);
     res.status(400).json({
@@ -345,7 +345,7 @@ router.get('/success', async (req, res) => {
   try {
     const { deliveryId } = req.query;
     console.log('✅ Payment success for delivery:', deliveryId);
-    
+
     res.send(`
       <html>
         <head>
@@ -385,7 +385,7 @@ router.get('/failed', async (req, res) => {
   try {
     const { deliveryId } = req.query;
     console.log('❌ Payment failed for delivery:', deliveryId);
-    
+
     res.send(`
       <html>
         <head>
@@ -427,21 +427,21 @@ router.get('/failed', async (req, res) => {
 router.get('/successful', authenticateJWT, async (req, res) => {
   try {
     console.log('🔥 Getting successful payments for revenue calculation');
-    
+
     const { db } = require('../config/firebase');
     const deliveriesRef = db.collection('deliveries');
-    
+
     // Get deliveries with paid status
     const snapshot = await deliveriesRef
       .where('paymentStatus', '==', 'paid')
       .get();
-    
+
     const successfulPayments = [];
-    
+
     let debugCount = 0;
     snapshot.forEach(doc => {
       const delivery = doc.data();
-      
+
       // Debug first paid delivery to see what fields exist
       if (debugCount === 0) {
         console.log('🔍 First paid delivery data:', {
@@ -449,17 +449,17 @@ router.get('/successful', authenticateJWT, async (req, res) => {
           deliveryRate: delivery.deliveryRate,
           DeliveryRate: delivery.DeliveryRate,
           amount: delivery.amount,
-          allAmountFields: Object.keys(delivery).filter(key => 
-            key.toLowerCase().includes('rate') || 
-            key.toLowerCase().includes('amount') || 
+          allAmountFields: Object.keys(delivery).filter(key =>
+            key.toLowerCase().includes('rate') ||
+            key.toLowerCase().includes('amount') ||
             key.toLowerCase().includes('price')
           )
         });
         debugCount++;
       }
-      
+
       const amount = parseFloat(delivery.deliveryRate || delivery.DeliveryRate || delivery.amount || 0);
-      
+
       successfulPayments.push({
         id: doc.id,
         amount: amount,
@@ -469,13 +469,13 @@ router.get('/successful', authenticateJWT, async (req, res) => {
         paymentMethod: delivery.paymentMethod || 'unknown'
       });
     });
-    
+
     const totalRevenue = successfulPayments.reduce((sum, p) => sum + p.amount, 0);
     console.log(`✅ Retrieved ${successfulPayments.length} successful payments`);
     console.log(`💰 Total revenue: ₱${totalRevenue.toLocaleString()}`);
-    
+
     res.json(successfulPayments);
-    
+
   } catch (error) {
     console.error('❌ Error getting successful payments:', error);
     res.status(500).json({
@@ -489,9 +489,9 @@ router.get('/successful', authenticateJWT, async (req, res) => {
 router.get('/:deliveryId/status', async (req, res) => {
   try {
     const { deliveryId } = req.params;
-    
+
     const payment = await realPayMongoService.getPayment(deliveryId);
-    
+
     if (!payment) {
       return res.status(404).json({
         success: false,
@@ -521,7 +521,7 @@ router.get('/all', authenticateJWT, async (req, res) => {
   try {
     console.log('📊 GET /api/payments/all - Admin requesting all payments');
     console.log('👤 User:', req.user.username, '| Role:', req.user.role);
-    
+
     // Check if user is admin
     if (req.user.role !== 'admin') {
       console.log('❌ Access denied - User is not admin');
@@ -534,22 +534,22 @@ router.get('/all', authenticateJWT, async (req, res) => {
     const { db } = require('../config/firebase');
     console.log('🔍 Fetching deliveries from Firebase...');
     const deliveriesSnapshot = await db.collection('deliveries').get();
-    
+
     console.log(`📦 Found ${deliveriesSnapshot.size} deliveries in database`);
-    
+
     const payments = [];
-    
+
     deliveriesSnapshot.forEach(doc => {
       const delivery = doc.data();
-      
+
       // Skip cancelled deliveries
       if (delivery.deliveryStatus === 'cancelled') {
         return;
       }
-      
+
       // Get delivery rate
       const amount = parseFloat(delivery.deliveryRate || delivery.DeliveryRate || 0);
-      
+
       // Get delivery date
       let deliveryDate = new Date();
       if (delivery.deliveryDate) {
@@ -579,17 +579,17 @@ router.get('/all', authenticateJWT, async (req, res) => {
         // Fallback: calculate due date (30 days after delivery date)
         dueDate = new Date(deliveryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
       }
-      
+
       // Determine payment status
       let paymentStatus = 'pending';
       const now = new Date();
-      
+
       if (delivery.paymentStatus === 'paid') {
         paymentStatus = 'paid';
       } else if (dueDate < now) {
         paymentStatus = 'overdue';
       }
-      
+
       payments.push({
         id: doc.id,
         deliveryId: doc.id,
@@ -609,7 +609,7 @@ router.get('/all', authenticateJWT, async (req, res) => {
         }
       });
     });
-    
+
     // Sort by due date (most urgent first)
     payments.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
@@ -710,17 +710,17 @@ router.get('/client/:id', authenticateJWT, async (req, res) => {
   try {
     const { id: clientId } = req.params;
     console.log(`🔍 Fetching payments for client: ${clientId}`);
-    
+
     const { db, admin } = require('../config/firebase');
     const deliveriesRef = db.collection('deliveries');
-    
+
     // Query deliveries for this client
     const snapshot = await deliveriesRef.where('clientId', '==', clientId).get();
     const payments = [];
-    
+
     snapshot.forEach(doc => {
       const delivery = doc.data();
-      
+
       // Only include deliveries with payment information
       if (delivery.amount && delivery.amount > 0) {
         // Get delivery date
@@ -730,7 +730,7 @@ router.get('/client/:id', authenticateJWT, async (req, res) => {
         } else if (deliveryDate) {
           deliveryDate = new Date(deliveryDate);
         }
-        
+
         // Get due date from database or calculate
         let dueDate;
         if (delivery.dueDate) {
@@ -739,15 +739,15 @@ router.get('/client/:id', authenticateJWT, async (req, res) => {
           // Fallback: calculate due date (30 days after delivery)
           dueDate = new Date(deliveryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
         }
-        
+
         // Determine payment status
         let paymentStatus = delivery.paymentStatus || 'pending';
         const now = new Date();
-        
+
         if (paymentStatus !== 'paid' && dueDate && dueDate < now) {
           paymentStatus = 'overdue';
         }
-        
+
         payments.push({
           id: doc.id,
           deliveryId: doc.id,
@@ -768,15 +768,15 @@ router.get('/client/:id', authenticateJWT, async (req, res) => {
         });
       }
     });
-    
+
     console.log(`✅ Found ${payments.length} payments for client ${clientId}`);
-    
+
     res.json({
       success: true,
       payments: payments,
       count: payments.length
     });
-    
+
   } catch (error) {
     console.error('❌ Error fetching client payments:', error);
     res.status(500).json({
