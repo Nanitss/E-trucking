@@ -459,83 +459,126 @@ const RouteMap = memo(
 
     // Main render - either with Google Maps or fallback display
     return (
-      <div className="route-map-container">
-        {googleMapsReady && !mapError ? (
-          <div className="route-map" ref={mapRef}></div>
-        ) : (
-          <div className="route-fallback-display">
-            <div className="fallback-header">
-              <h4>📍 Route Information (GPS Calculation)</h4>
-              <p>Showing estimated route within Philippines</p>
-            </div>
-            <div className="fallback-route">
-              <div className="route-point pickup">
-                <span className="point-marker">P</span>
-                <span className="point-address">{pickupAddress}</span>
+      <div className="route-map-container flex flex-col h-full w-full">
+        <div className="relative w-full h-[400px] min-h-[400px] rounded-xl overflow-hidden shadow-inner border border-gray-200">
+          {googleMapsReady && !mapError ? (
+            <div
+              className="route-map w-full h-full absolute inset-0"
+              ref={mapRef}
+            ></div>
+          ) : (
+            <div className="route-fallback-display w-full h-full bg-slate-50 flex flex-col items-center justify-center p-6">
+              <div className="fallback-header text-center mb-6">
+                <h4 className="text-lg font-bold text-gray-700">
+                  📍 Route Preview
+                </h4>
+                <p className="text-sm text-gray-500">
+                  Showing estimated route via GPS
+                </p>
               </div>
-              <div className="route-line">
-                <div className="route-arrow">→</div>
-                <div className="route-distance">
-                  {routeInfo ? routeInfo.distance.text : "Calculating..."}
+              <div className="fallback-route w-full max-w-md bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div className="route-point pickup flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                    P
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {pickupAddress}
+                  </span>
+                </div>
+                <div className="pl-4 ml-4 border-l-2 border-dashed border-gray-300 h-8"></div>
+                <div className="route-point dropoff flex items-center gap-3 mt-0">
+                  <div className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
+                    D
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">
+                    {dropoffAddress}
+                  </span>
                 </div>
               </div>
-              <div className="route-point dropoff">
-                <span className="point-marker">D</span>
-                <span className="point-address">{dropoffAddress}</span>
-              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {routeInfo && (
-          <div className="route-details">
-            <div className="route-header">
-              <h4>
-                🚛 {routeInfo.googleMapsUsed ? "Optimal" : "Estimated"} Route
-                {routeInfo.isShortestRoute &&
-                  ` (${routeInfo.totalRoutes} routes analyzed)`}
+          <div className="route-details mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                <span>🚛</span>
+                {routeInfo.googleMapsUsed
+                  ? "Optimal Delivery Route"
+                  : "Estimated Route"}
               </h4>
-            </div>
-            <div className="route-detail-item">
-              <span className="route-detail-label">📏 Distance:</span>
-              <span className="route-detail-value">
-                {routeInfo.distance.text}
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${routeInfo.googleMapsUsed ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}
+              >
+                {routeInfo.googleMapsUsed ? "Verified" : "Estimate"}
               </span>
             </div>
-            <div className="route-detail-item">
-              <span className="route-detail-label">⏱️ Travel Time:</span>
-              <span className="route-detail-value">
-                {routeInfo.duration.text}
-              </span>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:border-blue-100">
+                <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-xl shrink-0">
+                  <span role="img" aria-label="distance">
+                    📏
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider m-0 mb-1">
+                    Total Distance
+                  </p>
+                  <p className="text-xl font-bold text-gray-800 m-0">
+                    {routeInfo.distance.text}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:border-emerald-100">
+                <div className="w-12 h-12 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl shrink-0">
+                  <span role="img" aria-label="time">
+                    ⏱️
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider m-0 mb-1">
+                    Est. Travel Time
+                  </p>
+                  <p className="text-xl font-bold text-gray-800 m-0">
+                    {routeInfo.duration.text}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:border-purple-100">
+                <div className="w-12 h-12 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center text-xl shrink-0">
+                  <span role="img" aria-label="speed">
+                    🚀
+                  </span>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-bold uppercase tracking-wider m-0 mb-1">
+                    Avg. Speed
+                  </p>
+                  <p className="text-xl font-bold text-gray-800 m-0">
+                    {routeInfo.averageSpeed} km/h
+                  </p>
+                </div>
+              </div>
             </div>
-            <div className="route-detail-item">
-              <span className="route-detail-label">🚗 Avg Speed:</span>
-              <span className="route-detail-value">
-                {routeInfo.averageSpeed} km/h
-              </span>
+
+            <div className="mt-4 flex flex-col gap-2">
+              {routeInfo.isEstimate && (
+                <div className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg border border-amber-100 flex items-center gap-2">
+                  <span>ℹ️</span> Note: This is a GPS-based estimate pending
+                  real-time traffic data.
+                </div>
+              )}
+              {routeInfo.isShortestRoute && (
+                <div className="text-xs text-emerald-600 bg-emerald-50 px-3 py-2 rounded-lg border border-emerald-100 flex items-center gap-2">
+                  <span>✅</span> Smart Route System: Automatically selected the
+                  shortest path from {routeInfo.totalRoutes} alternatives.
+                </div>
+              )}
             </div>
-            {routeInfo.isEstimate && (
-              <div className="route-detail-item estimate-note">
-                <em>
-                  ℹ️ GPS-based estimate for Philippines trucking conditions
-                </em>
-              </div>
-            )}
-            {routeInfo.isShortestRoute && (
-              <div className="route-detail-item shortest-note">
-                <em>
-                  ✅ Shortest route automatically selected for optimal delivery
-                </em>
-              </div>
-            )}
-            {routeInfo.fallbackUsed && (
-              <div className="route-detail-item fallback-note">
-                <em>
-                  🛰️ Using GPS calculation - route is estimated for Philippines
-                  roads
-                </em>
-              </div>
-            )}
           </div>
         )}
       </div>
