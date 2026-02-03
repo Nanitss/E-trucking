@@ -26,6 +26,11 @@ import Loader from "../../components/common/Loader";
 // CSS imports removed in favor of Tailwind
 
 const PinnedLocations = () => {
+  // Configure the base URL for API requests - same pattern as AuthContext
+  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:5007'
+    : '';
+
   const { authUser } = useContext(AuthContext);
   const { showSuccess, showError } = useModernToast();
 
@@ -99,7 +104,7 @@ const PinnedLocations = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5007/api/client/pinned-locations",
+        `${API_BASE_URL}/api/client/pinned-locations`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -236,8 +241,8 @@ const PinnedLocations = () => {
 
       const token = localStorage.getItem("token");
       const url = showEditModal
-        ? `http://localhost:5007/api/client/pinned-locations/${selectedLocation.id}`
-        : "http://localhost:5007/api/client/pinned-locations";
+        ? `${API_BASE_URL}/api/client/pinned-locations/${selectedLocation.id}`
+        : `${API_BASE_URL}/api/client/pinned-locations`;
 
       const method = showEditModal ? "PUT" : "POST";
 
@@ -279,7 +284,7 @@ const PinnedLocations = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:5007/api/client/pinned-locations/${selectedLocation.id}`,
+        `${API_BASE_URL}/api/client/pinned-locations/${selectedLocation.id}`,
         {
           method: "DELETE",
           headers: {

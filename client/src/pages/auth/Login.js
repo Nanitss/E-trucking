@@ -4,6 +4,11 @@ import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 import { FaTruck, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
 
+// Configure the base URL for API requests - same pattern as AuthContext
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5007'
+  : '';
+
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +41,7 @@ const Login = () => {
         // First make login request
         const loginRes = await axios({
           method: "POST",
-          url: "http://localhost:5007/api/auth/login",
+          url: `${API_BASE_URL}/api/auth/login`,
           data: {
             username: formData.username.trim(),
             password: formData.password,
@@ -61,7 +66,7 @@ const Login = () => {
         // Now get user data with the token
         console.log("Getting user data with token");
         const userRes = await axios.get(
-          "http://localhost:5007/api/auth/current-user",
+          `${API_BASE_URL}/api/auth/current-user`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
