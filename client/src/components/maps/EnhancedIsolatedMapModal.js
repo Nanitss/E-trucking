@@ -22,19 +22,19 @@ class EnhancedIsolatedMapModal {
     this.searchResults = [];
     this.placesApiAvailable = false;
   }
-  
+
   // Initialize the modal with all necessary parameters
   async init(options = {}) {
     // Clear any existing modal first
     if (this.modalNode) {
       this.close();
     }
-    
-    this.onSelectCallback = options.onSelectCallback || (() => {});
+
+    this.onSelectCallback = options.onSelectCallback || (() => { });
     this.locationType = options.locationType || 'pickup';
     this.initialAddress = options.initialAddress || '';
     this.title = options.title || `Select ${this.locationType} Location`;
-    
+
     // Set used locations to prevent duplicate selection
     if (options.usedLocationIds) {
       this.usedLocationIds = new Set(options.usedLocationIds);
@@ -42,18 +42,18 @@ class EnhancedIsolatedMapModal {
       // Use global used locations
       this.usedLocationIds = new Set(EnhancedIsolatedMapModal.usedLocationIds);
     }
-    
+
     // Also check for other selected location to prevent duplicate selection
     if (options.otherSelectedLocation) {
       this.otherSelectedLocation = options.otherSelectedLocation;
     }
-    
+
     // Load saved locations and WAIT for them to load before creating modal
     await this.loadSavedLocations();
-    
+
     // Create container for modal
     this.createModal();
-    
+
     // Initialize map
     if (window.google && window.google.maps) {
       this.initMap();
@@ -61,11 +61,23 @@ class EnhancedIsolatedMapModal {
       console.error('Google Maps API not loaded');
       this.showFallbackUI();
     }
-    
+
     // Automatically show the modal after initialization
     this.show();
-    
+
     return this;
+  }
+
+  // Convenience method for opening the modal (wraps init with correct param mapping)
+  async open(options = {}) {
+    return this.init({
+      onSelectCallback: options.onSelect,
+      locationType: options.locationType,
+      initialAddress: options.initialLocation ? '' : '',
+      title: options.title,
+      usedLocationIds: options.usedLocationIds,
+      otherSelectedLocation: options.otherSelectedLocation
+    });
   }
 
   async loadSavedLocations() {
@@ -132,30 +144,30 @@ class EnhancedIsolatedMapModal {
         </div>
       </div>
     `;
-    
+
     document.body.appendChild(this.modalNode);
-    
+
     // Cache DOM references
     this.mapNode = this.modalNode.querySelector('.enhanced-map-container');
     this.searchInput = this.modalNode.querySelector('.enhanced-map-input');
     this.confirmBtn = this.modalNode.querySelector('.enhanced-map-confirm');
     this.closeBtn = this.modalNode.querySelector('.enhanced-map-close');
     this.selectedAddressSpan = this.modalNode.querySelector('.selected-address');
-    
+
     // Set up event listeners
     this.closeBtn.addEventListener('click', () => this.close());
     this.confirmBtn.addEventListener('click', () => this.confirmLocation());
-    
+
     // Set initial value for search input
     if (this.initialAddress) {
       this.searchInput.value = this.initialAddress;
       this.selectedAddress = this.initialAddress;
       this.updateSelectedLocationInfo();
     }
-    
+
     // Set up saved location click handlers
     this.setupSavedLocationHandlers();
-    
+
     // Add styles
     this.addStyles();
   }
@@ -173,18 +185,18 @@ class EnhancedIsolatedMapModal {
     // Simple list of all locations without categories
     return this.savedLocations.map(location => {
       const isUsed = this.usedLocationIds.has(location.id);
-      const isOtherSelected = this.otherSelectedLocation && 
-        (location.address === this.otherSelectedLocation || 
-         (location.coordinates && this.otherSelectedLocation.coordinates &&
-          location.coordinates.lat === this.otherSelectedLocation.coordinates.lat &&
-          location.coordinates.lng === this.otherSelectedLocation.coordinates.lng));
-      
+      const isOtherSelected = this.otherSelectedLocation &&
+        (location.address === this.otherSelectedLocation ||
+          (location.coordinates && this.otherSelectedLocation.coordinates &&
+            location.coordinates.lat === this.otherSelectedLocation.coordinates.lat &&
+            location.coordinates.lng === this.otherSelectedLocation.coordinates.lng));
+
       const isDisabled = isUsed || isOtherSelected;
       const isCurrentlySelected = this.selectedAddress === location.address;
       const disabledClass = isDisabled ? 'disabled' : '';
       const disabledAttr = isDisabled ? 'disabled' : '';
       const opacity = isDisabled ? '0.5' : '1';
-      
+
       let title = location.address || 'No address';
       if (isUsed) {
         title = 'Already selected for ' + (this.locationType === 'pickup' ? 'delivery' : 'pickup');
@@ -193,7 +205,7 @@ class EnhancedIsolatedMapModal {
       } else if (isCurrentlySelected) {
         title = 'Click again to deselect this location';
       }
-      
+
       return `
         <button class="saved-location-btn ${disabledClass}" 
                 data-location-id="${location.id}" 
@@ -212,7 +224,7 @@ class EnhancedIsolatedMapModal {
     const locationButtons = this.modalNode.querySelectorAll('.saved-location-btn:not(.disabled)');
     locationButtons.forEach(button => {
       const locationId = button.dataset.locationId;
-      
+
       button.addEventListener('click', () => {
         const location = this.savedLocations.find(loc => loc.id === locationId);
         if (location) {
@@ -224,27 +236,27 @@ class EnhancedIsolatedMapModal {
 
   selectSavedLocation(location) {
     console.log('📍 Selected saved location:', location.name);
-    
+
     // Check if this location is already selected
     const isAlreadySelected = this.selectedAddress === location.address;
-    
+
     if (isAlreadySelected) {
       // Deselect the location
       this.deselectLocation();
       return;
     }
-    
+
     this.selectedAddress = location.address;
     this.selectedCoordinates = location.coordinates;
     this.selectedLocationData = location; // Store full location data including contact info
-    
+
     // Update search input
     this.searchInput.value = location.address;
-    
+
     // Update map if available
     if (this.map && location.coordinates) {
       const position = new google.maps.LatLng(location.coordinates.lat, location.coordinates.lng);
-      
+
       // Move marker
       if (this.marker) {
         this.marker.setPosition(position);
@@ -260,12 +272,12 @@ class EnhancedIsolatedMapModal {
           this.handleMarkerDragEnd();
         });
       }
-      
+
       // Center map
       this.map.setCenter(position);
       this.map.setZoom(16);
     }
-    
+
     // Update UI
     this.updateSelectedLocationInfo();
     this.confirmBtn.disabled = false;
@@ -276,79 +288,79 @@ class EnhancedIsolatedMapModal {
     });
     this.modalNode.querySelector(`[data-location-id="${location.id}"]`)?.classList.add('selected');
   }
-  
+
   deselectLocation() {
     console.log('📍 Deselecting location');
-    
+
     // Find the location that was deselected to clear it from used locations
-    const deselectedLocation = this.savedLocations.find(loc => 
-      loc.address === this.selectedAddress || 
-      (loc.coordinates && this.selectedCoordinates && 
-       loc.coordinates.lat === this.selectedCoordinates.lat && 
-       loc.coordinates.lng === this.selectedCoordinates.lng)
+    const deselectedLocation = this.savedLocations.find(loc =>
+      loc.address === this.selectedAddress ||
+      (loc.coordinates && this.selectedCoordinates &&
+        loc.coordinates.lat === this.selectedCoordinates.lat &&
+        loc.coordinates.lng === this.selectedCoordinates.lng)
     );
-    
+
     // Clear selection
     this.selectedAddress = '';
     this.selectedCoordinates = null;
     this.selectedLocationData = null;
-    
+
     // Clear search input
     if (this.searchInput) {
       this.searchInput.value = '';
     }
-    
+
     // Remove marker from map
     if (this.marker) {
       this.marker.setMap(null);
       this.marker = null;
     }
-    
+
     // Update UI
     this.updateSelectedLocationInfo();
     this.confirmBtn.disabled = true;
-    
+
     // Remove selection highlighting
     this.modalNode.querySelectorAll('.saved-location-btn').forEach(btn => {
       btn.classList.remove('selected');
     });
-    
+
     // Reset map to default view
     if (this.map) {
       const defaultCenter = { lat: 14.5995, lng: 120.9842 };
       this.map.setCenter(defaultCenter);
       this.map.setZoom(13);
     }
-    
+
     // Remove this location from used locations so it becomes available again
     if (deselectedLocation) {
       EnhancedIsolatedMapModal.usedLocationIds.delete(deselectedLocation.id);
       console.log('📍 Location removed from used locations:', deselectedLocation.name);
     }
-    
+
     // Refresh the modal to update the UI
     this.refreshModal();
   }
-  
+
   clearSavedLocationSelection() {
     // If there was a previously selected saved location, remove it from used list
     if (this.selectedLocationData && this.selectedLocationData.id) {
       console.log('🔄 Clearing saved location selection, making it available again:', this.selectedLocationData.name);
       EnhancedIsolatedMapModal.usedLocationIds.delete(this.selectedLocationData.id);
     }
-    
+
     // Clear the selected location data
     this.selectedLocationData = null;
-    
+
     // Clear selection highlighting
     this.modalNode.querySelectorAll('.saved-location-btn').forEach(btn => {
       btn.classList.remove('selected');
     });
-    
+
     // Refresh the UI to show the location is available again
     this.refreshModal();
   }
-  
+
   refreshModal() {
     // Re-render the saved locations to update the UI
     const savedLocationsList = this.modalNode.querySelector('.saved-locations-list');
@@ -388,7 +400,7 @@ class EnhancedIsolatedMapModal {
   initMap() {
     // Default to Manila coordinates
     const defaultCenter = { lat: 14.5995, lng: 120.9842 };
-    
+
     this.map = new google.maps.Map(this.mapNode, {
       zoom: 13,
       center: defaultCenter,
@@ -429,7 +441,7 @@ class EnhancedIsolatedMapModal {
         this.autocomplete.addListener('place_changed', () => {
           this.handlePlaceChanged();
         });
-        
+
         this.placesApiAvailable = true;
         console.log('✅ Places API Autocomplete enabled');
       } else {
@@ -440,14 +452,14 @@ class EnhancedIsolatedMapModal {
       this.placesApiAvailable = false;
       this.setupManualSearch();
     }
-    
+
     // Add input event listener to handle manual typing
     this.searchInput.addEventListener('input', (e) => {
       // If user is typing manually, clear any selected saved location
       if (e.target.value !== this.selectedAddress) {
         this.clearSavedLocationSelection();
       }
-      
+
       // If Places API is not available, trigger manual search
       if (!this.placesApiAvailable) {
         this.handleManualSearch(e.target.value);
@@ -470,10 +482,10 @@ class EnhancedIsolatedMapModal {
     this.searchDropdown = document.createElement('div');
     this.searchDropdown.className = 'manual-search-dropdown';
     this.searchDropdown.style.display = 'none';
-    
+
     // Insert after search input
     this.searchInput.parentElement.appendChild(this.searchDropdown);
-    
+
     // Click outside to close dropdown
     document.addEventListener('click', (e) => {
       if (!this.searchInput.contains(e.target) && !this.searchDropdown.contains(e.target)) {
@@ -487,13 +499,13 @@ class EnhancedIsolatedMapModal {
     if (this.searchTimeout) {
       clearTimeout(this.searchTimeout);
     }
-    
+
     // Hide dropdown if query is too short
     if (!query || query.trim().length < 3) {
       this.searchDropdown.style.display = 'none';
       return;
     }
-    
+
     // Debounce search
     this.searchTimeout = setTimeout(() => {
       this.performGeocodingSearch(query);
@@ -504,13 +516,13 @@ class EnhancedIsolatedMapModal {
     if (!this.geocoder) {
       this.geocoder = new google.maps.Geocoder();
     }
-    
+
     try {
       // Add Philippines bias to the search
       const searchQuery = query.includes('Philippines') ? query : `${query}, Philippines`;
-      
+
       this.geocoder.geocode(
-        { 
+        {
           address: searchQuery,
           componentRestrictions: { country: 'PH' }
         },
@@ -530,22 +542,22 @@ class EnhancedIsolatedMapModal {
 
   displaySearchResults(results) {
     if (!this.searchDropdown) return;
-    
+
     if (results.length === 0) {
       this.searchDropdown.innerHTML = '<div class="search-result-item no-results">No locations found</div>';
       this.searchDropdown.style.display = 'block';
       return;
     }
-    
+
     this.searchDropdown.innerHTML = results.map((result, index) => `
       <div class="search-result-item" data-index="${index}">
         <div class="result-icon">📍</div>
         <div class="result-text">${result.formatted_address}</div>
       </div>
     `).join('');
-    
+
     this.searchDropdown.style.display = 'block';
-    
+
     // Add click handlers for results
     this.searchDropdown.querySelectorAll('.search-result-item').forEach((item, index) => {
       item.addEventListener('click', () => {
@@ -559,24 +571,24 @@ class EnhancedIsolatedMapModal {
       lat: result.geometry.location.lat(),
       lng: result.geometry.location.lng()
     };
-    
+
     this.selectedAddress = result.formatted_address;
     this.searchInput.value = result.formatted_address;
-    
+
     this.updateMapMarker(result.geometry.location);
     this.updateSelectedLocationInfo();
     this.confirmBtn.disabled = false;
-    
+
     // Hide dropdown
     this.searchDropdown.style.display = 'none';
-    
+
     // Clear saved location selection
     this.clearSavedLocationSelection();
   }
 
   handlePlaceChanged() {
     const place = this.autocomplete.getPlace();
-    
+
     if (!place.geometry) {
       console.warn('Place has no geometry');
       return;
@@ -588,7 +600,7 @@ class EnhancedIsolatedMapModal {
     };
 
     this.selectedAddress = place.formatted_address || this.searchInput.value;
-    
+
     this.updateMapMarker(place.geometry.location);
     this.updateSelectedLocationInfo();
     this.confirmBtn.disabled = false;
@@ -618,7 +630,7 @@ class EnhancedIsolatedMapModal {
         lng: position.lng()
       };
       this.reverseGeocode(position);
-      
+
       // Clear saved location selection when marker is dragged
       this.clearSavedLocationSelection();
     }
@@ -681,43 +693,43 @@ class EnhancedIsolatedMapModal {
   confirmLocation() {
     if (this.selectedAddress && this.onSelectCallback) {
       console.log('📍 Confirming location:', this.selectedAddress, this.selectedCoordinates);
-      
+
       // Mark this location as used only when confirming
-      const selectedLocation = this.selectedLocationData || this.savedLocations.find(loc => 
-        loc.address === this.selectedAddress || 
+      const selectedLocation = this.selectedLocationData || this.savedLocations.find(loc =>
+        loc.address === this.selectedAddress ||
         (loc.coordinates && loc.coordinates.lat === this.selectedCoordinates.lat && loc.coordinates.lng === this.selectedCoordinates.lng)
       );
-      
+
       if (selectedLocation) {
         EnhancedIsolatedMapModal.usedLocationIds.add(selectedLocation.id);
       }
-      
+
       // Pass address, coordinates, and full location data (for contact info)
       this.onSelectCallback(this.selectedAddress, this.selectedCoordinates, selectedLocation);
       this.close();
     }
   }
-  
+
   // Static method to mark a location as used
   static markLocationAsUsed(locationId) {
     EnhancedIsolatedMapModal.usedLocationIds.add(locationId);
   }
-  
+
   // Static method to clear used locations
   static clearUsedLocations() {
     EnhancedIsolatedMapModal.usedLocationIds.clear();
   }
-  
+
   // Instance method to clear used locations (for convenience)
   clearUsedLocations() {
     EnhancedIsolatedMapModal.usedLocationIds.clear();
   }
-  
+
   // Static method to get used locations
   static getUsedLocations() {
     return Array.from(EnhancedIsolatedMapModal.usedLocationIds);
   }
-  
+
   // Static method to get location ID by coordinates
   static getLocationIdByCoordinates(coordinates) {
     // This is a helper method that should be called after locations are loaded
@@ -728,7 +740,7 @@ class EnhancedIsolatedMapModal {
   show() {
     if (this.modalNode) {
       this.modalNode.style.display = 'flex';
-      
+
       // Focus search input after a short delay
       setTimeout(() => {
         if (this.searchInput) {
@@ -747,16 +759,16 @@ class EnhancedIsolatedMapModal {
       this.marker = null;
       this.autocomplete = null;
       this.searchDropdown = null;
-      
+
       // Clear search timeout
       if (this.searchTimeout) {
         clearTimeout(this.searchTimeout);
         this.searchTimeout = null;
       }
-      
+
       // Clear the other selected location reference
       this.otherSelectedLocation = null;
-      
+
       // Clear selected location data
       this.selectedLocationData = null;
       this.selectedAddress = '';
@@ -773,7 +785,7 @@ class EnhancedIsolatedMapModal {
         <input type="text" class="enhanced-map-manual-input" value="${this.initialAddress}" placeholder="Enter address"/>
       </div>
     `;
-    
+
     const manualInput = this.mapNode.querySelector('.enhanced-map-manual-input');
     if (manualInput) {
       manualInput.addEventListener('input', (e) => {
@@ -1244,7 +1256,7 @@ class EnhancedIsolatedMapModal {
         }
       }
     `;
-    
+
     document.head.appendChild(styleNode);
   }
 }

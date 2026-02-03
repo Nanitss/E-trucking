@@ -5,9 +5,27 @@ import { getFromStorage, setInStorage, removeFromStorage, isStorageAvailable } f
 export const AuthContext = createContext();
 
 // Configure the base URL for API requests
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-  ? 'http://localhost:5007' 
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5007'
   : ''; // Empty string means relative paths, which work when server and client are on same domain
+
+// Helper to get the correct API path
+// In production, Firebase hosting rewrites /api/** to the Cloud Function
+// The Cloud Function routes are mounted without /api prefix
+// So we use /api for localhost (where server has /api routes) but NOT for production
+const getApiPath = (path) => {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  if (isLocalhost) {
+    // In development, use full path with /api
+    const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
+    return `${API_BASE_URL}${cleanPath}`;
+  } else {
+    // In production, Firebase Hosting rewrite handles /api prefix
+    // Just use /api + path for the rewrite to match
+    const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
+    return cleanPath;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -16,10 +34,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [storageAvailable, setStorageAvailable] = useState(true);
 
-  // Set up axios default base URL
-  useEffect(() => {
-    axios.defaults.baseURL = API_BASE_URL;
-  }, []);
+  // Note: We don't set axios.defaults.baseURL because getApiPath handles URL construction
+  // This avoids potential URL duplication issues
 
   // Check if storage is available
   useEffect(() => {
@@ -38,14 +54,14 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         return;
       }
-      
+
       try {
         const token = getFromStorage('token');
         if (token) {
           // Set the authorization header with the token
           console.log('Found token in storage, setting in axios headers');
           axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-          
+
           // Try to load saved user data
           const parsedUser = getFromStorage('currentUser');
           if (parsedUser && parsedUser.id) {
@@ -56,7 +72,7 @@ export const AuthProvider = ({ children }) => {
             // We have a token but no valid user data, try to fetch user data
             console.log('Token found but no valid user data, fetching user data...');
             try {
-              const response = await axios.get(`${API_BASE_URL}/api/auth/current-user`);
+              const response = await axios.get(getApiPath('/auth/current-user'));
               console.log('User data retrieved:', response.data);
               setCurrentUser(response.data);
               setIsAuthenticated(true);
@@ -92,15 +108,19 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       console.log('AuthContext: Attempting login with username:', username);
-      
+
+      // Debug: Log the URL being used
+      const loginUrl = getApiPath('/auth/login');
+      console.log('AuthContext: Login URL:', loginUrl);
+
       // Use the full URL to avoid proxy issues
-      const { data } = await axios.post(`${API_BASE_URL}/api/auth/login`, { 
-        username: username.trim(), 
-        password 
+      const { data } = await axios.post(loginUrl, {
+        username: username.trim(),
+        password
       });
-      
+
       console.log('AuthContext: Login response received:', data);
-      
+
       const { token, user } = data;
 
       // Removed overly strict token validation to avoid breaking existing tokens
@@ -113,7 +133,7 @@ export const AuthProvider = ({ children }) => {
           // Store the token as a plain string
           setInStorage('token', token);
           console.log('Token stored in localStorage');
-          
+
           // Store user data if available
           if (user) {
             setInStorage('currentUser', user);
@@ -123,7 +143,7 @@ export const AuthProvider = ({ children }) => {
           console.error('Failed to store auth data:', storageError);
         }
       }
-      
+
       // Set token in axios headers
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       console.log('AuthContext: Set Authorization header with token');
@@ -135,12 +155,12 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return { success: true, role: user.role };
       }
-      
+
       // Otherwise try to get user data
       try {
         console.log('AuthContext: Getting user data with token');
-        const { data: userData } = await axios.get(`${API_BASE_URL}/api/auth/current-user`);
-        
+        const { data: userData } = await axios.get(getApiPath('/auth/current-user'));
+
         console.log('AuthContext: User data received:', userData);
         if (storageAvailable) {
           try {
@@ -151,7 +171,7 @@ export const AuthProvider = ({ children }) => {
         }
         setCurrentUser(userData);
         setIsAuthenticated(true);
-        
+
         return { success: true, role: userData.role };
       } catch (userErr) {
         console.error('AuthContext: Error fetching user after login:', userErr);
@@ -161,7 +181,7 @@ export const AuthProvider = ({ children }) => {
           statusText: userErr.response?.statusText,
           data: userErr.response?.data
         });
-        
+
         setError('Authentication successful but failed to load user data.');
         return { success: false, message: 'Authentication successful but failed to load user data.' };
       }
@@ -173,9 +193,9 @@ export const AuthProvider = ({ children }) => {
         statusText: err.response?.statusText,
         data: err.response?.data
       });
-      
+
       let errorMessage = 'Login failed. Please check your credentials.';
-      
+
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
       } else if (err.response?.status === 400) {
@@ -185,7 +205,7 @@ export const AuthProvider = ({ children }) => {
       } else if (!err.response) {
         errorMessage = 'Network error. Please check your connection.';
       }
-      
+
       setError(errorMessage);
       return { success: false, message: errorMessage };
     } finally {
@@ -195,17 +215,17 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     console.log('AuthContext: Logging out user');
-    
+
     // Clear axios headers first
     delete axios.defaults.headers.common['Authorization'];
-    
+
     // Then clear storage
     if (storageAvailable) {
       try {
         // Try to clean up localStorage items using our utility
         removeFromStorage('token');
         removeFromStorage('currentUser');
-        
+
         // Also directly clear localStorage as a fallback
         try {
           localStorage.removeItem('token');
@@ -218,14 +238,14 @@ export const AuthProvider = ({ children }) => {
         console.error('Error clearing localStorage during logout:', e);
       }
     }
-    
+
     // Reset state
     setCurrentUser(null);
     setIsAuthenticated(false);
     setError(null);
-    
+
     console.log('AuthContext: Logout complete, redirecting to login...');
-    
+
     // Redirect to login page
     window.location.href = '/login';
   };
@@ -237,13 +257,13 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{
-      currentUser, 
+      currentUser,
       authUser: currentUser, // Add authUser as an alias for compatibility
-      loading, 
-      error, 
+      loading,
+      error,
       isAuthenticated,
-      login, 
-      logout, 
+      login,
+      logout,
       hasRole
     }}>
       {children}

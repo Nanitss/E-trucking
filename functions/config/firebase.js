@@ -13,7 +13,7 @@ try {
     const projectId = process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT;
     const clientEmail = process.env.FB_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
     const privateKey = process.env.FB_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
-    const databaseURL = process.env.FB_DATABASE_URL || process.env.FIREBASE_DATABASE_URL;
+    const databaseURL = process.env.FB_DATABASE_URL || process.env.FIREBASE_DATABASE_URL || 'https://e-trucking-8d905-default-rtdb.asia-southeast1.firebasedatabase.app';
 
     const hasExplicitCredentials = projectId && clientEmail && privateKey;
 
@@ -93,7 +93,7 @@ try {
 let realtimeDb;
 try {
   // Only try to initialize Realtime Database if we have a database URL or proper credentials
-  const hasDatabaseUrl = process.env.FIREBASE_DATABASE_URL;
+  const hasDatabaseUrl = process.env.FIREBASE_DATABASE_URL || process.env.FB_DATABASE_URL || databaseURL;
   const hasFirebaseCredentials = process.env.FIREBASE_PROJECT_ID &&
     process.env.FIREBASE_CLIENT_EMAIL &&
     process.env.FIREBASE_PRIVATE_KEY;

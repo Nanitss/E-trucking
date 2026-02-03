@@ -44,12 +44,31 @@ const PORT = process.env.PORT || 5007;
 
 // Add request logging middleware
 app.use((req, res, next) => {
-  console.log(`🌐 ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  console.log(`🌐 INCOMING REQUEST - Method: ${req.method}`);
+  console.log(`🌐 Path: ${req.path}`);
+  console.log(`🌐 Original URL: ${req.originalUrl}`);
+  console.log(`🌐 Base URL: ${req.baseUrl}`);
+  console.log(`🌐 Full URL: ${req.protocol}://${req.get('host')}${req.originalUrl}`);
+  console.log(`🌐 Timestamp: ${new Date().toISOString()}`);
   if (req.path.includes('/admin/trucks') && (req.method === 'POST' || req.method === 'PUT')) {
     console.log('🚛 Truck request detected:', req.method, req.path);
     console.log('📄 Files:', req.files ? Object.keys(req.files) : 'No files');
     console.log('📄 Body keys:', Object.keys(req.body || {}));
   }
+
+  // URL Normalization Middleware
+  // Firebase Hosting rewrite + Cloud Function name can cause URL doubling (e.g. /api/api/auth/login)
+  // Converting all variations to clean paths (e.g. /auth/login) to match our route definitions
+  if (req.url.startsWith('/api/api/')) {
+    const newUrl = req.url.replace('/api/api', '');
+    console.log(`🔄 Rewriting Path (Double API): ${req.url} -> ${newUrl}`);
+    req.url = newUrl;
+  } else if (req.url.startsWith('/api/')) {
+    const newUrl = req.url.replace('/api', '');
+    console.log(`🔄 Rewriting Path (Single API): ${req.url} -> ${newUrl}`);
+    req.url = newUrl;
+  }
+
   next();
 });
 
@@ -486,23 +505,23 @@ app.use((req, res, next) => {
 });
 
 // Auth routes
-console.log('🔗 Mounting auth routes at /api/auth');
-app.use('/api/auth', authRoutes);
+console.log('🔗 Mounting auth routes at /auth');
+app.use('/auth', authRoutes);
 
 // Mobile driver routes (mount before web routes to avoid conflicts)
-console.log('🔗 Mounting mobile driver routes at /api/mobile');
-app.use('/api/mobile', mobileDriverRoutes);
+console.log('🔗 Mounting mobile driver routes at /mobile');
+app.use('/mobile', mobileDriverRoutes);
 
 // User management routes
 console.log('🔗 Mounting management routes...');
-app.use('/api/drivers', driversRoutes);
-app.use('/api/operators', operatorsRoutes);
-app.use('/api/helpers', helpersRoutes);
-app.use('/api/staffs', staffRoutes);
+app.use('/drivers', driversRoutes);
+app.use('/operators', operatorsRoutes);
+app.use('/helpers', helpersRoutes);
+app.use('/staffs', staffRoutes);
 
 // Mount client routes with enhanced logging
-console.log('🔗 Mounting client routes at /api/clients...');
-app.use('/api/clients', (req, res, next) => {
+console.log('🔗 Mounting client routes at /clients...');
+app.use('/clients', (req, res, next) => {
   console.log(`📍 Client route request: ${req.method} ${req.originalUrl}`);
   console.log('📍 Request path:', req.path);
   console.log('📍 Base URL:', req.baseUrl);
@@ -511,24 +530,24 @@ app.use('/api/clients', (req, res, next) => {
 console.log('✅ Client routes mounted successfully');
 
 // Mount truck routes
-app.use('/api/trucks', truckRoutes);
+app.use('/trucks', truckRoutes);
 
 // Mount admin routes
-console.log('🔗 Mounting admin routes at /api/admin');
-app.use('/api/admin', adminRoutes);
+console.log('🔗 Mounting admin routes at /admin');
+app.use('/admin', adminRoutes);
 
 // Mount validation routes
-console.log('🔗 Mounting validation routes at /api/validation');
-app.use('/api/validation', validationRoutes);
-app.use('/api/client/pinned-locations', pinnedLocationsRoutes);
+console.log('🔗 Mounting validation routes at /validation');
+app.use('/validation', validationRoutes);
+app.use('/client/pinned-locations', pinnedLocationsRoutes);
 
 // Mount audit routes
-console.log('🔗 Mounting audit routes at /api/audit');
-app.use('/api/audit', auditRoutes);
+console.log('🔗 Mounting audit routes at /audit');
+app.use('/audit', auditRoutes);
 
 // Mount delivery routes with driver assignment integration
-console.log('🔗 Mounting delivery routes at /api/deliveries');
-app.use('/api/deliveries', (req, res, next) => {
+console.log('🔗 Mounting delivery routes at /deliveries');
+app.use('/deliveries', (req, res, next) => {
   // Add driver assignment hook for new deliveries
   if (req.method === 'POST' && req.path === '/') {
     const originalEnd = res.end;
@@ -554,33 +573,33 @@ app.use('/api/deliveries', (req, res, next) => {
 }, deliveryRoutes);
 
 // Mount notification routes
-console.log('🔗 Mounting notification routes at /api/notifications');
-app.use('/api/notifications', notificationRoutes);
+console.log('🔗 Mounting notification routes at /notifications');
+app.use('/notifications', notificationRoutes);
 
 // Mount payment routes
-console.log('🔗 Mounting payment routes at /api/payments');
-app.use('/api/payments', paymentRoutes);
+console.log('🔗 Mounting payment routes at /payments');
+app.use('/payments', paymentRoutes);
 
 // Mount tracking routes
-console.log('🔗 Mounting tracking routes at /api/tracking');
-app.use('/api/tracking', trackingRoutes);
+console.log('🔗 Mounting tracking routes at /tracking');
+app.use('/tracking', trackingRoutes);
 
 // Simple file scanning routes (no authentication required for testing)
-app.use('/api/simple-files', simpleFileRoutes);
+app.use('/simple-files', simpleFileRoutes);
 
 // Document routes
-app.use('/api/documents', documentRoutes);
+app.use('/documents', documentRoutes);
 
 // Enhanced upload routes with file replacement and better organization
-app.use('/api/upload', enhancedUploadRoutes);
+app.use('/upload', enhancedUploadRoutes);
 
 // Report routes for filtered data exports
-console.log('🔗 Mounting report routes at /api/reports');
-app.use('/api/reports', reportRoutes);
+console.log('🔗 Mounting report routes at /reports');
+app.use('/reports', reportRoutes);
 
 // Migration routes for one-time database updates
-console.log('🔗 Mounting migration routes at /api/migrations');
-app.use('/api/migrations', migrationRoutes);
+console.log('🔗 Mounting migration routes at /migrations');
+app.use('/migrations', migrationRoutes);
 
 // PayMongo routes removed
 

@@ -9,6 +9,12 @@ const API_BASE_URL = window.location.hostname === 'localhost' || window.location
   ? 'http://localhost:5007'
   : '';
 
+// Helper to get the correct API path
+const getApiPath = (path) => {
+  const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
+  return `${API_BASE_URL}${cleanPath}`;
+};
+
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
@@ -41,7 +47,7 @@ const Login = () => {
         // First make login request
         const loginRes = await axios({
           method: "POST",
-          url: `${API_BASE_URL}/api/auth/login`,
+          url: getApiPath('/auth/login'),
           data: {
             username: formData.username.trim(),
             password: formData.password,
@@ -66,7 +72,7 @@ const Login = () => {
         // Now get user data with the token
         console.log("Getting user data with token");
         const userRes = await axios.get(
-          `${API_BASE_URL}/api/auth/current-user`,
+          getApiPath('/auth/current-user'),
           {
             headers: {
               Authorization: `Bearer ${token}`,
