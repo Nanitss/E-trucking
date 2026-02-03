@@ -56,11 +56,9 @@ app.use((req, res, next) => {
 // Add environment variables check
 console.log('\n=== Environment Check ===');
 console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-console.log('FIREBASE_PROJECT_ID exists:', !!process.env.FIREBASE_PROJECT_ID);
-console.log('FIREBASE_CLIENT_EMAIL exists:', !!process.env.FIREBASE_CLIENT_EMAIL);
-console.log('FIREBASE_PRIVATE_KEY exists:', !!process.env.FIREBASE_PRIVATE_KEY);
-console.log('PAYMONGO_SECRET_KEY exists:', !!process.env.PAYMONGO_SECRET_KEY);
-console.log('PAYMONGO_PUBLIC_KEY exists:', !!process.env.PAYMONGO_PUBLIC_KEY);
+console.log('FB_PROJECT_ID exists:', !!(process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID));
+console.log('FB_CLIENT_EMAIL exists:', !!(process.env.FB_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL));
+console.log('FB_PRIVATE_KEY exists:', !!(process.env.FB_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY));
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('===================\n');
 
@@ -71,7 +69,10 @@ if (!process.env.JWT_SECRET) {
 }
 
 // Warning if Firebase variables are missing
-if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+const projectId = process.env.FB_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FB_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FB_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
+if (!projectId || !clientEmail || !privateKey) {
   console.error('⚠️ WARNING: Firebase configuration is incomplete in environment variables!');
   console.error('Please check your .env file');
 }
@@ -581,158 +582,8 @@ app.use('/api/reports', reportRoutes);
 console.log('🔗 Mounting migration routes at /api/migrations');
 app.use('/api/migrations', migrationRoutes);
 
-// PayMongo payment success and failure pages
-app.get('/payments/success', async (req, res) => {
-  const { deliveryId } = req.query;
-  console.log('✅ Payment success for delivery:', deliveryId);
+// PayMongo routes removed
 
-  // Mark delivery as paid in the database
-  if (deliveryId) {
-    try {
-      const { db, admin } = require('./config/firebase');
-      const deliveryRef = db.collection('deliveries').doc(deliveryId);
-
-      // Update the delivery status to paid
-      await deliveryRef.update({
-        paymentStatus: 'paid',
-        paidAt: admin.firestore.Timestamp.now(),
-        paymentCompletedVia: 'paymongo_success_redirect',
-        updated_at: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      console.log('✅ Delivery marked as paid:', deliveryId);
-    } catch (error) {
-      console.error('❌ Error marking delivery as paid:', error);
-    }
-  }
-
-  res.send(`
-    <html>
-      <head>
-        <title>Payment Successful - Trucking Management</title>
-        <style>
-          body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            text-align: center; 
-            padding: 50px; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .success-container { 
-            background: white; 
-            padding: 40px; 
-            border-radius: 15px; 
-            display: inline-block; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            max-width: 500px;
-            width: 90%;
-          }
-          .success-icon { 
-            font-size: 80px; 
-            color: #10b981; 
-            margin-bottom: 20px; 
-            animation: bounce 1s ease-in-out;
-          }
-          @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-            40% { transform: translateY(-10px); }
-            60% { transform: translateY(-5px); }
-          }
-          h1 { 
-            color: #059669; 
-            margin-bottom: 10px; 
-            font-size: 2.5em;
-            font-weight: 300;
-          }
-          p { 
-            color: #6b7280; 
-            margin: 15px 0; 
-            font-size: 1.1em;
-            line-height: 1.6;
-          }
-          .delivery-id { 
-            background: #f3f4f6; 
-            padding: 15px; 
-            border-radius: 8px; 
-            font-family: 'Courier New', monospace; 
-            margin: 25px 0; 
-            border-left: 4px solid #10b981;
-            font-size: 1.1em;
-          }
-          .mode-badge { 
-            background: #3b82f6; 
-            color: white; 
-            padding: 10px 20px; 
-            border-radius: 25px; 
-            font-size: 14px; 
-            font-weight: bold; 
-            margin: 15px 0; 
-            display: inline-block;
-          }
-          .close-btn { 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-            color: white; 
-            border: none; 
-            padding: 15px 30px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-size: 16px; 
-            margin-top: 25px;
-            transition: transform 0.2s;
-          }
-          .close-btn:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-          }
-          .return-btn {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
-            text-decoration: none;
-            display: inline-block;
-            transition: transform 0.2s;
-          }
-          .return-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-          }
-        </style>
-      </head>
-      <body>
-        <div class="success-container">
-          <div class="success-icon">✅</div>
-          <h1>Payment Successful!</h1>
-          <p>Your GCash payment has been processed successfully through <strong>PayMongo</strong></p>
-          <div class="delivery-id">Delivery ID: ${deliveryId || 'N/A'}</div>
-          <div class="mode-badge">REAL PAYMONGO INTEGRATION</div>
-          <p>Thank you for using our trucking service! Your delivery payment is confirmed.</p>
-          <a href="/client/payment-management" class="return-btn">Return to Dashboard</a>
-          <button class="close-btn" onclick="window.close()">Close Window</button>
-        </div>
-        <script>
-          // Auto-redirect after 10 seconds
-          setTimeout(() => {
-            if (window.opener) {
-              window.opener.location.reload();
-              window.close();
-            } else {
-              window.location.href = '/client/payment-management';
-            }
-          }, 10000);
-        </script>
-      </body>
-    </html>
-  `);
-});
 
 app.get('/payments/failed', (req, res) => {
   const { deliveryId } = req.query;
