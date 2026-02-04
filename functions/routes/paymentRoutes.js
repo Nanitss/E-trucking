@@ -9,9 +9,11 @@ const { authenticateJWT } = require("../middleware/auth");
 const auditService = require("../services/AuditService");
 
 // Configure multer for payment proof uploads
+// IMPORTANT: Firebase Cloud Functions only allow writes to /tmp directory
 const proofStorage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(process.cwd(), "uploads", "temp");
+    // Use /tmp which is the ONLY writable directory in Firebase Cloud Functions
+    const uploadPath = "/tmp/payment-proofs";
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }

@@ -3,10 +3,7 @@ node_modules/
 **/node_modules/
 vendor/
 
-# Environment files
-.env
-.env.local
-.env.*.local
+
 
 # Build outputs
 /public/build

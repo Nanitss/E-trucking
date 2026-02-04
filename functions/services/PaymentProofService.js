@@ -18,7 +18,8 @@ const db = admin.firestore();
  */
 class PaymentProofService {
   constructor() {
-    this.basePath = path.join(process.cwd(), "uploads", "payment-proofs");
+    // IMPORTANT: Firebase Cloud Functions only allow writes to /tmp directory
+    this.basePath = "/tmp/payment-proofs";
     this.ensureBaseDirectory();
 
     // Allowed file types

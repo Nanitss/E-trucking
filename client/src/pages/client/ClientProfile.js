@@ -637,13 +637,12 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         {/* Alert for upload success/error */}
         {uploadAlert.show && (
           <div
-            className={`mb-4 p-4 rounded-lg flex items-center gap-3 ${
-              uploadAlert.type === "success"
+            className={`mb-4 p-4 rounded-lg flex items-center gap-3 ${uploadAlert.type === "success"
                 ? "bg-green-100 text-green-800 border border-green-200"
                 : uploadAlert.type === "error"
                   ? "bg-red-100 text-red-800 border border-red-200"
                   : "bg-blue-100 text-blue-800 border border-blue-200"
-            }`}
+              }`}
           >
             {uploadAlert.type === "success" ? (
               <FaCheckCircle />
@@ -696,11 +695,11 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                       checked={
                         selectedDeliveries.length > 0 &&
                         selectedDeliveries.length ===
-                          (billingData?.payments || []).filter(
-                            (p) =>
-                              p.status !== "paid" &&
-                              p.status !== "pending_verification",
-                          ).length
+                        (billingData?.payments || []).filter(
+                          (p) =>
+                            p.status !== "paid" &&
+                            p.status !== "pending_verification",
+                        ).length
                       }
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                     />
@@ -813,11 +812,6 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                           <span className="text-emerald-700">
                             {formatCurrency(payment.amount)}
                           </span>
-                          {payment.testMode && (
-                            <span className="text-[10px] px-1.5 py-0.5 bg-gray-200 text-gray-600 rounded uppercase font-bold tracking-wider">
-                              TEST
-                            </span>
-                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm align-middle">
@@ -989,11 +983,10 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                 {/* Alerts inside modal */}
                 {uploadAlert.show && (
                   <div
-                    className={`p-3 rounded-lg text-sm flex items-start gap-2 ${
-                      uploadAlert.type === "error"
+                    className={`p-3 rounded-lg text-sm flex items-start gap-2 ${uploadAlert.type === "error"
                         ? "bg-red-50 text-red-700"
                         : "bg-green-50 text-green-700"
-                    }`}
+                      }`}
                   >
                     <FaInfoCircle className="mt-0.5 shrink-0" />
                     <span>{uploadAlert.message}</span>
@@ -1006,11 +999,10 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                   type="button"
                   onClick={handleProofSubmit}
                   disabled={uploadingProof || !proofFile}
-                  className={`inline-flex w-full justify-center rounded-lg px-4 py-2 text-base font-semibold text-white shadow-sm sm:w-auto sm:text-sm transition-all ${
-                    uploadingProof || !proofFile
+                  className={`inline-flex w-full justify-center rounded-lg px-4 py-2 text-base font-semibold text-white shadow-sm sm:w-auto sm:text-sm transition-all ${uploadingProof || !proofFile
                       ? "bg-gray-400 cursor-not-allowed"
                       : "bg-blue-600 hover:bg-blue-500"
-                  }`}
+                    }`}
                 >
                   {uploadingProof ? (
                     <span className="flex items-center gap-2">
@@ -1040,7 +1032,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 const ClientProfile = () => {
   const { authUser, logout } = useContext(AuthContext) || {
     authUser: null,
-    logout: () => {},
+    logout: () => { },
   };
   const history = useHistory();
   const location = useLocation();
@@ -1618,13 +1610,13 @@ const ClientProfile = () => {
     const otherSelectedLocation =
       type === "pickup"
         ? {
-            address: bookingData.dropoffLocation,
-            coordinates: bookingData.dropoffCoordinates,
-          }
+          address: bookingData.dropoffLocation,
+          coordinates: bookingData.dropoffCoordinates,
+        }
         : {
-            address: bookingData.pickupLocation,
-            coordinates: bookingData.pickupCoordinates,
-          };
+          address: bookingData.pickupLocation,
+          coordinates: bookingData.pickupCoordinates,
+        };
 
     enhancedIsolatedMapModal.init({
       locationType: type,
@@ -2814,9 +2806,9 @@ const ClientProfile = () => {
       const averageTruckCapacity =
         allocatedTrucks.length > 0
           ? allocatedTrucks.reduce(
-              (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
-              0,
-            ) / allocatedTrucks.length
+            (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
+            0,
+          ) / allocatedTrucks.length
           : 5; // Default assumption of 5 tons per truck
 
       const estimatedAdditionalTrucks = Math.ceil(
@@ -2939,11 +2931,10 @@ const ClientProfile = () => {
               />
               <button
                 type="button"
-                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${
-                  !bookingData.weight || parseFloat(bookingData.weight) <= 0
+                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${!bookingData.weight || parseFloat(bookingData.weight) <= 0
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
-                }`}
+                  }`}
                 onClick={async () => {
                   const weight = parseFloat(bookingData.weight);
                   if (weight && weight > 0) {
@@ -3566,13 +3557,12 @@ const ClientProfile = () => {
                       return (
                         <div
                           key={truck.TruckID}
-                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${
-                            isSelected
+                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${isSelected
                               ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
                               : isRecommended
                                 ? "border-amber-400 bg-amber-50"
                                 : "border-gray-200 bg-white hover:bg-gray-50"
-                          }`}
+                            }`}
                           onClick={() =>
                             handleTruckSelectionWithAvailability(truck.TruckID)
                           }
@@ -3620,11 +3610,10 @@ const ClientProfile = () => {
 
                           <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${
-                                utilizationPercentage > 100
+                              className={`h-full rounded-full transition-all duration-500 ${utilizationPercentage > 100
                                   ? "bg-red-500"
                                   : "bg-emerald-500"
-                              }`}
+                                }`}
                               style={{
                                 width: `${Math.min(100, utilizationPercentage)}%`,
                               }}
@@ -3864,11 +3853,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === deliveryId
               ? {
-                  ...delivery,
-                  clientConfirmed: true,
-                  confirmedAt: new Date().toISOString(),
-                  DeliveryStatus: "completed", // Mark as completed after client confirmation
-                }
+                ...delivery,
+                clientConfirmed: true,
+                confirmedAt: new Date().toISOString(),
+                DeliveryStatus: "completed", // Mark as completed after client confirmation
+              }
               : delivery,
           ),
         );
@@ -4008,9 +3997,9 @@ const ClientProfile = () => {
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
           Math.cos((pickup.lat * Math.PI) / 180) *
-            Math.cos((dropoff.lat * Math.PI) / 180) *
-            Math.sin(dLon / 2) *
-            Math.sin(dLon / 2);
+          Math.cos((dropoff.lat * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         estimatedDistance = Math.round(R * c * 100) / 100; // Round to 2 decimal places
       } else {
@@ -4126,12 +4115,12 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                  ...delivery,
-                  PickupLocation: changeRouteData.pickupLocation,
-                  DropoffLocation: changeRouteData.dropoffLocation,
-                  DeliveryDistance: changeRouteData.newDistance,
-                  DeliveryRate: changeRouteData.newCost,
-                }
+                ...delivery,
+                PickupLocation: changeRouteData.pickupLocation,
+                DropoffLocation: changeRouteData.dropoffLocation,
+                DeliveryDistance: changeRouteData.newDistance,
+                DeliveryRate: changeRouteData.newCost,
+              }
               : delivery,
           ),
         );
@@ -4173,11 +4162,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                  ...delivery,
-                  DeliveryDate: new Date(
-                    `${rebookData.newDate}T${rebookData.newTime}`,
-                  ),
-                }
+                ...delivery,
+                DeliveryDate: new Date(
+                  `${rebookData.newDate}T${rebookData.newTime}`,
+                ),
+              }
               : delivery,
           ),
         );
@@ -4332,15 +4321,15 @@ const ClientProfile = () => {
       const updatedData =
         changeRouteMapType === "pickup"
           ? {
-              ...changeRouteData,
-              pickupLocation: address,
-              pickupCoordinates: coordinates,
-            }
+            ...changeRouteData,
+            pickupLocation: address,
+            pickupCoordinates: coordinates,
+          }
           : {
-              ...changeRouteData,
-              dropoffLocation: address,
-              dropoffCoordinates: coordinates,
-            };
+            ...changeRouteData,
+            dropoffLocation: address,
+            dropoffCoordinates: coordinates,
+          };
 
       if (updatedData.pickupLocation && updatedData.dropoffLocation) {
         calculateNewRoute();
@@ -4422,7 +4411,7 @@ const ClientProfile = () => {
                     }
                     pickupAddress={selectedDeliveryRoute.pickupLocation}
                     dropoffAddress={selectedDeliveryRoute.dropoffLocation}
-                    onRouteCalculated={() => {}} // No need to handle route calculation for viewing
+                    onRouteCalculated={() => { }} // No need to handle route calculation for viewing
                   />
                 </div>
               )}
@@ -4922,15 +4911,15 @@ const ClientProfile = () => {
                     Filters
                     {(truckFilters.type !== "all" ||
                       truckFilters.status !== "all") && (
-                      <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
-                        {
-                          [
-                            truckFilters.type !== "all",
-                            truckFilters.status !== "all",
-                          ].filter(Boolean).length
-                        }
-                      </span>
-                    )}
+                        <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                          {
+                            [
+                              truckFilters.type !== "all",
+                              truckFilters.status !== "all",
+                            ].filter(Boolean).length
+                          }
+                        </span>
+                      )}
                   </button>
 
                   {/* Per Page Select */}
@@ -5777,8 +5766,8 @@ const ClientProfile = () => {
                       <strong>Distance:</strong>{" "}
                       {selectedDelivery.DeliveryDistance
                         ? parseFloat(selectedDelivery.DeliveryDistance).toFixed(
-                            2,
-                          )
+                          2,
+                        )
                         : "0.00"}{" "}
                       km
                     </span>
@@ -6000,8 +5989,7 @@ const ClientProfile = () => {
                       Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        viewingDelivery.DeliveryStatus === "pending"
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${viewingDelivery.DeliveryStatus === "pending"
                           ? "bg-amber-100 text-amber-700"
                           : viewingDelivery.DeliveryStatus === "in-progress"
                             ? "bg-blue-100 text-blue-700"
@@ -6010,7 +5998,7 @@ const ClientProfile = () => {
                               : viewingDelivery.DeliveryStatus === "cancelled"
                                 ? "bg-red-100 text-red-700"
                                 : "bg-gray-100 text-gray-700"
-                      }`}
+                        }`}
                     >
                       {viewingDelivery.DeliveryStatus}
                     </span>
@@ -6033,8 +6021,8 @@ const ClientProfile = () => {
                     <span className="text-lg font-bold text-emerald-600">
                       {formatCurrency(
                         viewingDelivery.DeliveryRate ||
-                          viewingDelivery.deliveryRate ||
-                          0,
+                        viewingDelivery.deliveryRate ||
+                        0,
                       )}
                     </span>
                   </div>
@@ -6078,16 +6066,16 @@ const ClientProfile = () => {
                     viewingDelivery.dropoffCoordinates) ||
                     (viewingDelivery.PickupCoordinates &&
                       viewingDelivery.DropoffCoordinates)) && (
-                    <button
-                      className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-                      onClick={() => {
-                        viewDeliveryRoute(viewingDelivery);
-                        setShowViewDetailsModal(false);
-                      }}
-                    >
-                      <FaMapMarkerAlt /> View Route on Map
-                    </button>
-                  )}
+                      <button
+                        className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
+                        onClick={() => {
+                          viewDeliveryRoute(viewingDelivery);
+                          setShowViewDetailsModal(false);
+                        }}
+                      >
+                        <FaMapMarkerAlt /> View Route on Map
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -6316,16 +6304,15 @@ const ClientProfile = () => {
                       Current Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                        deliveries.some(
-                          (delivery) =>
-                            delivery.TruckID === viewingTruck.TruckID &&
-                            (delivery.DeliveryStatus === "pending" ||
-                              delivery.DeliveryStatus === "in-progress"),
-                        )
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${deliveries.some(
+                        (delivery) =>
+                          delivery.TruckID === viewingTruck.TruckID &&
+                          (delivery.DeliveryStatus === "pending" ||
+                            delivery.DeliveryStatus === "in-progress"),
+                      )
                           ? "bg-amber-100 text-amber-700"
                           : "bg-emerald-100 text-emerald-700"
-                      }`}
+                        }`}
                     >
                       {deliveries.some(
                         (delivery) =>
@@ -6354,16 +6341,16 @@ const ClientProfile = () => {
                   (delivery.DeliveryStatus === "pending" ||
                     delivery.DeliveryStatus === "in-progress"),
               ) && (
-                <button
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
-                  onClick={() => {
-                    setShowTruckDetailsModal(false);
-                    history.push("/client/book-truck");
-                  }}
-                >
-                  <FaCalendarPlus /> Book This Truck
-                </button>
-              )}
+                  <button
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+                    onClick={() => {
+                      setShowTruckDetailsModal(false);
+                      history.push("/client/book-truck");
+                    }}
+                  >
+                    <FaCalendarPlus /> Book This Truck
+                  </button>
+                )}
             </div>
           </div>
         </Modal>
