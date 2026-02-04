@@ -52,6 +52,7 @@ const BookTruck = () => {
   const [showRoutePreview, setShowRoutePreview] = useState(false);
   // Booking confirmation modal state (shows before booking)
   const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
+  const [isSubmittingBooking, setIsSubmittingBooking] = useState(false);
   // Booking summary modal state (shows after successful booking)
   const [showBookingSummary, setShowBookingSummary] = useState(false);
   const [bookedTrucksInfo, setBookedTrucksInfo] = useState([]);
@@ -457,6 +458,7 @@ const BookTruck = () => {
 
   // Perform the actual booking after user confirms
   const performBooking = async () => {
+    setIsSubmittingBooking(true);
     try {
       const response = await axios.post("/api/clients/truck-rental", {
         pickupLocation: bookingData.pickupLocation,
@@ -476,6 +478,7 @@ const BookTruck = () => {
       });
 
       if (response.data.success) {
+        setIsSubmittingBooking(false);
         // Close the confirmation modal first
         setShowBookingConfirmation(false);
         // Get booked trucks details for summary modal
@@ -487,6 +490,7 @@ const BookTruck = () => {
       }
     } catch (error) {
       console.error("Booking error:", error);
+      setIsSubmittingBooking(false);
       setShowBookingConfirmation(false);
       showError(
         "Booking Failed",
@@ -721,10 +725,18 @@ const BookTruck = () => {
                 Cancel
               </button>
               <button
-                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
                 onClick={performBooking}
+                disabled={isSubmittingBooking}
               >
-                Confirm Booking
+                {isSubmittingBooking ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Processing...
+                  </>
+                ) : (
+                  "Confirm Booking"
+                )}
               </button>
             </div>
           </div>
