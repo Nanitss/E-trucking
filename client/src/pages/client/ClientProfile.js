@@ -35,6 +35,8 @@ import {
   FaCalendar,
   FaSync,
   FaCalendarPlus,
+  FaUpload,
+  FaFileAlt,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { useModernToast } from "../../context/ModernToastContext";
@@ -51,6 +53,21 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
   const [deliveryData, setDeliveryData] = useState({ active: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Payment proof upload states
+  const [selectedDeliveries, setSelectedDeliveries] = useState([]);
+  const [proofUploadModalOpen, setProofUploadModalOpen] = useState(false);
+  const [proofFile, setProofFile] = useState(null);
+  const [proofForm, setProofForm] = useState({
+    referenceNumber: "",
+    notes: "",
+  });
+  const [uploadingProof, setUploadingProof] = useState(false);
+  const [uploadAlert, setUploadAlert] = useState({
+    show: false,
+    type: "",
+    message: "",
+  });
   // Utility to get clientId from multiple sources (mirrors PaymentManagement)
   const getClientId = () => {
     try {
@@ -102,6 +119,128 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Payment proof handlers
+  const handleSelectDelivery = (deliveryId) => {
+    setSelectedDeliveries((prev) =>
+      prev.includes(deliveryId)
+        ? prev.filter((id) => id !== deliveryId)
+        : [...prev, deliveryId],
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      // Select only pending/overdue payments (not paid or pending_verification)
+      const selectablePayments = (billingData?.payments || []).filter(
+        (p) => p.status !== "paid" && p.status !== "pending_verification",
+      );
+      setSelectedDeliveries(
+        selectablePayments.map((p) => p.id || p.deliveryId),
+      );
+    } else {
+      setSelectedDeliveries([]);
+    }
+  };
+
+  const handleProofFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const allowedTypes = ["image/png", "application/pdf"];
+      if (!allowedTypes.includes(file.type)) {
+        setUploadAlert({
+          show: true,
+          type: "error",
+          message: "Please upload a PNG image or PDF file only",
+        });
+        return;
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setUploadAlert({
+          show: true,
+          type: "error",
+          message: "File size must be less than 5MB",
+        });
+        return;
+      }
+      setProofFile(file);
+    }
+  };
+
+  const handleProofSubmit = async () => {
+    if (!proofFile) {
+      setUploadAlert({
+        show: true,
+        type: "error",
+        message: "Please select a file to upload",
+      });
+      return;
+    }
+
+    if (selectedDeliveries.length === 0) {
+      setUploadAlert({
+        show: true,
+        type: "error",
+        message: "Please select at least one delivery",
+      });
+      return;
+    }
+
+    try {
+      setUploadingProof(true);
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("proofFile", proofFile);
+      formData.append("deliveryIds", JSON.stringify(selectedDeliveries));
+      formData.append("referenceNumber", proofForm.referenceNumber);
+      formData.append("notes", proofForm.notes);
+
+      const response = await axios.post(
+        "/api/payments/upload-proof",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      if (response.data.success) {
+        setUploadAlert({
+          show: true,
+          type: "success",
+          message:
+            response.data.message ||
+            "Payment proof uploaded successfully! Awaiting admin verification.",
+        });
+        setProofUploadModalOpen(false);
+        setProofFile(null);
+        setProofForm({ referenceNumber: "", notes: "" });
+        setSelectedDeliveries([]);
+        // Refresh billing data
+        await fetchBillingData();
+      }
+    } catch (error) {
+      console.error("Error uploading proof:", error);
+      setUploadAlert({
+        show: true,
+        type: "error",
+        message:
+          error.response?.data?.message || "Failed to upload payment proof",
+      });
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const getSelectedTotal = () => {
+    return (billingData?.payments || [])
+      .filter((p) => selectedDeliveries.includes(p.id || p.deliveryId))
+      .reduce((sum, p) => sum + (p.amount || 0), 0);
   };
 
   const fetchBillingData = async () => {
@@ -495,15 +634,54 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 
       {/* Detailed Billing Records */}
       <div className="px-8 pb-8">
-        <div className="mb-6 flex justify-between items-end border-b border-gray-200 pb-4">
+        {/* Alert for upload success/error */}
+        {uploadAlert.show && (
+          <div
+            className={`mb-4 p-4 rounded-lg flex items-center gap-3 ${
+              uploadAlert.type === "success"
+                ? "bg-green-100 text-green-800 border border-green-200"
+                : uploadAlert.type === "error"
+                  ? "bg-red-100 text-red-800 border border-red-200"
+                  : "bg-blue-100 text-blue-800 border border-blue-200"
+            }`}
+          >
+            {uploadAlert.type === "success" ? (
+              <FaCheckCircle />
+            ) : (
+              <FaExclamationTriangle />
+            )}
+            <span className="flex-1">{uploadAlert.message}</span>
+            <button
+              onClick={() =>
+                setUploadAlert({ show: false, type: "", message: "" })
+              }
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <FaTimes />
+            </button>
+          </div>
+        )}
+
+        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
           <div>
             <h3 className="text-xl font-bold text-gray-800 mb-1">
               Billing Records
             </h3>
             <p className="text-gray-500 text-sm m-0">
-              All your delivery charges and payment status
+              {selectedDeliveries.length > 0
+                ? `${selectedDeliveries.length} delivery(s) selected - Total: ${formatCurrency(getSelectedTotal())}`
+                : "Select deliveries to upload payment proof"}
             </p>
           </div>
+          {selectedDeliveries.length > 0 && (
+            <button
+              onClick={() => setProofUploadModalOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all font-medium"
+            >
+              <FaUpload />
+              Upload Payment Proof
+            </button>
+          )}
         </div>
 
         {billingData?.payments?.length > 0 ? (
@@ -511,6 +689,22 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
             <table className="w-full border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-gray-50 text-left">
+                  <th className="px-6 py-4 w-12 border-b border-gray-200">
+                    <input
+                      type="checkbox"
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      checked={
+                        selectedDeliveries.length > 0 &&
+                        selectedDeliveries.length ===
+                          (billingData?.payments || []).filter(
+                            (p) =>
+                              p.status !== "paid" &&
+                              p.status !== "pending_verification",
+                          ).length
+                      }
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                     Delivery ID
                   </th>
@@ -553,6 +747,23 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 
                   return (
                     <tr key={payment.id || index} className={rowClass}>
+                      <td className="px-6 py-4 w-12 align-middle">
+                        {payment.status !== "paid" &&
+                          payment.status !== "pending_verification" && (
+                            <input
+                              type="checkbox"
+                              checked={selectedDeliveries.includes(
+                                payment.id || payment.deliveryId,
+                              )}
+                              onChange={() =>
+                                handleSelectDelivery(
+                                  payment.id || payment.deliveryId,
+                                )
+                              }
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                            />
+                          )}
+                      </td>
                       <td className="px-6 py-4 text-sm align-middle">
                         <div className="flex flex-col gap-1">
                           <span className="font-mono font-semibold text-blue-600">
@@ -651,6 +862,177 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
           </div>
         )}
       </div>
+      {/* Payment Proof Upload Modal */}
+      {proofUploadModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+            onClick={() => setProofUploadModalOpen(false)}
+          />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-xl transition-all w-full max-w-lg">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                  <FaUpload className="text-blue-600" />
+                  Upload Payment Proof
+                </h3>
+                <button
+                  onClick={() => setProofUploadModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Summary of Selection */}
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm text-blue-800 font-medium">
+                      Selected Deliveries:
+                    </span>
+                    <span className="text-sm font-bold text-blue-900">
+                      {selectedDeliveries.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-blue-800 font-medium">
+                      Total Amount:
+                    </span>
+                    <span className="text-lg font-bold text-blue-700">
+                      {formatCurrency(getSelectedTotal())}
+                    </span>
+                  </div>
+                </div>
+
+                {/* File Upload Area */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Proof of Payment (Image/PDF)
+                  </label>
+                  <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-500 transition-colors bg-gray-50 hover:bg-white cursor-pointer relative">
+                    <input
+                      type="file"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={handleProofFileChange}
+                      accept="image/png,application/pdf"
+                    />
+                    <div className="space-y-1 text-center">
+                      {proofFile ? (
+                        <div className="flex flex-col items-center">
+                          <FaFileAlt className="mx-auto h-12 w-12 text-blue-500" />
+                          <div className="flex text-sm text-gray-600 mt-2">
+                            <span className="font-medium text-blue-600 truncate max-w-[200px]">
+                              {proofFile.name}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            {(proofFile.size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <p className="text-xs text-green-600 mt-1 font-medium">
+                            Click to change file
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <FaUpload className="mx-auto h-12 w-12 text-gray-400" />
+                          <div className="flex text-sm text-gray-600">
+                            <span className="font-medium text-blue-600 hover:text-blue-500">
+                              Upload a file
+                            </span>
+                            <p className="pl-1">or drag and drop</p>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            PNG, PDF up to 5MB
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Fields */}
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Reference Number
+                    </label>
+                    <input
+                      type="text"
+                      value={proofForm.referenceNumber}
+                      onChange={(e) =>
+                        setProofForm({
+                          ...proofForm,
+                          referenceNumber: e.target.value,
+                        })
+                      }
+                      placeholder="e.g. GCash Ref No., Bank Trans ID"
+                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Notes (Optional)
+                    </label>
+                    <textarea
+                      value={proofForm.notes}
+                      onChange={(e) =>
+                        setProofForm({ ...proofForm, notes: e.target.value })
+                      }
+                      rows={2}
+                      placeholder="Any additional details..."
+                      className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border"
+                    />
+                  </div>
+                </div>
+
+                {/* Alerts inside modal */}
+                {uploadAlert.show && (
+                  <div
+                    className={`p-3 rounded-lg text-sm flex items-start gap-2 ${
+                      uploadAlert.type === "error"
+                        ? "bg-red-50 text-red-700"
+                        : "bg-green-50 text-green-700"
+                    }`}
+                  >
+                    <FaInfoCircle className="mt-0.5 shrink-0" />
+                    <span>{uploadAlert.message}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-gray-50 px-6 py-4 flex flex-row-reverse gap-3">
+                <button
+                  type="button"
+                  onClick={handleProofSubmit}
+                  disabled={uploadingProof || !proofFile}
+                  className={`inline-flex w-full justify-center rounded-lg px-4 py-2 text-base font-semibold text-white shadow-sm sm:w-auto sm:text-sm transition-all ${
+                    uploadingProof || !proofFile
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-blue-600 hover:bg-blue-500"
+                  }`}
+                >
+                  {uploadingProof ? (
+                    <span className="flex items-center gap-2">
+                      <FaSync className="animate-spin" /> Uploading...
+                    </span>
+                  ) : (
+                    "Submit Proof"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProofUploadModalOpen(false)}
+                  disabled={uploadingProof}
+                  className="inline-flex w-full justify-center rounded-lg bg-white px-4 py-2 text-base font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -658,7 +1040,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
 const ClientProfile = () => {
   const { authUser, logout } = useContext(AuthContext) || {
     authUser: null,
-    logout: () => { },
+    logout: () => {},
   };
   const history = useHistory();
   const location = useLocation();
@@ -1236,13 +1618,13 @@ const ClientProfile = () => {
     const otherSelectedLocation =
       type === "pickup"
         ? {
-          address: bookingData.dropoffLocation,
-          coordinates: bookingData.dropoffCoordinates,
-        }
+            address: bookingData.dropoffLocation,
+            coordinates: bookingData.dropoffCoordinates,
+          }
         : {
-          address: bookingData.pickupLocation,
-          coordinates: bookingData.pickupCoordinates,
-        };
+            address: bookingData.pickupLocation,
+            coordinates: bookingData.pickupCoordinates,
+          };
 
     enhancedIsolatedMapModal.init({
       locationType: type,
@@ -2432,9 +2814,9 @@ const ClientProfile = () => {
       const averageTruckCapacity =
         allocatedTrucks.length > 0
           ? allocatedTrucks.reduce(
-            (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
-            0,
-          ) / allocatedTrucks.length
+              (sum, truck) => sum + (parseFloat(truck.TruckCapacity) || 0),
+              0,
+            ) / allocatedTrucks.length
           : 5; // Default assumption of 5 tons per truck
 
       const estimatedAdditionalTrucks = Math.ceil(
@@ -2557,10 +2939,11 @@ const ClientProfile = () => {
               />
               <button
                 type="button"
-                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${!bookingData.weight || parseFloat(bookingData.weight) <= 0
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
-                  }`}
+                className={`px-4 py-2 rounded-xl font-bold text-white transition-all shadow-md ${
+                  !bookingData.weight || parseFloat(bookingData.weight) <= 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20 active:translate-y-0.5"
+                }`}
                 onClick={async () => {
                   const weight = parseFloat(bookingData.weight);
                   if (weight && weight > 0) {
@@ -3183,12 +3566,13 @@ const ClientProfile = () => {
                       return (
                         <div
                           key={truck.TruckID}
-                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${isSelected
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                            : isRecommended
-                              ? "border-amber-400 bg-amber-50"
-                              : "border-gray-200 bg-white hover:bg-gray-50"
-                            }`}
+                          className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${
+                            isSelected
+                              ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                              : isRecommended
+                                ? "border-amber-400 bg-amber-50"
+                                : "border-gray-200 bg-white hover:bg-gray-50"
+                          }`}
                           onClick={() =>
                             handleTruckSelectionWithAvailability(truck.TruckID)
                           }
@@ -3236,10 +3620,11 @@ const ClientProfile = () => {
 
                           <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${utilizationPercentage > 100
-                                ? "bg-red-500"
-                                : "bg-emerald-500"
-                                }`}
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                utilizationPercentage > 100
+                                  ? "bg-red-500"
+                                  : "bg-emerald-500"
+                              }`}
                               style={{
                                 width: `${Math.min(100, utilizationPercentage)}%`,
                               }}
@@ -3479,11 +3864,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === deliveryId
               ? {
-                ...delivery,
-                clientConfirmed: true,
-                confirmedAt: new Date().toISOString(),
-                DeliveryStatus: "completed", // Mark as completed after client confirmation
-              }
+                  ...delivery,
+                  clientConfirmed: true,
+                  confirmedAt: new Date().toISOString(),
+                  DeliveryStatus: "completed", // Mark as completed after client confirmation
+                }
               : delivery,
           ),
         );
@@ -3623,9 +4008,9 @@ const ClientProfile = () => {
         const a =
           Math.sin(dLat / 2) * Math.sin(dLat / 2) +
           Math.cos((pickup.lat * Math.PI) / 180) *
-          Math.cos((dropoff.lat * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+            Math.cos((dropoff.lat * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         estimatedDistance = Math.round(R * c * 100) / 100; // Round to 2 decimal places
       } else {
@@ -3741,12 +4126,12 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                ...delivery,
-                PickupLocation: changeRouteData.pickupLocation,
-                DropoffLocation: changeRouteData.dropoffLocation,
-                DeliveryDistance: changeRouteData.newDistance,
-                DeliveryRate: changeRouteData.newCost,
-              }
+                  ...delivery,
+                  PickupLocation: changeRouteData.pickupLocation,
+                  DropoffLocation: changeRouteData.dropoffLocation,
+                  DeliveryDistance: changeRouteData.newDistance,
+                  DeliveryRate: changeRouteData.newCost,
+                }
               : delivery,
           ),
         );
@@ -3788,11 +4173,11 @@ const ClientProfile = () => {
           prevDeliveries.map((delivery) =>
             delivery.DeliveryID === selectedDelivery.DeliveryID
               ? {
-                ...delivery,
-                DeliveryDate: new Date(
-                  `${rebookData.newDate}T${rebookData.newTime}`,
-                ),
-              }
+                  ...delivery,
+                  DeliveryDate: new Date(
+                    `${rebookData.newDate}T${rebookData.newTime}`,
+                  ),
+                }
               : delivery,
           ),
         );
@@ -3947,15 +4332,15 @@ const ClientProfile = () => {
       const updatedData =
         changeRouteMapType === "pickup"
           ? {
-            ...changeRouteData,
-            pickupLocation: address,
-            pickupCoordinates: coordinates,
-          }
+              ...changeRouteData,
+              pickupLocation: address,
+              pickupCoordinates: coordinates,
+            }
           : {
-            ...changeRouteData,
-            dropoffLocation: address,
-            dropoffCoordinates: coordinates,
-          };
+              ...changeRouteData,
+              dropoffLocation: address,
+              dropoffCoordinates: coordinates,
+            };
 
       if (updatedData.pickupLocation && updatedData.dropoffLocation) {
         calculateNewRoute();
@@ -3981,8 +4366,7 @@ const ClientProfile = () => {
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-8 box-border animate-fade-in block md:p-4 bg-slate-50 min-h-screen">
-      <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200 md:flex-col md:items-start md:gap-4">
-      </div>
+      <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200 md:flex-col md:items-start md:gap-4"></div>
 
       {/* Booking Modal */}
       {renderBookingModal()}
@@ -4038,7 +4422,7 @@ const ClientProfile = () => {
                     }
                     pickupAddress={selectedDeliveryRoute.pickupLocation}
                     dropoffAddress={selectedDeliveryRoute.dropoffLocation}
-                    onRouteCalculated={() => { }} // No need to handle route calculation for viewing
+                    onRouteCalculated={() => {}} // No need to handle route calculation for viewing
                   />
                 </div>
               )}
@@ -4538,15 +4922,15 @@ const ClientProfile = () => {
                     Filters
                     {(truckFilters.type !== "all" ||
                       truckFilters.status !== "all") && (
-                        <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
-                          {
-                            [
-                              truckFilters.type !== "all",
-                              truckFilters.status !== "all",
-                            ].filter(Boolean).length
-                          }
-                        </span>
-                      )}
+                      <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                        {
+                          [
+                            truckFilters.type !== "all",
+                            truckFilters.status !== "all",
+                          ].filter(Boolean).length
+                        }
+                      </span>
+                    )}
                   </button>
 
                   {/* Per Page Select */}
@@ -5393,8 +5777,8 @@ const ClientProfile = () => {
                       <strong>Distance:</strong>{" "}
                       {selectedDelivery.DeliveryDistance
                         ? parseFloat(selectedDelivery.DeliveryDistance).toFixed(
-                          2,
-                        )
+                            2,
+                          )
                         : "0.00"}{" "}
                       km
                     </span>
@@ -5616,16 +6000,17 @@ const ClientProfile = () => {
                       Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${viewingDelivery.DeliveryStatus === "pending"
-                        ? "bg-amber-100 text-amber-700"
-                        : viewingDelivery.DeliveryStatus === "in-progress"
-                          ? "bg-blue-100 text-blue-700"
-                          : viewingDelivery.DeliveryStatus === "completed"
-                            ? "bg-emerald-100 text-emerald-700"
-                            : viewingDelivery.DeliveryStatus === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
-                        }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        viewingDelivery.DeliveryStatus === "pending"
+                          ? "bg-amber-100 text-amber-700"
+                          : viewingDelivery.DeliveryStatus === "in-progress"
+                            ? "bg-blue-100 text-blue-700"
+                            : viewingDelivery.DeliveryStatus === "completed"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : viewingDelivery.DeliveryStatus === "cancelled"
+                                ? "bg-red-100 text-red-700"
+                                : "bg-gray-100 text-gray-700"
+                      }`}
                     >
                       {viewingDelivery.DeliveryStatus}
                     </span>
@@ -5648,8 +6033,8 @@ const ClientProfile = () => {
                     <span className="text-lg font-bold text-emerald-600">
                       {formatCurrency(
                         viewingDelivery.DeliveryRate ||
-                        viewingDelivery.deliveryRate ||
-                        0,
+                          viewingDelivery.deliveryRate ||
+                          0,
                       )}
                     </span>
                   </div>
@@ -5693,16 +6078,16 @@ const ClientProfile = () => {
                     viewingDelivery.dropoffCoordinates) ||
                     (viewingDelivery.PickupCoordinates &&
                       viewingDelivery.DropoffCoordinates)) && (
-                      <button
-                        className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
-                        onClick={() => {
-                          viewDeliveryRoute(viewingDelivery);
-                          setShowViewDetailsModal(false);
-                        }}
-                      >
-                        <FaMapMarkerAlt /> View Route on Map
-                      </button>
-                    )}
+                    <button
+                      className="mt-2 w-full px-4 py-2 border border-blue-200 text-blue-600 bg-white hover:bg-blue-50 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm font-medium"
+                      onClick={() => {
+                        viewDeliveryRoute(viewingDelivery);
+                        setShowViewDetailsModal(false);
+                      }}
+                    >
+                      <FaMapMarkerAlt /> View Route on Map
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -5931,15 +6316,16 @@ const ClientProfile = () => {
                       Current Status:
                     </label>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${deliveries.some(
-                        (delivery) =>
-                          delivery.TruckID === viewingTruck.TruckID &&
-                          (delivery.DeliveryStatus === "pending" ||
-                            delivery.DeliveryStatus === "in-progress"),
-                      )
-                        ? "bg-amber-100 text-amber-700"
-                        : "bg-emerald-100 text-emerald-700"
-                        }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                        deliveries.some(
+                          (delivery) =>
+                            delivery.TruckID === viewingTruck.TruckID &&
+                            (delivery.DeliveryStatus === "pending" ||
+                              delivery.DeliveryStatus === "in-progress"),
+                        )
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}
                     >
                       {deliveries.some(
                         (delivery) =>
@@ -5968,16 +6354,16 @@ const ClientProfile = () => {
                   (delivery.DeliveryStatus === "pending" ||
                     delivery.DeliveryStatus === "in-progress"),
               ) && (
-                  <button
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
-                    onClick={() => {
-                      setShowTruckDetailsModal(false);
-                      history.push("/client/book-truck");
-                    }}
-                  >
-                    <FaCalendarPlus /> Book This Truck
-                  </button>
-                )}
+                <button
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 transition-all hover:-translate-y-0.5"
+                  onClick={() => {
+                    setShowTruckDetailsModal(false);
+                    history.push("/client/book-truck");
+                  }}
+                >
+                  <FaCalendarPlus /> Book This Truck
+                </button>
+              )}
             </div>
           </div>
         </Modal>

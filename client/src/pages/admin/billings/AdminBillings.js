@@ -62,6 +62,10 @@ const AdminBillings = ({ currentUser }) => {
   // Proof viewer state
   const [proofViewerOpen, setProofViewerOpen] = useState(false);
   const [viewingProof, setViewingProof] = useState(null);
+  const [approvingProof, setApprovingProof] = useState(false);
+  const [rejectingProof, setRejectingProof] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   // Filter states
   const [statusFilter, setStatusFilter] = useState("all");
@@ -254,7 +258,8 @@ const AdminBillings = ({ currentUser }) => {
       setAlert({
         show: true,
         type: "error",
-        message: error.response?.data?.message || "Failed to load payment proof",
+        message:
+          error.response?.data?.message || "Failed to load payment proof",
       });
     }
   };
@@ -298,6 +303,100 @@ const AdminBillings = ({ currentUser }) => {
       });
     } finally {
       setUpdatingStatus(false);
+    }
+  };
+
+  // Approve payment proof - marks all linked deliveries as paid
+  const handleApproveProof = async () => {
+    if (!viewingProof?.id) return;
+
+    try {
+      setApprovingProof(true);
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        "/api/payments/approve-proof",
+        { proofId: viewingProof.id },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (response.data.success) {
+        setAlert({
+          show: true,
+          type: "success",
+          message: `Payment approved! ${response.data.data.deliveriesUpdated} delivery(s) marked as paid.`,
+        });
+
+        setProofViewerOpen(false);
+        setViewingProof(null);
+        await fetchAllPayments();
+      }
+    } catch (error) {
+      console.error("Error approving proof:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          error.response?.data?.message || "Failed to approve payment proof",
+      });
+    } finally {
+      setApprovingProof(false);
+    }
+  };
+
+  // Open rejection dialog
+  const handleOpenRejectDialog = () => {
+    setRejectDialogOpen(true);
+    setRejectionReason("");
+  };
+
+  // Reject payment proof - allows client to resubmit
+  const handleRejectProof = async () => {
+    if (!viewingProof?.id || !rejectionReason.trim()) {
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Please provide a reason for rejection",
+      });
+      return;
+    }
+
+    try {
+      setRejectingProof(true);
+      const token = localStorage.getItem("token");
+
+      const response = await axios.post(
+        "/api/payments/reject-proof",
+        {
+          proofId: viewingProof.id,
+          rejectionReason: rejectionReason.trim(),
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+
+      if (response.data.success) {
+        setAlert({
+          show: true,
+          type: "info",
+          message: `Payment proof rejected. Client can now submit a new proof.`,
+        });
+
+        setRejectDialogOpen(false);
+        setRejectionReason("");
+        setProofViewerOpen(false);
+        setViewingProof(null);
+        await fetchAllPayments();
+      }
+    } catch (error) {
+      console.error("Error rejecting proof:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          error.response?.data?.message || "Failed to reject payment proof",
+      });
+    } finally {
+      setRejectingProof(false);
     }
   };
 
@@ -564,7 +663,9 @@ const AdminBillings = ({ currentUser }) => {
                     >
                       <MenuItem value="all">All Status</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="pending_verification">Pending Verification</MenuItem>
+                      <MenuItem value="pending_verification">
+                        Pending Verification
+                      </MenuItem>
                       <MenuItem value="overdue">Overdue</MenuItem>
                       <MenuItem value="paid">Paid</MenuItem>
                       <MenuItem value="failed">Failed</MenuItem>
@@ -738,7 +839,7 @@ const AdminBillings = ({ currentUser }) => {
                             </TableCell>
                             <TableCell>
                               {payment.status === "pending" &&
-                                daysUntilDue !== null ? (
+                              daysUntilDue !== null ? (
                                 <Typography
                                   variant="body2"
                                   color={
@@ -914,94 +1015,243 @@ const AdminBillings = ({ currentUser }) => {
           <DialogContent dividers>
             {viewingProof && (
               <Box>
+                {/* Client & Proof Info */}
                 <Paper sx={{ p: 2, mb: 2, bgcolor: "#f5f5f5" }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    <strong>Delivery ID:</strong> {viewingProof.deliveryId}
-                  </Typography>
-                  <Typography variant="subtitle2" gutterBottom>
-                    <strong>Amount:</strong> {formatCurrency(viewingProof.payment?.amount || 0)}
-                  </Typography>
-                  <Typography variant="subtitle2" gutterBottom>
-                    <strong>Reference Number:</strong> {viewingProof.referenceNumber || "N/A"}
-                  </Typography>
-                  <Typography variant="subtitle2" gutterBottom>
-                    <strong>Notes:</strong> {viewingProof.notes || "No notes provided"}
-                  </Typography>
-                  <Typography variant="subtitle2" gutterBottom>
-                    <strong>Uploaded At:</strong>{" "}
-                    {viewingProof.uploadedAt
-                      ? formatDate(viewingProof.uploadedAt)
-                      : "N/A"}
-                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Client:</strong>{" "}
+                        {viewingProof.clientName || "N/A"}
+                      </Typography>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Reference Number:</strong>{" "}
+                        {viewingProof.referenceNumber || "N/A"}
+                      </Typography>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Uploaded At:</strong>{" "}
+                        {viewingProof.uploadedAt
+                          ? formatDate(viewingProof.uploadedAt)
+                          : "N/A"}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Total Amount:</strong>{" "}
+                        {formatCurrency(
+                          viewingProof.totalAmount ||
+                            viewingProof.payment?.amount ||
+                            0,
+                        )}
+                      </Typography>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Status:</strong>{" "}
+                        <Chip
+                          label={
+                            viewingProof.status === "pending"
+                              ? "Pending Verification"
+                              : viewingProof.status
+                          }
+                          color={
+                            viewingProof.status === "approved"
+                              ? "success"
+                              : viewingProof.status === "rejected"
+                                ? "error"
+                                : "info"
+                          }
+                          size="small"
+                        />
+                      </Typography>
+                      <Typography variant="subtitle2" gutterBottom>
+                        <strong>Deliveries Covered:</strong>{" "}
+                        {viewingProof.deliveryIds?.length || 1}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                  {viewingProof.notes && (
+                    <Typography variant="subtitle2" sx={{ mt: 1 }}>
+                      <strong>Notes:</strong> {viewingProof.notes}
+                    </Typography>
+                  )}
                 </Paper>
 
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {/* Linked Deliveries List */}
+                {viewingProof.deliveries &&
+                  viewingProof.deliveries.length > 0 && (
+                    <Paper sx={{ p: 2, mb: 2, bgcolor: "#fff" }}>
+                      <Typography
+                        variant="subtitle2"
+                        gutterBottom
+                        sx={{ fontWeight: "bold" }}
+                      >
+                        Deliveries Covered by This Proof:
+                      </Typography>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Delivery ID</TableCell>
+                            <TableCell>Truck</TableCell>
+                            <TableCell align="right">Amount</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {viewingProof.deliveries.map((delivery) => (
+                            <TableRow key={delivery.id}>
+                              <TableCell>
+                                {delivery.id?.substring(0, 8)}...
+                              </TableCell>
+                              <TableCell>
+                                {delivery.truckPlate || "N/A"}
+                              </TableCell>
+                              <TableCell align="right">
+                                {formatCurrency(delivery.amount || 0)}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Paper>
+                  )}
+
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 1, fontWeight: "bold" }}
+                >
                   Uploaded Proof:
                 </Typography>
 
-                {viewingProof.proofUrl && (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      minHeight: 300,
-                      border: "1px solid #ddd",
-                      borderRadius: 1,
-                      p: 2,
-                      bgcolor: "white",
-                    }}
-                  >
-                    {viewingProof.proofUrl.endsWith(".pdf") ? (
-                      <Box textAlign="center">
-                        <Typography variant="body2" color="textSecondary" mb={2}>
-                          PDF Document
-                        </Typography>
-                        <Button
-                          variant="contained"
-                          href={viewingProof.proofUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open PDF
-                        </Button>
-                      </Box>
-                    ) : (
-                      <img
-                        src={viewingProof.proofUrl}
-                        alt="Payment Proof"
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "500px",
-                          objectFit: "contain",
-                        }}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
-                        }}
-                      />
-                    )}
-                  </Box>
-                )}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 300,
+                    border: "1px solid #ddd",
+                    borderRadius: 1,
+                    p: 2,
+                    bgcolor: "white",
+                  }}
+                >
+                  {viewingProof.proofFileType === "application/pdf" ||
+                  viewingProof.proofFileName?.endsWith(".pdf") ? (
+                    <Box textAlign="center">
+                      <Typography variant="body2" color="textSecondary" mb={2}>
+                        PDF Document
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        href={`/api/payments/proof-file/${viewingProof.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Open PDF
+                      </Button>
+                    </Box>
+                  ) : viewingProof.id ? (
+                    <img
+                      src={`/api/payments/proof-file/${viewingProof.id}`}
+                      alt="Payment Proof"
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "500px",
+                        objectFit: "contain",
+                      }}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src =
+                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
+                      }}
+                    />
+                  ) : (
+                    <Typography color="textSecondary">
+                      No proof file available
+                    </Typography>
+                  )}
+                </Box>
               </Box>
             )}
           </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setProofViewerOpen(false)} color="primary">
+          <DialogActions sx={{ p: 2, gap: 1 }}>
+            <Button
+              onClick={() => setProofViewerOpen(false)}
+              color="inherit"
+              disabled={approvingProof || rejectingProof}
+            >
               Close
             </Button>
-            {viewingProof?.payment && viewingProof.payment.status !== "paid" && (
-              <Button
-                onClick={() => {
-                  setProofViewerOpen(false);
-                  handleMarkAsPaid(viewingProof.payment);
-                }}
-                variant="contained"
-                color="success"
-              >
-                Mark as Paid
-              </Button>
+            {viewingProof?.status === "pending" && (
+              <>
+                <Button
+                  onClick={handleOpenRejectDialog}
+                  variant="outlined"
+                  color="error"
+                  disabled={approvingProof || rejectingProof}
+                >
+                  Reject
+                </Button>
+                <Button
+                  onClick={handleApproveProof}
+                  variant="contained"
+                  color="success"
+                  disabled={approvingProof || rejectingProof}
+                  startIcon={
+                    approvingProof ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : null
+                  }
+                >
+                  {approvingProof
+                    ? "Approving..."
+                    : `Approve All (${viewingProof.deliveryIds?.length || 1} Deliveries)`}
+                </Button>
+              </>
             )}
+          </DialogActions>
+        </Dialog>
+
+        {/* Rejection Reason Dialog */}
+        <Dialog
+          open={rejectDialogOpen}
+          onClose={() => !rejectingProof && setRejectDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>Reject Payment Proof</DialogTitle>
+          <DialogContent>
+            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
+              Please provide a reason for rejecting this payment proof. The
+              client will be able to see this reason and submit a new proof.
+            </Typography>
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Rejection Reason"
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="e.g., Reference number does not match, Amount is incorrect, Image is unclear..."
+              disabled={rejectingProof}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() => setRejectDialogOpen(false)}
+              disabled={rejectingProof}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRejectProof}
+              variant="contained"
+              color="error"
+              disabled={rejectingProof || !rejectionReason.trim()}
+              startIcon={
+                rejectingProof ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : null
+              }
+            >
+              {rejectingProof ? "Rejecting..." : "Confirm Rejection"}
+            </Button>
           </DialogActions>
         </Dialog>
       </Box>
