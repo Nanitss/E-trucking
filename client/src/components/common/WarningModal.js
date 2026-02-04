@@ -17,25 +17,55 @@ const WarningModal = ({
   cancelText = null,
   onConfirm = null,
   size = "medium", // 'small', 'medium', 'large'
+  children, // For custom content like booking summary
 }) => {
   if (!isOpen) return null;
 
-  const getIcon = () => {
-    switch (type) {
-      case "success":
-        return <FaCheckCircle className="modal-icon success" />;
-      case "error":
-        return <FaExclamationCircle className="modal-icon error" />;
-      case "info":
-        return <FaInfoCircle className="modal-icon info" />;
-      case "warning":
-      default:
-        return <FaExclamationTriangle className="modal-icon warning" />;
-    }
+  const getIconConfig = () => {
+    const configs = {
+      success: {
+        icon: FaCheckCircle,
+        bgColor: "bg-emerald-500",
+        textColor: "text-white",
+      },
+      error: {
+        icon: FaExclamationCircle,
+        bgColor: "bg-red-500",
+        textColor: "text-white",
+      },
+      info: {
+        icon: FaInfoCircle,
+        bgColor: "bg-blue-600",
+        textColor: "text-white",
+      },
+      warning: {
+        icon: FaExclamationTriangle,
+        bgColor: "bg-amber-500",
+        textColor: "text-white",
+      },
+    };
+    return configs[type] || configs.warning;
   };
 
-  const getModalClass = () => {
-    return `warning-modal-overlay ${type}`;
+  const getHeaderBgColor = () => {
+    // Use solid colors matching project theme
+    const colors = {
+      success: "bg-emerald-500",
+      error: "bg-red-500",
+      info: "bg-blue-600",
+      warning: "bg-[#1e3a5f]", // Dark blue matching navbar
+    };
+    return colors[type] || colors.warning;
+  };
+
+  const getButtonColor = () => {
+    const colors = {
+      success: "bg-emerald-500 hover:bg-emerald-600",
+      error: "bg-red-500 hover:bg-red-600",
+      info: "bg-blue-600 hover:bg-blue-700",
+      warning: "bg-blue-600 hover:bg-blue-700", // Blue for confirm buttons
+    };
+    return colors[type] || colors.warning;
   };
 
   const handleConfirm = () => {
@@ -52,40 +82,70 @@ const WarningModal = ({
     }
   };
 
+  const sizeClasses = {
+    small: "max-w-sm",
+    medium: "max-w-md",
+    large: "max-w-lg",
+  };
+
+  const iconConfig = getIconConfig();
+  const IconComponent = iconConfig.icon;
+
   return (
-    <div className={getModalClass()} onClick={handleBackdropClick}>
-      <div className={`warning-modal-content ${size}`}>
-        <div className="warning-modal-header">
-          <div className="warning-modal-title">
-            {getIcon()}
-            <h3>{title}</h3>
-          </div>
-          <button className="warning-modal-close" onClick={onClose}>
-            <FaTimes />
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={handleBackdropClick}
+    >
+      <div
+        className={`bg-white rounded-xl shadow-2xl ${sizeClasses[size] || sizeClasses.medium} w-full overflow-hidden`}
+      >
+        {/* Header - Solid color, no gradient */}
+        <div className={`${getHeaderBgColor()} p-4 text-white relative`}>
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 text-white/80 hover:text-white transition-colors p-1"
+          >
+            <FaTimes size={16} />
           </button>
-        </div>
-
-        <div className="warning-modal-body">
-          <div className="warning-modal-message">
-            {typeof message === "string"
-              ? message
-                  .split("\n")
-                  .map((line, index) => <p key={index}>{line}</p>)
-              : message}
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 rounded-full p-2">
+              <IconComponent className="text-xl text-white" />
+            </div>
+            <h3 className="text-lg font-bold">{title}</h3>
           </div>
         </div>
 
-        <div className="warning-modal-footer">
+        {/* Body */}
+        <div className="p-5">
+          {/* Custom children content (for booking summary) */}
+          {children}
+
+          {/* Default message display */}
+          {!children && message && (
+            <div className="text-gray-700 leading-relaxed">
+              {typeof message === "string"
+                ? message.split("\n").map((line, index) => (
+                    <p key={index} className="mb-2 last:mb-0">
+                      {line}
+                    </p>
+                  ))
+                : message}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-5 pb-5 flex justify-end gap-3">
           {cancelText && (
             <button
-              className="btn btn-secondary warning-modal-btn"
+              className="px-5 py-2 border border-gray-300 text-gray-700 hover:bg-gray-100 font-medium rounded-lg transition-colors"
               onClick={onClose}
             >
               {cancelText}
             </button>
           )}
           <button
-            className={`btn warning-modal-btn ${type === "error" ? "btn-danger" : type === "success" ? "btn-success" : "btn-primary"}`}
+            className={`px-5 py-2 ${getButtonColor()} text-white font-semibold rounded-lg transition-colors`}
             onClick={handleConfirm}
           >
             {confirmText}
