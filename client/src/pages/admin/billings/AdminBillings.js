@@ -59,6 +59,10 @@ const AdminBillings = ({ currentUser }) => {
     message: "",
   });
 
+  // Proof viewer state
+  const [proofViewerOpen, setProofViewerOpen] = useState(false);
+  const [viewingProof, setViewingProof] = useState(null);
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -82,9 +86,11 @@ const AdminBillings = ({ currentUser }) => {
     pendingPayments: 0,
     overduePayments: 0,
     paidPayments: 0,
+    pendingVerificationPayments: 0,
     pendingAmount: 0,
     overdueAmount: 0,
     paidAmount: 0,
+    pendingVerificationAmount: 0,
   });
 
   useEffect(() => {
@@ -201,9 +207,11 @@ const AdminBillings = ({ currentUser }) => {
       pendingPayments: 0,
       overduePayments: 0,
       paidPayments: 0,
+      pendingVerificationPayments: 0,
       pendingAmount: 0,
       overdueAmount: 0,
       paidAmount: 0,
+      pendingVerificationAmount: 0,
     };
 
     filteredPayments.forEach((payment) => {
@@ -218,10 +226,37 @@ const AdminBillings = ({ currentUser }) => {
       } else if (payment.status === "pending") {
         newStats.pendingPayments++;
         newStats.pendingAmount += payment.amount || 0;
+      } else if (payment.status === "pending_verification") {
+        newStats.pendingVerificationPayments++;
+        newStats.pendingVerificationAmount += payment.amount || 0;
       }
     });
 
     setStats(newStats);
+  };
+
+  const handleViewProof = async (payment) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`/api/payments/${payment.id}/proof`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.data.success) {
+        setViewingProof({
+          ...response.data.data,
+          payment: payment,
+        });
+        setProofViewerOpen(true);
+      }
+    } catch (error) {
+      console.error("Error fetching proof:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message: error.response?.data?.message || "Failed to load payment proof",
+      });
+    }
   };
 
   const handleMarkAsPaid = (payment) => {
@@ -529,6 +564,7 @@ const AdminBillings = ({ currentUser }) => {
                     >
                       <MenuItem value="all">All Status</MenuItem>
                       <MenuItem value="pending">Pending</MenuItem>
+                      <MenuItem value="pending_verification">Pending Verification</MenuItem>
                       <MenuItem value="overdue">Overdue</MenuItem>
                       <MenuItem value="paid">Paid</MenuItem>
                       <MenuItem value="failed">Failed</MenuItem>
@@ -702,7 +738,7 @@ const AdminBillings = ({ currentUser }) => {
                             </TableCell>
                             <TableCell>
                               {payment.status === "pending" &&
-                              daysUntilDue !== null ? (
+                                daysUntilDue !== null ? (
                                 <Typography
                                   variant="body2"
                                   color={
@@ -738,27 +774,46 @@ const AdminBillings = ({ currentUser }) => {
                               )}
                             </TableCell>
                             <TableCell>
-                              {payment.status !== "paid" ? (
-                                <Button
-                                  variant="contained"
-                                  color="success"
-                                  size="small"
-                                  onClick={() => handleMarkAsPaid(payment)}
-                                  sx={{
-                                    textTransform: "none",
-                                    fontSize: "0.75rem",
-                                  }}
-                                >
-                                  Mark as Paid
-                                </Button>
-                              ) : (
-                                <Typography
-                                  variant="body2"
-                                  color="success.main"
-                                >
-                                  ✓ Paid
-                                </Typography>
-                              )}
+                              <Box display="flex" gap={1} flexWrap="wrap">
+                                {/* View Proof Button - show if proof exists */}
+                                {payment.status === "pending_verification" && (
+                                  <Button
+                                    variant="outlined"
+                                    color="info"
+                                    size="small"
+                                    onClick={() => handleViewProof(payment)}
+                                    sx={{
+                                      textTransform: "none",
+                                      fontSize: "0.75rem",
+                                    }}
+                                  >
+                                    View Proof
+                                  </Button>
+                                )}
+
+                                {/* Mark as Paid Button */}
+                                {payment.status !== "paid" ? (
+                                  <Button
+                                    variant="contained"
+                                    color="success"
+                                    size="small"
+                                    onClick={() => handleMarkAsPaid(payment)}
+                                    sx={{
+                                      textTransform: "none",
+                                      fontSize: "0.75rem",
+                                    }}
+                                  >
+                                    Mark as Paid
+                                  </Button>
+                                ) : (
+                                  <Typography
+                                    variant="body2"
+                                    color="success.main"
+                                  >
+                                    ✓ Paid
+                                  </Typography>
+                                )}
+                              </Box>
                             </TableCell>
                           </TableRow>
                         );
@@ -837,6 +892,116 @@ const AdminBillings = ({ currentUser }) => {
                 "Confirm Payment"
               )}
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Proof Viewer Modal */}
+        <Dialog
+          open={proofViewerOpen}
+          onClose={() => setProofViewerOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle>
+            Payment Proof
+            <IconButton
+              onClick={() => setProofViewerOpen(false)}
+              sx={{ position: "absolute", right: 8, top: 8 }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers>
+            {viewingProof && (
+              <Box>
+                <Paper sx={{ p: 2, mb: 2, bgcolor: "#f5f5f5" }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>Delivery ID:</strong> {viewingProof.deliveryId}
+                  </Typography>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>Amount:</strong> {formatCurrency(viewingProof.payment?.amount || 0)}
+                  </Typography>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>Reference Number:</strong> {viewingProof.referenceNumber || "N/A"}
+                  </Typography>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>Notes:</strong> {viewingProof.notes || "No notes provided"}
+                  </Typography>
+                  <Typography variant="subtitle2" gutterBottom>
+                    <strong>Uploaded At:</strong>{" "}
+                    {viewingProof.uploadedAt
+                      ? formatDate(viewingProof.uploadedAt)
+                      : "N/A"}
+                  </Typography>
+                </Paper>
+
+                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                  Uploaded Proof:
+                </Typography>
+
+                {viewingProof.proofUrl && (
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: 300,
+                      border: "1px solid #ddd",
+                      borderRadius: 1,
+                      p: 2,
+                      bgcolor: "white",
+                    }}
+                  >
+                    {viewingProof.proofUrl.endsWith(".pdf") ? (
+                      <Box textAlign="center">
+                        <Typography variant="body2" color="textSecondary" mb={2}>
+                          PDF Document
+                        </Typography>
+                        <Button
+                          variant="contained"
+                          href={viewingProof.proofUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open PDF
+                        </Button>
+                      </Box>
+                    ) : (
+                      <img
+                        src={viewingProof.proofUrl}
+                        alt="Payment Proof"
+                        style={{
+                          maxWidth: "100%",
+                          maxHeight: "500px",
+                          objectFit: "contain",
+                        }}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
+                        }}
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setProofViewerOpen(false)} color="primary">
+              Close
+            </Button>
+            {viewingProof?.payment && viewingProof.payment.status !== "paid" && (
+              <Button
+                onClick={() => {
+                  setProofViewerOpen(false);
+                  handleMarkAsPaid(viewingProof.payment);
+                }}
+                variant="contained"
+                color="success"
+              >
+                Mark as Paid
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       </Box>
