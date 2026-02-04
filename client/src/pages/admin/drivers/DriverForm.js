@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 // Sidebar import removed - using header navigation now
+import { API_BASE_URL } from "../../../config/api";
 
 const DriverForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [formData, setFormData] = useState({
     DriverName: "",
@@ -58,8 +59,8 @@ const DriverForm = () => {
         const token = localStorage.getItem("token");
         const config = token
           ? {
-              headers: { Authorization: `Bearer ${token}` },
-            }
+            headers: { Authorization: `Bearer ${token}` },
+          }
           : {};
 
         // Use admin endpoint for full driver data with documents
@@ -126,8 +127,7 @@ const DriverForm = () => {
         console.error("Error fetching driver:", err);
         if (err.response) {
           setError(
-            `Server error (${err.response.status}): ${
-              err.response.data.sqlMessage || err.response.data.message
+            `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
             }`,
           );
         } else if (err.request) {
@@ -454,8 +454,7 @@ const DriverForm = () => {
         setError(err.response.data.errors.join(", "));
       } else if (err.response) {
         setError(
-          `Server error (${err.response.status}): ${
-            err.response.data.sqlMessage || err.response.data.message
+          `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
           }`,
         );
       } else if (err.request) {

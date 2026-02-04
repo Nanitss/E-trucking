@@ -5,13 +5,14 @@ import axios from "axios";
 import { AlertContext } from "../../../context/AlertContext";
 import AdminHeader from "../../../components/common/AdminHeader";
 import { TbChevronLeft, TbDeviceFloppy } from "react-icons/tb";
+import { API_BASE_URL } from "../../../config/api";
 
 const DeliveryForm = ({ currentUser }) => {
   const { id } = useParams();
   const history = useHistory();
   const { showAlert } = useContext(AlertContext);
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [formData, setFormData] = useState({
     deliveryDate: new Date().toISOString().split("T")[0],

@@ -32,6 +32,7 @@ import DriverForm from "./DriverForm";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import { API_BASE_URL } from "../../../config/api";
 
 const DriversList = ({ currentUser }) => {
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
@@ -57,7 +58,7 @@ const DriversList = ({ currentUser }) => {
   const [sortDirection, setSortDirection] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const driversPerPage = 20;
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   // Helper function to calculate document compliance
   const calculateDocumentCompliance = (documents) => {
@@ -141,9 +142,9 @@ const DriversList = ({ currentUser }) => {
       const token = localStorage.getItem("token");
       const headers = token
         ? {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
         : {};
 
       // Fetch drivers from admin endpoint (has document scanning logic)
@@ -219,8 +220,8 @@ const DriversList = ({ currentUser }) => {
       const token = localStorage.getItem("token");
       const config = token
         ? {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          headers: { Authorization: `Bearer ${token}` },
+        }
         : {};
 
       const response = await axios.get(`${baseURL}/api/drivers`, config);
@@ -267,8 +268,8 @@ const DriversList = ({ currentUser }) => {
         const token = localStorage.getItem("token");
         const config = token
           ? {
-              headers: { Authorization: `Bearer ${token}` },
-            }
+            headers: { Authorization: `Bearer ${token}` },
+          }
           : {};
 
         await axios.delete(`${baseURL}/api/admin/drivers/${driverId}`, config);
@@ -292,9 +293,9 @@ const DriversList = ({ currentUser }) => {
       const token = localStorage.getItem("token");
       const headers = token
         ? {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        }
         : {};
 
       // Fetch fresh driver data with scanned documents
@@ -1133,8 +1134,8 @@ const DriversList = ({ currentUser }) => {
                         <span className="font-medium text-gray-900 text-sm">
                           {driver.licenseExpiryDate
                             ? new Date(
-                                driver.licenseExpiryDate,
-                              ).toLocaleDateString()
+                              driver.licenseExpiryDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -1145,8 +1146,8 @@ const DriversList = ({ currentUser }) => {
                         <span className="font-medium text-gray-900 text-sm">
                           {driver.employmentDate
                             ? new Date(
-                                driver.employmentDate,
-                              ).toLocaleDateString()
+                              driver.employmentDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -1311,8 +1312,8 @@ const DriversList = ({ currentUser }) => {
                           <span className="text-sm font-medium text-gray-900">
                             {selectedDriver.employmentDate
                               ? new Date(
-                                  selectedDriver.employmentDate,
-                                ).toLocaleDateString()
+                                selectedDriver.employmentDate,
+                              ).toLocaleDateString()
                               : "N/A"}
                           </span>
                         </div>
@@ -1387,8 +1388,8 @@ const DriversList = ({ currentUser }) => {
                               <span className="text-sm font-medium text-gray-900">
                                 {selectedDriver.licenseExpiryDate
                                   ? new Date(
-                                      selectedDriver.licenseExpiryDate,
-                                    ).toLocaleDateString()
+                                    selectedDriver.licenseExpiryDate,
+                                  ).toLocaleDateString()
                                   : "N/A"}
                               </span>
                               {getLicenseExpiryWarning(selectedDriver)}
@@ -1494,7 +1495,7 @@ const DriversList = ({ currentUser }) => {
                   </h3>
 
                   {selectedDriver.documents &&
-                  Object.keys(selectedDriver.documents).length > 0 ? (
+                    Object.keys(selectedDriver.documents).length > 0 ? (
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <FileViewer
                         documents={selectedDriver.documents}

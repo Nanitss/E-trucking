@@ -4,12 +4,13 @@ import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 
 // Sidebar import removed - using header navigation now
+import { API_BASE_URL } from "../../../config/api";
 
 const HelperForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [formData, setFormData] = useState({
     name: "",
@@ -61,8 +62,8 @@ const HelperForm = () => {
           dateHired:
             helper.dateHired || helper.HelperEmploymentDate
               ? new Date(helper.dateHired || helper.HelperEmploymentDate)
-                  .toISOString()
-                  .split("T")[0]
+                .toISOString()
+                .split("T")[0]
               : "",
           status: helper.status || helper.HelperStatus || "Active",
           licenseType: helper.licenseType || "Class C",
@@ -82,8 +83,7 @@ const HelperForm = () => {
         console.error("Error fetching helper:", err);
         if (err.response) {
           setError(
-            `Server error (${err.response.status}): ${
-              err.response.data.sqlMessage || err.response.data.message
+            `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
             }`,
           );
         } else if (err.request) {
@@ -305,10 +305,9 @@ const HelperForm = () => {
       console.error("Error saving helper:", error);
       if (error.response) {
         setError(
-          `Server error (${error.response.status}): ${
-            error.response.data.message ||
-            error.response.data.error ||
-            "Unknown error"
+          `Server error (${error.response.status}): ${error.response.data.message ||
+          error.response.data.error ||
+          "Unknown error"
           }`,
         );
       } else if (error.request) {

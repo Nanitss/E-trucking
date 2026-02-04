@@ -21,13 +21,14 @@ import {
 } from "react-icons/tb";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import { API_BASE_URL } from "../../../config/api";
 
 // ⚙️ CONFIGURABLE THRESHOLD - Change this number to adjust the overdue payment warning threshold
 const OVERDUE_PAYMENT_THRESHOLD = 3;
 
 const ClientsList = ({ currentUser }) => {
   // Define baseURL for API calls
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [clients, setClients] = useState([]);
   const [filteredClients, setFilteredClients] = useState([]);
@@ -950,7 +951,7 @@ const ClientsList = ({ currentUser }) => {
                     </div>
                   </div>
                   {selectedClient.documents &&
-                  Object.keys(selectedClient.documents).length > 0 ? (
+                    Object.keys(selectedClient.documents).length > 0 ? (
                     <div className="details-items">
                       <FileViewer
                         documents={selectedClient.documents}

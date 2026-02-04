@@ -1,31 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { getFromStorage, setInStorage, removeFromStorage, isStorageAvailable } from '../utils/storageUtil';
+import { getApiPath } from '../config/api';
 
 export const AuthContext = createContext();
-
-// Configure the base URL for API requests
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5007'
-  : ''; // Empty string means relative paths, which work when server and client are on same domain
-
-// Helper to get the correct API path
-// In production, Firebase hosting rewrites /api/** to the Cloud Function
-// The Cloud Function routes are mounted without /api prefix
-// So we use /api for localhost (where server has /api routes) but NOT for production
-const getApiPath = (path) => {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  if (isLocalhost) {
-    // In development, use full path with /api
-    const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
-    return `${API_BASE_URL}${cleanPath}`;
-  } else {
-    // In production, Firebase Hosting rewrite handles /api prefix
-    // Just use /api + path for the rewrite to match
-    const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
-    return cleanPath;
-  }
-};
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);

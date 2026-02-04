@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../../../config/api";
 
 const StaffForm = ({ staff = null, onClose, onSave }) => {
   const [formData, setFormData] = useState({
@@ -80,7 +81,7 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
     setIsSubmitting(true);
 
     try {
-      const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+      const baseURL = API_BASE_URL;
       const staffData = {
         name: formData.name,
         position: formData.position,
@@ -127,7 +128,7 @@ const StaffForm = ({ staff = null, onClose, onSave }) => {
     }
 
     try {
-      const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+      const baseURL = API_BASE_URL;
       await axios.delete(`${baseURL}/api/admin/staff/${staff.id}`);
       alert("Staff deleted successfully!");
       onClose();

@@ -31,10 +31,11 @@ import {
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import { API_BASE_URL } from "../../../config/api";
 
 const TruckList = ({ currentUser }) => {
-  // Define baseURL for API calls
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  // Use centralized API configuration
+  const baseURL = API_BASE_URL;
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
 
   const [trucks, setTrucks] = useState([]);
@@ -324,8 +325,7 @@ const TruckList = ({ currentUser }) => {
           });
 
           console.log(
-            `📊 Filtered ${
-              trucksData.length - validTrucks.length
+            `📊 Filtered ${trucksData.length - validTrucks.length
             } invalid trucks`,
           );
 
@@ -349,8 +349,7 @@ const TruckList = ({ currentUser }) => {
 
               if (isMatch) {
                 console.log(
-                  `🚛 Truck ${
-                    truck.truckPlate || truckId
+                  `🚛 Truck ${truck.truckPlate || truckId
                   } has active delivery (${deliveryStatus})`,
                 );
               }
@@ -368,10 +367,8 @@ const TruckList = ({ currentUser }) => {
 
               if (isMatch) {
                 console.log(
-                  `🔗 Truck ${
-                    truck.truckPlate || truckId
-                  } has active allocation (Client: ${
-                    allocation.clientId || "Unknown"
+                  `🔗 Truck ${truck.truckPlate || truckId
+                  } has active allocation (Client: ${allocation.clientId || "Unknown"
                   })`,
                 );
               }
@@ -380,8 +377,7 @@ const TruckList = ({ currentUser }) => {
             });
 
             console.log(
-              `Processing truck ${
-                truck.truckPlate || truckId
+              `Processing truck ${truck.truckPlate || truckId
               }: hasActiveDelivery=${hasActiveDelivery}, hasActiveAllocation=${hasActiveAllocation}`,
             );
 
@@ -1142,14 +1138,13 @@ const TruckList = ({ currentUser }) => {
                         {/* Registration Status Column */}
                         {truck.registrationExpiryWarning ? (
                           <div
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${
-                              truck.OperationalStatus === "registration-expired"
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${truck.OperationalStatus === "registration-expired"
                                 ? "bg-red-50 text-red-700 border-red-200"
                                 : "bg-amber-50 text-amber-700 border-amber-200"
-                            }`}
+                              }`}
                           >
                             {truck.OperationalStatus ===
-                            "registration-expired" ? (
+                              "registration-expired" ? (
                               <span>
                                 <TbAlertCircle
                                   size={14}
@@ -1608,7 +1603,7 @@ const TruckList = ({ currentUser }) => {
                     📁 Documents
                   </h3>
                   {selectedTruck.documents &&
-                  Object.keys(selectedTruck.documents).length > 0 ? (
+                    Object.keys(selectedTruck.documents).length > 0 ? (
                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <FileViewer
                         documents={selectedTruck.documents}

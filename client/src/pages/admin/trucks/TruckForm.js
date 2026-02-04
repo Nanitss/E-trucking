@@ -6,12 +6,13 @@ import axios from "axios";
 // Sidebar import removed - using header navigation now
 import FileViewer from "../../../components/FileViewer";
 import TruckDocumentUpload from "../../../components/TruckDocumentUpload";
+import { API_BASE_URL } from "../../../config/api";
 
 const TruckForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [formData, setFormData] = useState({
     TruckPlate: "",
@@ -148,8 +149,7 @@ const TruckForm = () => {
       } catch (err) {
         console.error("Error fetching truck:", err);
         setError(
-          `Failed to load truck data: ${
-            err.response?.data?.message || err.message
+          `Failed to load truck data: ${err.response?.data?.message || err.message
           }`,
         );
         setLoading(false);
@@ -598,8 +598,7 @@ const TruckForm = () => {
         setError(err.response.data.errors.join(", "));
       } else if (err.response) {
         setError(
-          `Server error (${err.response.status}): ${
-            err.response.data.sqlMessage || err.response.data.message
+          `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
           }`,
         );
       } else if (err.request) {

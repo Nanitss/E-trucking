@@ -15,6 +15,7 @@ import {
   TbArrowDown,
 } from "react-icons/tb";
 import AdminHeader from "../../../components/common/AdminHeader";
+import { API_BASE_URL } from "../../../config/api";
 
 const OperatorList = () => {
   const [operators, setOperators] = useState([]);
@@ -31,8 +32,7 @@ const OperatorList = () => {
         setLoading(true);
         setError(null);
         console.log("Fetching operators from API...");
-        const baseURL =
-          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        const baseURL = API_BASE_URL;
         console.log("API Base URL:", baseURL);
 
         const response = await axios.get(`${baseURL}/api/operators`);
@@ -151,8 +151,7 @@ const OperatorList = () => {
       )
     ) {
       try {
-        const baseURL =
-          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        const baseURL = API_BASE_URL;
         await axios.delete(`${baseURL}/api/operators/${operatorId}`);
         // Remove the operator from the state
         setOperators(
@@ -362,8 +361,8 @@ const OperatorList = () => {
                     <td>
                       {operator.OperatorEmploymentDate
                         ? new Date(
-                            operator.OperatorEmploymentDate,
-                          ).toLocaleDateString()
+                          operator.OperatorEmploymentDate,
+                        ).toLocaleDateString()
                         : "-"}
                     </td>
                     <td>

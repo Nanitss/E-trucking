@@ -24,6 +24,7 @@ import {
 } from "react-icons/tb";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import { API_BASE_URL } from "../../../config/api";
 
 const StaffList = ({ currentUser }) => {
   const [staff, setStaff] = useState([]);
@@ -56,8 +57,7 @@ const StaffList = ({ currentUser }) => {
       try {
         setLoading(true);
         console.log("Fetching staff from API...");
-        const baseURL =
-          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        const baseURL = API_BASE_URL;
         console.log("API Base URL:", baseURL);
 
         const response = await axios.get(`${baseURL}/api/staffs`);
@@ -135,7 +135,7 @@ const StaffList = ({ currentUser }) => {
     const matchesDepartment =
       departmentFilter === "all" ||
       staffMember.StaffDepartment?.toLowerCase() ===
-        departmentFilter.toLowerCase();
+      departmentFilter.toLowerCase();
 
     return matchesSearch && matchesStatus && matchesDepartment;
   });
@@ -365,8 +365,8 @@ const StaffList = ({ currentUser }) => {
                 </h3>
                 <p className="text-gray-500 max-w-md mx-auto mb-8">
                   {searchTerm ||
-                  statusFilter !== "all" ||
-                  departmentFilter !== "all"
+                    statusFilter !== "all" ||
+                    departmentFilter !== "all"
                     ? "No staff members match your current filters. Try adjusting your search criteria."
                     : "No staff records found. Add your first staff member to get started."}
                 </p>
@@ -458,18 +458,16 @@ const StaffList = ({ currentUser }) => {
                           </td>
                           <td className="py-4 px-6">
                             <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                s.StaffStatus === "Active"
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${s.StaffStatus === "Active"
                                   ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                   : "bg-gray-50 text-gray-600 border-gray-100"
-                              }`}
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  s.StaffStatus === "Active"
+                                className={`w-1.5 h-1.5 rounded-full ${s.StaffStatus === "Active"
                                     ? "bg-emerald-500"
                                     : "bg-gray-400"
-                                }`}
+                                  }`}
                               ></span>
                               {formatStatus(s.StaffStatus)}
                             </span>
@@ -529,11 +527,10 @@ const StaffList = ({ currentUser }) => {
                           <button
                             key={i + 1}
                             onClick={() => handlePageChange(i + 1)}
-                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${
-                              currentPage === i + 1
+                            className={`w-8 h-8 rounded-lg text-sm font-medium transition-all ${currentPage === i + 1
                                 ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
                                 : "text-gray-600 hover:bg-white hover:text-blue-600 border border-transparent hover:border-gray-200"
-                            }`}
+                              }`}
                           >
                             {i + 1}
                           </button>
@@ -619,8 +616,8 @@ const StaffList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedStaff.StaffEmploymentDate
                             ? new Date(
-                                selectedStaff.StaffEmploymentDate,
-                              ).toLocaleDateString()
+                              selectedStaff.StaffEmploymentDate,
+                            ).toLocaleDateString()
                             : "Unknown"}
                         </span>
                       </div>

@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
 // Sidebar import removed - using header navigation now
+import { API_BASE_URL } from "../../../config/api";
 
 const StaffForm = () => {
   const { id } = useParams();
   const history = useHistory();
   const isEditMode = Boolean(id);
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [formData, setFormData] = useState({
     StaffName: "",
@@ -50,8 +51,7 @@ const StaffForm = () => {
         console.error("Error fetching staff member:", err);
         if (err.response) {
           setError(
-            `Server error (${err.response.status}): ${
-              err.response.data.sqlMessage || err.response.data.message
+            `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
             }`,
           );
         } else if (err.request) {
@@ -130,8 +130,7 @@ const StaffForm = () => {
       console.error("Error saving staff member:", err);
       if (err.response) {
         setError(
-          `Server error (${err.response.status}): ${
-            err.response.data.sqlMessage || err.response.data.message
+          `Server error (${err.response.status}): ${err.response.data.sqlMessage || err.response.data.message
           }`,
         );
       } else if (err.request) {

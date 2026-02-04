@@ -1,11 +1,7 @@
 // src/context/NotificationContext.js
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-
-// Configure the base URL for API requests - same pattern as AuthContext
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5007'
-  : '';
+import { API_BASE_URL } from '../config/api';
 
 export const NotificationContext = createContext();
 

@@ -23,13 +23,12 @@ import {
 } from "react-icons/fa";
 import enhancedIsolatedMapModal from "../../components/maps/EnhancedIsolatedMapModal";
 import Loader from "../../components/common/Loader";
+import { API_BASE_URL } from "../../config/api";
 // CSS imports removed in favor of Tailwind
 
 const PinnedLocations = () => {
-  // Configure the base URL for API requests - same pattern as AuthContext
-  const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5007'
-    : '';
+  // Configure the base URL for API requests - using centralized config
+  const API_BASE = API_BASE_URL;
 
   const { authUser } = useContext(AuthContext);
   const { showSuccess, showError } = useModernToast();

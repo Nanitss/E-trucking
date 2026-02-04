@@ -5,10 +5,11 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import { TbUser, TbEye, TbEdit } from "react-icons/tb";
 import FileViewer from "../../../components/FileViewer";
+import { API_BASE_URL } from "../../../config/api";
 
 const StaffList = () => {
   // Define baseURL for API calls
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [staff, setStaff] = useState([]);
   const [filteredStaff, setFilteredStaff] = useState([]);
@@ -475,8 +476,8 @@ const StaffList = () => {
                     <td>
                       {staffMember.employmentDate
                         ? new Date(
-                            staffMember.employmentDate,
-                          ).toLocaleDateString()
+                          staffMember.employmentDate,
+                        ).toLocaleDateString()
                         : "N/A"}
                     </td>
                     <td>
@@ -621,8 +622,8 @@ const StaffList = () => {
                       <span className="detail-value">
                         {selectedStaff.employmentDate
                           ? new Date(
-                              selectedStaff.employmentDate,
-                            ).toLocaleDateString()
+                            selectedStaff.employmentDate,
+                          ).toLocaleDateString()
                           : "N/A"}
                       </span>
                     </div>
@@ -731,7 +732,7 @@ const StaffList = () => {
                   </div>
                 </div>
                 {selectedStaff.documents &&
-                Object.keys(selectedStaff.documents).length > 0 ? (
+                  Object.keys(selectedStaff.documents).length > 0 ? (
                   <div className="details-items">
                     <FileViewer
                       documents={selectedStaff.documents}

@@ -23,10 +23,11 @@ import {
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import { API_BASE_URL } from "../../../config/api";
 
 const HelpersList = ({ currentUser }) => {
   // Define baseURL for API calls
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
 
   const [helpers, setHelpers] = useState([]);
@@ -461,18 +462,16 @@ const HelpersList = ({ currentUser }) => {
             <div className="view-mode-toggle" style={{ marginLeft: "auto" }}>
               <button
                 onClick={() => setViewMode("table")}
-                className={`view-mode-btn ${
-                  viewMode === "table" ? "active" : ""
-                }`}
+                className={`view-mode-btn ${viewMode === "table" ? "active" : ""
+                  }`}
                 title="Table View"
               >
                 <TbList size={20} />
               </button>
               <button
                 onClick={() => setViewMode("cards")}
-                className={`view-mode-btn ${
-                  viewMode === "cards" ? "active" : ""
-                }`}
+                className={`view-mode-btn ${viewMode === "cards" ? "active" : ""
+                  }`}
                 title="Card View"
               >
                 <TbLayoutGrid size={20} />
@@ -811,8 +810,8 @@ const HelpersList = ({ currentUser }) => {
                         <span className="helper-info-value">
                           {helper.licenseExpiryDate
                             ? new Date(
-                                helper.licenseExpiryDate,
-                              ).toLocaleDateString()
+                              helper.licenseExpiryDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -821,8 +820,8 @@ const HelpersList = ({ currentUser }) => {
                         <span className="helper-info-value">
                           {helper.employmentDate
                             ? new Date(
-                                helper.employmentDate,
-                              ).toLocaleDateString()
+                              helper.employmentDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -944,8 +943,8 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedHelper.employmentDate
                             ? new Date(
-                                selectedHelper.employmentDate,
-                              ).toLocaleDateString()
+                              selectedHelper.employmentDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -973,8 +972,8 @@ const HelpersList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedHelper.licenseExpiryDate
                             ? new Date(
-                                selectedHelper.licenseExpiryDate,
-                              ).toLocaleDateString()
+                              selectedHelper.licenseExpiryDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </span>
                       </div>
@@ -1009,11 +1008,10 @@ const HelpersList = ({ currentUser }) => {
                         <div className="document-item">
                           <span className="doc-name">Valid ID:</span>
                           <span
-                            className={`doc-status ${
-                              selectedHelper.documents?.validId
+                            className={`doc-status ${selectedHelper.documents?.validId
                                 ? "complete"
                                 : "missing"
-                            }`}
+                              }`}
                           >
                             {selectedHelper.documents?.validId
                               ? "✓ Complete"
@@ -1023,11 +1021,10 @@ const HelpersList = ({ currentUser }) => {
                         <div className="document-item">
                           <span className="doc-name">Barangay Clearance:</span>
                           <span
-                            className={`doc-status ${
-                              selectedHelper.documents?.barangayClearance
+                            className={`doc-status ${selectedHelper.documents?.barangayClearance
                                 ? "complete"
                                 : "missing"
-                            }`}
+                              }`}
                           >
                             {selectedHelper.documents?.barangayClearance
                               ? "✓ Complete"
@@ -1037,11 +1034,10 @@ const HelpersList = ({ currentUser }) => {
                         <div className="document-item">
                           <span className="doc-name">Medical Certificate:</span>
                           <span
-                            className={`doc-status ${
-                              selectedHelper.documents?.medicalCertificate
+                            className={`doc-status ${selectedHelper.documents?.medicalCertificate
                                 ? "complete"
                                 : "optional"
-                            }`}
+                              }`}
                           >
                             {selectedHelper.documents?.medicalCertificate
                               ? "✓ Complete"
@@ -1051,11 +1047,10 @@ const HelpersList = ({ currentUser }) => {
                         <div className="document-item">
                           <span className="doc-name">Helper License:</span>
                           <span
-                            className={`doc-status ${
-                              selectedHelper.documents?.helperLicense
+                            className={`doc-status ${selectedHelper.documents?.helperLicense
                                 ? "complete"
                                 : "optional"
-                            }`}
+                              }`}
                           >
                             {selectedHelper.documents?.helperLicense
                               ? "✓ Complete"
@@ -1094,7 +1089,7 @@ const HelpersList = ({ currentUser }) => {
                     </div>
                   </div>
                   {selectedHelper.documents &&
-                  Object.keys(selectedHelper.documents).length > 0 ? (
+                    Object.keys(selectedHelper.documents).length > 0 ? (
                     <div className="details-items">
                       <FileViewer
                         documents={selectedHelper.documents}

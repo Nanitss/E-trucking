@@ -1,5 +1,3 @@
-// src/pages/admin/clients/ClientList.js - Enhanced with improved design
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
@@ -29,6 +27,7 @@ import {
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import { API_BASE_URL } from "../../../config/api";
 
 const ClientList = ({ currentUser }) => {
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
@@ -72,7 +71,7 @@ const ClientList = ({ currentUser }) => {
   const fetchAllClientPayments = async (clientsList) => {
     try {
       const token = localStorage.getItem("token");
-      const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+      const baseURL = API_BASE_URL;
       const paymentsData = {};
 
       for (const client of clientsList) {
@@ -126,8 +125,7 @@ const ClientList = ({ currentUser }) => {
         setLoading(true);
         setError(null);
         console.log("Fetching clients from API...");
-        const baseURL =
-          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        const baseURL = API_BASE_URL;
         console.log("API Base URL:", baseURL);
 
         const response = await axios.get(`${baseURL}/api/clients`);
@@ -300,8 +298,7 @@ const ClientList = ({ currentUser }) => {
     // Re-run the effect
     const fetchClients = async () => {
       try {
-        const baseURL =
-          process.env.REACT_APP_API_URL || "http://localhost:5007";
+        const baseURL = API_BASE_URL;
         const response = await axios.get(`${baseURL}/api/clients`);
 
         if (response.data && Array.isArray(response.data)) {
@@ -688,30 +685,28 @@ const ClientList = ({ currentUser }) => {
                         <td className="py-4 px-6 text-sm text-gray-600">
                           {client.ClientCreationDate
                             ? new Date(
-                                client.ClientCreationDate,
-                              ).toLocaleDateString()
+                              client.ClientCreationDate,
+                            ).toLocaleDateString()
                             : "N/A"}
                         </td>
                         <td className="py-4 px-6">
                           <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                              client.ClientStatus?.toLowerCase() === "active"
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${client.ClientStatus?.toLowerCase() === "active"
                                 ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                                 : client.ClientStatus?.toLowerCase() ===
-                                    "inactive"
+                                  "inactive"
                                   ? "bg-gray-50 text-gray-600 border-gray-100"
                                   : "bg-amber-50 text-amber-700 border-amber-100"
-                            }`}
+                              }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                client.ClientStatus?.toLowerCase() === "active"
+                              className={`w-1.5 h-1.5 rounded-full ${client.ClientStatus?.toLowerCase() === "active"
                                   ? "bg-emerald-500"
                                   : client.ClientStatus?.toLowerCase() ===
-                                      "inactive"
+                                    "inactive"
                                     ? "bg-gray-400"
                                     : "bg-amber-500"
-                              }`}
+                                }`}
                             ></span>
                             {formatStatus(client.ClientStatus)}
                           </span>
@@ -847,8 +842,8 @@ const ClientList = ({ currentUser }) => {
                         <span className="detail-value">
                           {selectedClient.ClientCreationDate
                             ? new Date(
-                                selectedClient.ClientCreationDate,
-                              ).toLocaleDateString()
+                              selectedClient.ClientCreationDate,
+                            ).toLocaleDateString()
                             : "Unknown"}
                         </span>
                       </div>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useHistory, Link } from "react-router-dom";
+import { API_BASE_URL } from "../../../config/api";
 
 const ClientForm = () => {
   const { id } = useParams();
@@ -30,7 +31,7 @@ const ClientForm = () => {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState({});
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   // Fetch client data when editing
   useEffect(() => {

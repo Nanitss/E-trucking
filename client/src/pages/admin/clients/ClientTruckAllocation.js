@@ -3,11 +3,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useHistory, Link } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../../../config/api";
 
 const ClientTruckAllocation = () => {
   const { id } = useParams();
   const history = useHistory();
-  const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5007";
+  const baseURL = API_BASE_URL;
 
   const [client, setClient] = useState(null);
   const [allocatedTrucks, setAllocatedTrucks] = useState([]);
@@ -230,7 +231,7 @@ const ClientTruckAllocation = () => {
       // Show success message
       const successMsg =
         response.data.successfulAllocations &&
-        response.data.successfulAllocations.length
+          response.data.successfulAllocations.length
           ? `${response.data.successfulAllocations.length} trucks allocated successfully!`
           : "Trucks allocated successfully!";
 
@@ -246,7 +247,7 @@ const ClientTruckAllocation = () => {
       console.error("❌ Error allocating trucks:", err);
       setError(
         "Failed to allocate trucks. Please try again. " +
-          (err.response?.data?.message || err.message),
+        (err.response?.data?.message || err.message),
       );
       setLoading(false);
     }

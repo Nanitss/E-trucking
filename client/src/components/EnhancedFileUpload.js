@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
-const EnhancedFileUpload = ({ 
-  documentType = 'general', 
-  subFolder = '', 
+const EnhancedFileUpload = ({
+  documentType = 'general',
+  subFolder = '',
   identifier = '',
-  onUploadSuccess = () => {},
-  onUploadError = () => {},
+  onUploadSuccess = () => { },
+  onUploadError = () => { },
   showFileList = true,
   allowMultiple = true,
   acceptedTypes = '*',
@@ -18,7 +19,7 @@ const EnhancedFileUpload = ({
   const [message, setMessage] = useState('');
   const [existingFiles, setExistingFiles] = useState([]);
 
-  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5007';
+  const baseURL = API_BASE_URL;
 
   // Fetch existing files when component mounts
   useEffect(() => {
@@ -40,7 +41,7 @@ const EnhancedFileUpload = ({
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+
     // Validate file size
     const oversizedFiles = selectedFiles.filter(file => file.size > maxFileSize);
     if (oversizedFiles.length > 0) {
@@ -54,11 +55,11 @@ const EnhancedFileUpload = ({
       const invalidFiles = selectedFiles.filter(file => {
         const fileType = file.type;
         const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-        return !allowedTypes.some(type => 
+        return !allowedTypes.some(type =>
           type.startsWith('.') ? type === fileExtension : fileType.includes(type)
         );
       });
-      
+
       if (invalidFiles.length > 0) {
         setMessage(`Some files have invalid types. Allowed: ${acceptedTypes}`);
         return;
@@ -103,21 +104,21 @@ const EnhancedFileUpload = ({
       });
 
       console.log('✅ Upload response:', response.data);
-      
+
       if (response.data.success) {
         setMessage('Files uploaded successfully!');
         setUploadedFiles(response.data.files);
         setFiles([]);
-        
+
         // Reset file input
         const fileInput = document.getElementById('fileInput');
         if (fileInput) fileInput.value = '';
-        
+
         // Fetch updated file list
         if (showFileList) {
           fetchExistingFiles();
         }
-        
+
         // Call success callback
         onUploadSuccess(response.data.files);
       } else {
@@ -142,7 +143,7 @@ const EnhancedFileUpload = ({
 
     try {
       const response = await axios.delete(`${baseURL}/api/upload/delete/${encodeURIComponent(filePath)}`);
-      
+
       if (response.data.success) {
         setMessage('File deleted successfully');
         fetchExistingFiles(); // Refresh file list
@@ -176,7 +177,7 @@ const EnhancedFileUpload = ({
     <div className="enhanced-file-upload">
       <div className="upload-section">
         <h3>File Upload</h3>
-        
+
         <div className="file-input-container">
           <input
             id="fileInput"
@@ -202,8 +203,8 @@ const EnhancedFileUpload = ({
         )}
 
         <div className="upload-controls">
-          <button 
-            onClick={handleUpload} 
+          <button
+            onClick={handleUpload}
             disabled={loading || files.length === 0}
             className="upload-btn"
           >
@@ -221,7 +222,7 @@ const EnhancedFileUpload = ({
       {showFileList && (
         <div className="file-list-section">
           <h3>Existing Files</h3>
-          
+
           {existingFiles.length === 0 ? (
             <p>No files found</p>
           ) : (
@@ -233,15 +234,15 @@ const EnhancedFileUpload = ({
                     <span className="file-size">{formatFileSize(file.size)}</span>
                     <span className="file-date">{formatDate(file.modified)}</span>
                   </div>
-                  
+
                   <div className="file-actions">
-                    <button 
+                    <button
                       onClick={() => handleFileView(file.relativePath)}
                       className="view-btn"
                     >
                       View
                     </button>
-                    <button 
+                    <button
                       onClick={() => handleFileDelete(file.relativePath)}
                       className="delete-btn"
                     >

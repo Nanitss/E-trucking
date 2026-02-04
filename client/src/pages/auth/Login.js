@@ -3,17 +3,7 @@ import { useHistory, Link } from "react-router-dom";
 import axios from "axios";
 import { AuthContext } from "../../context/AuthContext";
 import { FaTruck, FaEye, FaEyeSlash, FaLock, FaUser } from "react-icons/fa";
-
-// Configure the base URL for API requests - same pattern as AuthContext
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:5007'
-  : '';
-
-// Helper to get the correct API path
-const getApiPath = (path) => {
-  const cleanPath = path.startsWith('/api') ? path : `/api${path}`;
-  return `${API_BASE_URL}${cleanPath}`;
-};
+import { getApiPath } from "../../config/api";
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
