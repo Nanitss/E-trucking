@@ -73,14 +73,23 @@ const BookingSummaryModal = ({
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-bold text-gray-800">
-                        {truck.PlateNumber || truck.TruckID}
+                        {truck.PlateNumber ||
+                          truck.plateNumber ||
+                          truck.TruckID}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {truck.TruckType || "Standard Truck"}
+                        {truck.VehicleType ||
+                          truck.vehicleType ||
+                          truck.TruckType ||
+                          "Truck"}
                       </p>
                     </div>
                     <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                      {truck.TruckCapacity || "N/A"} tons
+                      {truck.Capacity ||
+                        truck.capacity ||
+                        truck.TruckCapacity ||
+                        "N/A"}{" "}
+                      tons
                     </div>
                   </div>
                 </div>
@@ -149,7 +158,7 @@ const BookingSummaryModal = ({
                 Route & Cost
               </h3>
               <div className="grid grid-cols-2 gap-3">
-                {routeDetails?.distanceText && (
+                {(routeDetails?.distance || routeDetails?.distanceText) && (
                   <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
                     <div className="flex items-center gap-2 mb-1">
                       <FaRoute className="text-purple-600" size={14} />
@@ -158,11 +167,11 @@ const BookingSummaryModal = ({
                       </span>
                     </div>
                     <p className="text-lg font-bold text-gray-800">
-                      {routeDetails.distanceText}
+                      {routeDetails.distance || routeDetails.distanceText}
                     </p>
                   </div>
                 )}
-                {routeDetails?.durationText && (
+                {(routeDetails?.duration || routeDetails?.durationText) && (
                   <div className="bg-orange-50 rounded-xl p-4 border border-orange-100">
                     <div className="flex items-center gap-2 mb-1">
                       <FaClock className="text-orange-600" size={14} />
@@ -171,7 +180,7 @@ const BookingSummaryModal = ({
                       </span>
                     </div>
                     <p className="text-lg font-bold text-gray-800">
-                      {routeDetails.durationText}
+                      {routeDetails.duration || routeDetails.durationText}
                     </p>
                   </div>
                 )}
