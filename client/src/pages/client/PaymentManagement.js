@@ -14,6 +14,9 @@ import {
   FaReceipt,
   FaExternalLinkAlt,
   FaHistory,
+  FaUpload,
+  FaFileAlt,
+  FaFilter,
 } from "react-icons/fa";
 import { format, differenceInDays } from "date-fns";
 import { AuthContext } from "../../context/AuthContext";
@@ -35,6 +38,17 @@ const PaymentManagement = () => {
     type: "info",
     message: "",
   });
+
+  // New states for proof upload feature
+  const [selectedMonth, setSelectedMonth] = useState("all");
+  const [selectedDeliveries, setSelectedDeliveries] = useState([]);
+  const [proofUploadModalOpen, setProofUploadModalOpen] = useState(false);
+  const [proofFile, setProofFile] = useState(null);
+  const [proofForm, setProofForm] = useState({
+    referenceNumber: "",
+    notes: "",
+  });
+  const [uploadingProof, setUploadingProof] = useState(false);
 
   // Payment form states
   const [cardForm, setCardForm] = useState({
@@ -259,6 +273,137 @@ const PaymentManagement = () => {
     }
   };
 
+  const handleProofUpload = () => {
+    if (selectedDeliveries.length === 0) {
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Please select at least one delivery to pay",
+      });
+      return;
+    }
+    setProofUploadModalOpen(true);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file size (5MB max)
+      if (file.size > 5 * 1024 * 1024) {
+        setAlert({
+          show: true,
+          type: "error",
+          message: "File size must be less than 5MB",
+        });
+        return;
+      }
+      setProofFile(file);
+    }
+  };
+
+  const handleProofSubmit = async () => {
+    if (!proofFile) {
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Please select a file to upload",
+      });
+      return;
+    }
+
+    try {
+      setUploadingProof(true);
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("proofFile", proofFile);
+      formData.append("deliveryIds", JSON.stringify(selectedDeliveries));
+      formData.append("referenceNumber", proofForm.referenceNumber);
+      formData.append("notes", proofForm.notes);
+
+      const response = await axios.post(
+        "/api/payments/upload-proof",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
+
+      if (response.data.success) {
+        setAlert({
+          show: true,
+          type: "success",
+          message: response.data.message,
+        });
+        setProofUploadModalOpen(false);
+        setProofFile(null);
+        setProofForm({ referenceNumber: "", notes: "" });
+        setSelectedDeliveries([]);
+        await fetchPaymentSummary();
+      }
+    } catch (error) {
+      console.error("Error uploading proof:", error);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          error.response?.data?.message || "Failed to upload payment proof",
+      });
+    } finally {
+      setUploadingProof(false);
+    }
+  };
+
+  const handleSelectDelivery = (deliveryId) => {
+    setSelectedDeliveries((prev) =>
+      prev.includes(deliveryId)
+        ? prev.filter((id) => id !== deliveryId)
+        : [...prev, deliveryId],
+    );
+  };
+
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const filtered = getFilteredPayments();
+      setSelectedDeliveries(filtered.map((p) => p.id));
+    } else {
+      setSelectedDeliveries([]);
+    }
+  };
+
+  const getFilteredPayments = () => {
+    if (!paymentSummary?.pendingPayments) return [];
+
+    if (selectedMonth === "all") return paymentSummary.pendingPayments;
+
+    return paymentSummary.pendingPayments.filter((payment) => {
+      if (!payment.dueDate) return false;
+      const paymentDate = new Date(payment.dueDate);
+      const [year, month] = selectedMonth.split("-");
+      return (
+        paymentDate.getFullYear() === parseInt(year) &&
+        paymentDate.getMonth() === parseInt(month) - 1
+      );
+    });
+  };
+
+  const getAvailableMonths = () => {
+    if (!paymentSummary?.pendingPayments) return [];
+
+    const months = new Set();
+    paymentSummary.pendingPayments.forEach((payment) => {
+      if (payment.dueDate) {
+        const date = new Date(payment.dueDate);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        months.add(monthKey);
+      }
+    });
+
+    return Array.from(months).sort().reverse();
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-PH", {
       style: "currency",
@@ -271,12 +416,15 @@ const PaymentManagement = () => {
     if (status === "paid") colors = "bg-emerald-100 text-emerald-700";
     if (status === "pending") colors = "bg-amber-100 text-amber-700";
     if (status === "overdue") colors = "bg-red-100 text-red-700";
+    if (status === "pending_verification") colors = "bg-blue-100 text-blue-700";
+
+    const displayStatus = status === "pending_verification" ? "Pending Verification" : status;
 
     return (
       <span
         className={`px-2 py-1 rounded text-xs font-bold uppercase ${colors}`}
       >
-        {status}
+        {displayStatus}
       </span>
     );
   };
@@ -344,15 +492,61 @@ const PaymentManagement = () => {
 
       {/* Pending Payments Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 bg-amber-50">
+        <div className="p-6 border-b border-gray-100 bg-amber-50 flex justify-between items-center">
           <h3 className="font-bold text-amber-800 flex items-center gap-2">
             <FaClock className="text-amber-600" /> Pending Payments
           </h3>
+          <div className="flex gap-2 items-center">
+            {/* Month Filter */}
+            <div className="flex items-center gap-2">
+              <FaFilter className="text-gray-400" />
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-500 outline-none"
+              >
+                <option value="all">All Months</option>
+                {getAvailableMonths().map((monthKey) => {
+                  const [year, month] = monthKey.split("-");
+                  const monthName = format(
+                    new Date(year, parseInt(month) - 1),
+                    "MMMM yyyy",
+                  );
+                  return (
+                    <option key={monthKey} value={monthKey}>
+                      {monthName}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+            {/* Upload Proof Button */}
+            {selectedDeliveries.length > 0 && (
+              <button
+                onClick={handleProofUpload}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-sm font-bold transition-colors shadow-sm flex items-center gap-2"
+              >
+                <FaUpload /> Upload Payment Proof ({selectedDeliveries.length})
+              </button>
+            )}
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-bold">
               <tr>
+                <th className="p-4">
+                  <input
+                    type="checkbox"
+                    checked={
+                      getFilteredPayments().length > 0 &&
+                      selectedDeliveries.length ===
+                      getFilteredPayments().length
+                    }
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                </th>
                 <th className="p-4">Delivery ID</th>
                 <th className="p-4">Due Date</th>
                 <th className="p-4">Amount</th>
@@ -361,9 +555,18 @@ const PaymentManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {paymentSummary?.pendingPayments?.length > 0 ? (
-                paymentSummary.pendingPayments.map((payment) => (
+              {getFilteredPayments().length > 0 ? (
+                getFilteredPayments().map((payment) => (
                   <tr key={payment.id} className="hover:bg-gray-50">
+                    <td className="p-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedDeliveries.includes(payment.id)}
+                        onChange={() => handleSelectDelivery(payment.id)}
+                        className="w-4 h-4 accent-blue-600"
+                        disabled={payment.status === "pending_verification"}
+                      />
+                    </td>
                     <td className="p-4 font-mono text-sm">
                       #{payment.id.substring(0, 8)}
                     </td>
@@ -377,18 +580,24 @@ const PaymentManagement = () => {
                     </td>
                     <td className="p-4">{getStatusBadge(payment.status)}</td>
                     <td className="p-4 text-center">
-                      <button
-                        onClick={() => handlePayNow(payment)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
-                      >
-                        Pay Now
-                      </button>
+                      {payment.status === "pending_verification" ? (
+                        <span className="text-blue-600 text-sm font-medium">
+                          Awaiting Approval
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handlePayNow(payment)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors shadow-sm"
+                        >
+                          Pay Now
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="p-8 text-center text-gray-500">
+                  <td colSpan="6" className="p-8 text-center text-gray-500">
                     No pending payments. You're all caught up!
                   </td>
                 </tr>
@@ -658,6 +867,118 @@ const PaymentManagement = () => {
                   {alert.message}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proof Upload Modal */}
+      {proofUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-fade-in">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-emerald-50">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <FaUpload className="text-emerald-600" /> Upload Payment Proof
+              </h3>
+              <button
+                onClick={() => setProofUploadModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <p className="text-sm text-blue-800">
+                  <strong>Selected Deliveries:</strong> {selectedDeliveries.length}
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Upload proof for batch payment
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Payment Proof File *
+                </label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,application/pdf"
+                  onChange={handleFileChange}
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-sm"
+                />
+                {proofFile && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+                    <FaFileAlt className="text-emerald-600" />
+                    <span className="font-medium">{proofFile.name}</span>
+                    <span className="text-xs text-gray-400">
+                      ({(proofFile.size / 1024).toFixed(1)} KB)
+                    </span>
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Accepted: JPG, PNG, PDF (max 5MB)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Reference Number
+                </label>
+                <input
+                  type="text"
+                  value={proofForm.referenceNumber}
+                  onChange={(e) =>
+                    setProofForm({ ...proofForm, referenceNumber: e.target.value })
+                  }
+                  placeholder="e.g., Bank transaction reference"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-1">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  value={proofForm.notes}
+                  onChange={(e) =>
+                    setProofForm({ ...proofForm, notes: e.target.value })
+                  }
+                  placeholder="Additional information..."
+                  rows="3"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-100 focus:border-emerald-500 outline-none text-sm resize-none"
+                />
+              </div>
+
+              {alert.show && (
+                <div
+                  className={`p-3 rounded-lg text-sm ${alert.type === "error"
+                      ? "bg-red-50 text-red-700 border border-red-200"
+                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                    }`}
+                >
+                  {alert.message}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setProofUploadModalOpen(false)}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium"
+                  disabled={uploadingProof}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleProofSubmit}
+                  disabled={uploadingProof || !proofFile}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {uploadingProof ? "Uploading..." : "Upload Proof"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
