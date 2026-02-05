@@ -42,7 +42,7 @@ const ClientSidebar = () => {
     <div className="client-sidebar">
       <div className="sidebar-header">
         <div className="logo">
-          <img src={process.env.PUBLIC_URL + '/images/logo.png.webp'} alt="Trucking Logo" />
+          <img src={process.env.PUBLIC_URL + '/images/logo.webp'} alt="Trucking Logo" />
           <span>Trucking MS</span>
         </div>
       </div>

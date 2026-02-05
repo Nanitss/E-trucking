@@ -5,6 +5,7 @@
 
 /* Essential Base Layer - Minimal reset needed alongside Tailwind */
 @layer base {
+
   html,
   body,
   #root {
@@ -34,6 +35,7 @@
 
 /* Custom Component Layer - Reusable components */
 @layer components {
+
   /* Layout containers */
   .app-container {
     @apply min-h-screen bg-background text-gray-800 font-sans;
@@ -44,7 +46,8 @@
   }
 
   .content-container.with-sidebar {
-    @apply ml-72; /* Match Sidebar width (w-72) */
+    @apply ml-72;
+    /* Match Sidebar width (w-72) */
   }
 
   .content-container.full-width {
@@ -104,41 +107,32 @@
   }
 
   .form-control {
-    @apply w-full px-4 py-2 text-base text-gray-800 bg-white border border-gray-300 rounded-lg
-           transition-all duration-150
-           focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
+    @apply w-full px-4 py-2 text-base text-gray-800 bg-white border border-gray-300 rounded-lg transition-all duration-150 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/20;
   }
 
   /* Buttons */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-base font-medium
-           border border-transparent rounded-lg cursor-pointer
-           transition-all duration-150 whitespace-nowrap select-none;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-base font-medium border border-transparent rounded-lg cursor-pointer transition-all duration-150 whitespace-nowrap select-none;
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white border-primary-600
-           hover:bg-primary-700 hover:-translate-y-0.5 hover:shadow-md;
+    @apply bg-primary-600 text-white border-primary-600 hover:bg-primary-700 hover:-translate-y-0.5 hover:shadow-md;
   }
 
   .btn-secondary {
-    @apply bg-gray-500 text-white border-gray-500
-           hover:bg-gray-600 hover:-translate-y-0.5 hover:shadow-md;
+    @apply bg-gray-500 text-white border-gray-500 hover:bg-gray-600 hover:-translate-y-0.5 hover:shadow-md;
   }
 
   .btn-success {
-    @apply bg-success-500 text-white border-success-500
-           hover:bg-success-600 hover:-translate-y-0.5 hover:shadow-md;
+    @apply bg-success-500 text-white border-success-500 hover:bg-success-600 hover:-translate-y-0.5 hover:shadow-md;
   }
 
   .btn-danger {
-    @apply bg-danger-500 text-white border-danger-500
-           hover:bg-danger-600 hover:-translate-y-0.5 hover:shadow-md;
+    @apply bg-danger-500 text-white border-danger-500 hover:bg-danger-600 hover:-translate-y-0.5 hover:shadow-md;
   }
 
   .btn-warning {
-    @apply bg-warning-500 text-white border-warning-500
-           hover:bg-warning-600 hover:-translate-y-0.5 hover:shadow-md;
+    @apply bg-warning-500 text-white border-warning-500 hover:bg-warning-600 hover:-translate-y-0.5 hover:shadow-md;
   }
 
   .btn-sm {
@@ -151,8 +145,7 @@
 
   /* Status badges */
   .status-badge {
-    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 
-           rounded-full text-xs font-semibold capitalize shadow-sm min-w-[70px];
+    @apply inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold capitalize shadow-sm min-w-[70px];
   }
 
   .status-badge.active,
@@ -302,9 +295,7 @@
   }
 
   .quick-button {
-    @apply flex flex-col items-center justify-center bg-white rounded-xl p-4 shadow-card
-           no-underline text-gray-800 transition-all duration-200 h-full
-           hover:-translate-y-1 hover:shadow-lg;
+    @apply flex flex-col items-center justify-center bg-white rounded-xl p-4 shadow-card no-underline text-gray-800 transition-all duration-200 h-full hover:-translate-y-1 hover:shadow-lg;
   }
 
   /* Empty state */
@@ -316,7 +307,7 @@
   .modal-overlay {
     @apply fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center opacity-100 transition-opacity duration-300 backdrop-blur-sm;
   }
-  
+
   .modal-overlay.closing {
     @apply opacity-0 pointer-events-none;
   }
@@ -324,25 +315,25 @@
   .modal-content {
     @apply bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden transform transition-all duration-300 scale-100;
   }
-  
+
   .modal-large {
     @apply max-w-4xl;
   }
-  
+
   .modal-header {
     @apply flex justify-between items-center p-4 border-b border-gray-100 bg-gray-50/50;
   }
-  
+
   .modal-header h2 {
     @apply text-lg font-bold text-gray-800 m-0;
   }
-  
+
   .modal-close {
     @apply p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors;
   }
-  
+
   .modal-body {
-    @apply p-0 overflow-y-auto max-h-[80vh];
+    @apply p-6 overflow-y-auto max-h-[80vh];
   }
 }
 

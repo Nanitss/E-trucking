@@ -481,7 +481,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
   }).length;
 
   return (
-    <div className="w-full bg-slate-50 rounded-xl shadow-lg border border-amber-400/20 box-border p-0 overflow-hidden flex flex-col mb-8">
+    <div className="w-full bg-slate-50 rounded-xl shadow-lg border border-amber-400/20 box-border p-0 overflow-hidden flex flex-col mb-8 max-h-[calc(100vh-250px)] overflow-y-auto">
       {/* Header */}
       <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center">
         <div className="header-content">
@@ -684,7 +684,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         </div>
 
         {billingData?.payments?.length > 0 ? (
-          <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-gray-200">
+          <div className="overflow-x-auto overflow-y-auto max-h-[300px] bg-white rounded-xl shadow-sm border border-gray-200">
             <table className="w-full border-collapse min-w-[800px]">
               <thead>
                 <tr className="bg-gray-50 text-left">
@@ -4354,7 +4354,7 @@ const ClientProfile = () => {
   }
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto p-8 box-border animate-fade-in block md:p-4 bg-slate-50 min-h-screen">
+    <div className="w-full max-w-[1400px] mx-auto p-8 box-border animate-fade-in block md:p-4 bg-slate-50 h-full overflow-hidden">
       <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-200 md:flex-col md:items-start md:gap-4"></div>
 
       {/* Booking Modal */}
@@ -4439,9 +4439,9 @@ const ClientProfile = () => {
       )}
 
       {/* Content Sections */}
-      <div className="w-full flex-1 flex flex-col items-center relative z-10 box-border">
+      <div className="w-full flex-1 flex flex-col items-center relative z-10 box-border overflow-hidden">
         {activeTab === "overview" && (
-          <div className="flex flex-col gap-8 w-full max-w-[1400px] mx-auto box-border">
+          <div className="flex flex-col gap-8 w-full max-w-[1400px] mx-auto box-border overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full mx-auto">
               <div className="bg-white rounded-xl p-6 flex items-center gap-5 shadow-sm border border-amber-400/20 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-amber-400 min-h-[110px] h-full">
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center text-xl text-white shrink-0 shadow-sm bg-gradient-to-br from-blue-700 to-blue-900">
@@ -4501,7 +4501,7 @@ const ClientProfile = () => {
               <h3 className="m-0 mb-6 text-blue-900 text-2xl font-bold">
                 Recent Activity
               </h3>
-              <div className="flex flex-col gap-5">
+              <div className="flex flex-col gap-5 max-h-[400px] overflow-y-auto pr-2">
                 {deliveries.slice(0, 5).map((delivery) => (
                   <div
                     key={delivery.DeliveryID}
@@ -4675,7 +4675,7 @@ const ClientProfile = () => {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto w-full">
+                <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)] w-full">
                   <table className="w-full border-collapse min-w-[1000px]">
                     <thead>
                       <tr className="bg-gray-50/50">
@@ -5034,7 +5034,7 @@ const ClientProfile = () => {
                 </p>
               </div>
             ) : (
-              <div className="overflow-x-auto w-full">
+              <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)] w-full">
                 <table className="w-full border-collapse min-w-[1000px]">
                   <thead>
                     <tr className="bg-gray-50/50">

@@ -43,8 +43,12 @@ const Home = () => {
             className={`text-2xl font-extrabold tracking-tight flex items-center gap-2 ${isScrolled ? "text-blue-900" : "text-white"
               }`}
           >
-            <FaTruck className="text-3xl" />
-            E-TRUCKING
+            <img
+              src={process.env.PUBLIC_URL + "/images/logo.webp"}
+              alt="E-TRUCKING"
+              className="h-20 w-auto object-contain"
+            />
+            <span className={isScrolled ? "text-blue-900" : "text-white"}>E-TRUCKING</span>
           </Link>
 
           {/* Desktop Nav */}
@@ -289,8 +293,12 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-1 md:col-span-1">
               <Link to="/" className="text-2xl font-bold text-white flex items-center gap-2 mb-6">
-                <FaTruck className="text-blue-500" />
-                E-TRUCKING
+                <img
+                  src={process.env.PUBLIC_URL + "/images/logo.webp"}
+                  alt="E-TRUCKING"
+                  className="h-10 w-auto object-contain"
+                />
+                <span className="text-white">E-TRUCKING</span>
               </Link>
               <p className="text-gray-400 leading-relaxed mb-6">
                 Empowering logistics companies with cutting-edge technology for better fleet management.

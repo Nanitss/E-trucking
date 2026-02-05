@@ -182,9 +182,11 @@ const Sidebar = () => {
     <div className="flex flex-col h-screen w-72 bg-sidebar-bg border-r border-sidebar-border shadow-sidebar fixed left-0 top-0 z-50 transition-all duration-300">
       {/* Header / Logo */}
       <div className="flex items-center gap-3 px-6 h-20 border-b border-sidebar-border bg-sidebar-bg/50 backdrop-blur-sm">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/20 text-white font-bold text-xl">
-          T
-        </div>
+        <img
+          src={process.env.PUBLIC_URL + "/images/logo.webp"}
+          alt="Trucking Logo"
+          className="w-10 h-10 object-contain"
+        />
         <div>
           <h1 className="text-lg font-bold text-white tracking-tight">
             Trucking MS
