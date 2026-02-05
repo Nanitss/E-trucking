@@ -343,7 +343,7 @@ const PinnedLocations = () => {
   const labelClass = "block font-semibold text-gray-700 text-sm mb-2";
 
   return (
-    <div className="w-full animate-fade-in block">
+    <div className="w-full h-full animate-fade-in block overflow-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 pb-4 border-b border-gray-200">
         <h1 className="flex items-center gap-3 text-3xl font-bold text-primary-500 m-0">
@@ -487,7 +487,7 @@ const PinnedLocations = () => {
             )}
           </div>
         ) : (
-          <div className="w-full overflow-x-auto">
+          <div className="w-full overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)]">
             <table className="w-full border-separate border-spacing-0 min-w-[800px]">
               <thead>
                 <tr className="bg-gradient-to-br from-gray-50 to-gray-200">

@@ -322,7 +322,7 @@ const DeliveryTracker = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col p-4 md:p-6 font-sans text-gray-800">
+    <div className="h-full bg-gray-50 flex flex-col p-4 md:p-6 font-sans text-gray-800 overflow-hidden">
       <div className="flex items-center gap-3 mb-8">
         <div className="p-3 bg-blue-600 rounded-xl text-white shadow-lg shadow-blue-600/20">
           <FaTruck className="text-xl" />
@@ -454,7 +454,7 @@ const DeliveryTracker = () => {
           )}
         </div>
 
-        <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-400px)] rounded-xl border border-gray-200">
           {filteredDeliveries.length > 0 ? (
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">

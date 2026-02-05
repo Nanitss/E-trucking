@@ -19,7 +19,7 @@ const ClientHeader = () => {
   const location = useLocation();
   const { authUser, logout } = useContext(AuthContext) || {
     authUser: null,
-    logout: () => {},
+    logout: () => { },
   };
 
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
@@ -56,9 +56,9 @@ const ClientHeader = () => {
         {/* Logo */}
         <div className="flex items-center gap-3">
           <img
-            src={process.env.PUBLIC_URL + "/images/logo.png.webp"}
+            src={process.env.PUBLIC_URL + "/images/logo.webp"}
             alt="Logo"
-            className="h-10 w-auto object-contain"
+            className="h-14 w-auto object-contain"
           />
           <span className="text-white text-lg font-bold">Trucking MS</span>
           <span className="bg-secondary-500 text-white text-xs font-bold px-2 py-1 rounded-full ml-1">

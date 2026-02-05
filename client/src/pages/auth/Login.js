@@ -170,9 +170,11 @@ const Login = () => {
 
           <div className="relative z-10 p-12 text-white max-w-lg">
             <div className="flex items-center gap-3 mb-8 animate-fade-in-up">
-              <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center shadow-lg">
-                <FaTruck className="text-2xl text-white" />
-              </div>
+              <img
+                src={`${process.env.PUBLIC_URL}/images/logo.webp`}
+                alt="E-TRUCKING Logo"
+                className="h-20 w-auto object-contain"
+              />
               <h2 className="text-3xl font-extrabold tracking-tight">E-TRUCKING</h2>
             </div>
 
@@ -205,7 +207,11 @@ const Login = () => {
         <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white relative">
           <div className="w-full max-w-md space-y-8 animate-fade-in">
             <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-              <FaTruck className="text-3xl text-blue-600" />
+              <img
+                src={`${process.env.PUBLIC_URL}/images/logo.webp`}
+                alt="E-TRUCKING Logo"
+                className="h-10 w-auto object-contain"
+              />
               <span className="text-2xl font-extrabold text-gray-900">E-TRUCKING</span>
             </div>
 
