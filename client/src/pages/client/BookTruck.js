@@ -550,7 +550,7 @@ const BookTruck = () => {
   const availableTrucks = getAvailableTrucksForDisplay();
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="h-screen overflow-y-auto bg-gray-50 py-8 px-4 pb-20">
       {/* Warning Modal */}
       <WarningModal
         isOpen={modalState.isOpen}
@@ -1133,6 +1133,9 @@ const BookTruck = () => {
                       ₱{calculateTotalEstimatedCost()}
                     </span>
                   </div>
+                  <p className="text-xs text-gray-500 italic mt-2">
+                    Note: Rate may change on the delivery day.
+                  </p>
                 </div>
               </div>
             )}
