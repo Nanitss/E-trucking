@@ -495,7 +495,7 @@ const BookTruck = () => {
       showError(
         "Booking Failed",
         error.response?.data?.message ||
-          "Failed to create booking. Please try again.",
+        "Failed to create booking. Please try again.",
       );
     }
   };
@@ -787,11 +787,10 @@ const BookTruck = () => {
                 />
                 <button
                   type="button"
-                  className={`px-5 py-3 rounded-xl font-bold text-white transition-all shadow-md ${
-                    !bookingData.weight || parseFloat(bookingData.weight) <= 0
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
-                  }`}
+                  className={`px-5 py-3 rounded-xl font-bold text-white transition-all shadow-md ${!bookingData.weight || parseFloat(bookingData.weight) <= 0
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20"
+                    }`}
                   onClick={() => {
                     const weight = parseFloat(bookingData.weight);
                     if (weight && weight > 0) {
@@ -1194,13 +1193,12 @@ const BookTruck = () => {
                     return (
                       <div
                         key={truck.TruckID}
-                        className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
-                            : isRecommended
-                              ? "border-amber-400 bg-amber-50"
-                              : "border-gray-200 bg-white hover:bg-gray-50"
-                        }`}
+                        className={`relative border rounded-xl p-3 cursor-pointer transition-all hover:translate-y-[-2px] hover:shadow-md ${isSelected
+                          ? "border-blue-500 bg-blue-50 ring-2 ring-blue-200"
+                          : isRecommended
+                            ? "border-amber-400 bg-amber-50"
+                            : "border-gray-200 bg-white hover:bg-gray-50"
+                          }`}
                         onClick={() =>
                           handleTruckSelectionWithAvailability(truck.TruckID)
                         }
@@ -1237,11 +1235,10 @@ const BookTruck = () => {
                         </div>
                         <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              utilizationPercentage > 100
-                                ? "bg-red-500"
-                                : "bg-emerald-500"
-                            }`}
+                            className={`h-full rounded-full transition-all duration-500 ${utilizationPercentage > 100
+                              ? "bg-red-500"
+                              : "bg-emerald-500"
+                              }`}
                             style={{
                               width: `${Math.min(100, utilizationPercentage)}%`,
                             }}
