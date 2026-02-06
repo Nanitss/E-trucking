@@ -50,8 +50,6 @@ const AdminHeader = ({ currentUser }) => {
       return { text: "Add Staff", link: "/admin/staffs/add" };
     } else if (path.includes("/clients")) {
       return { text: "Add Client", link: "/admin/clients/add" };
-    } else if (path.includes("/deliveries")) {
-      return { text: "Add Delivery", link: "/admin/deliveries/add" };
     } else if (path.includes("/operators")) {
       return { text: "Add Operator", link: "/admin/operators/add" };
     } else {

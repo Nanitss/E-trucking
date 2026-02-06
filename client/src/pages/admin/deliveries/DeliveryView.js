@@ -249,7 +249,7 @@ const DeliveryView = ({ currentUser }) => {
                   }
                   pickupAddress={delivery.PickupLocation}
                   dropoffAddress={delivery.DeliveryAddress}
-                  onRouteCalculated={() => {}}
+                  onRouteCalculated={() => { }}
                 />
               </div>
             </div>
@@ -316,6 +316,7 @@ const DeliveryView = ({ currentUser }) => {
                     <span className="status-tag pending">⏳ Pending</span>
                   )}
                 </div>
+                <span className="detail-price">💰 ₱1,050.00</span>
               </div>
               <div className="detail-cell">
                 <span className="detail-label">HELPER</span>
@@ -327,6 +328,7 @@ const DeliveryView = ({ currentUser }) => {
                     <span className="status-tag pending">⏳ Pending</span>
                   )}
                 </div>
+                <span className="detail-price">💰 ₱750.00</span>
               </div>
             </div>
           </div>
