@@ -5,6 +5,7 @@ const path = require("path");
 const fs = require("fs");
 const paymentService = require("../services/PaymentService");
 const paymentProofService = require("../services/PaymentProofService");
+const receiptService = require("../services/ReceiptService");
 const { authenticateJWT } = require("../middleware/auth");
 const auditService = require("../services/AuditService");
 
@@ -110,12 +111,15 @@ router.get("/all", authenticateJWT, async (req, res) => {
         dueDate = new Date(deliveryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
       }
 
-      // Determine payment status
+      // Determine payment status - preserve pending_verification from database
       let paymentStatus = "pending";
       const now = new Date();
 
       if (delivery.paymentStatus === "paid") {
         paymentStatus = "paid";
+      } else if (delivery.paymentStatus === "pending_verification") {
+        // Preserve pending_verification status - proof uploaded, awaiting admin review
+        paymentStatus = "pending_verification";
       } else if (dueDate < now) {
         paymentStatus = "overdue";
       }
@@ -131,6 +135,10 @@ router.get("/all", authenticateJWT, async (req, res) => {
         dueDate: dueDate.toISOString(),
         deliveryDate: deliveryDate.toISOString(),
         paidAt: delivery.paidAt || null,
+        // Include proof info for pending_verification payments
+        proofId: delivery.proofId || null,
+        proofUploadedAt: delivery.proofUploadedAt || null,
+        proofRejectionReason: delivery.proofRejectionReason || null,
         metadata: {
           clientName: delivery.clientName,
           truckPlate: delivery.truckPlate || delivery.TruckPlate,
@@ -1243,102 +1251,134 @@ router.post("/fix-cancelled-deliveries", authenticateJWT, async (req, res) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 // ─── POST /api/payments/upload-proof ─────────────────────────────────────────
-// Client uploads payment proof for one or multiple deliveries
-router.post(
-  "/upload-proof",
-  authenticateJWT,
-  proofUpload.single("proofFile"),
-  async (req, res) => {
-    try {
-      console.log("📤 POST /api/payments/upload-proof");
-      console.log("👤 User:", req.user.username, "| ID:", req.user.id);
+// Client uploads payment proof for one or multiple deliveries (using base64)
+router.post("/upload-proof", authenticateJWT, async (req, res) => {
+  try {
+    console.log("📤 POST /api/payments/upload-proof");
+    console.log("👤 User:", req.user.username, "| ID:", req.user.id);
 
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message:
-            "No file uploaded. Please upload a PNG or PDF file (max 5MB).",
-        });
-      }
+    const { file, deliveryIds, referenceNumber, notes } = req.body;
 
-      // Parse delivery IDs from request
-      let deliveryIds;
+    // Validate file exists
+    if (!file || !file.data) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "No file uploaded. Please upload a PNG or PDF file (max 5MB).",
+      });
+    }
+
+    // Validate and decode base64 file
+    const base64Match = file.data.match(/^data:(.+);base64,(.+)$/);
+    if (!base64Match) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid file format. Expected base64-encoded file.",
+      });
+    }
+
+    const mimeType = base64Match[1];
+    const base64Content = base64Match[2];
+    const fileBuffer = Buffer.from(base64Content, "base64");
+
+    // Validate file type
+    const allowedTypes = ["image/png", "application/pdf"];
+    if (!allowedTypes.includes(mimeType)) {
+      return res.status(400).json({
+        success: false,
+        message: "Only PNG and PDF files are allowed",
+      });
+    }
+
+    // Validate file size (5MB max)
+    if (fileBuffer.length > 5 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        message: "File size must be less than 5MB",
+      });
+    }
+
+    // Create file object compatible with PaymentProofService
+    const fileObj = {
+      buffer: fileBuffer,
+      originalname: file.name || "proof.png",
+      mimetype: mimeType,
+      size: fileBuffer.length,
+    };
+
+    // Parse delivery IDs
+    let parsedDeliveryIds;
+    if (Array.isArray(deliveryIds)) {
+      parsedDeliveryIds = deliveryIds;
+    } else {
       try {
-        deliveryIds = JSON.parse(req.body.deliveryIds);
-        if (!Array.isArray(deliveryIds) || deliveryIds.length === 0) {
+        parsedDeliveryIds = JSON.parse(deliveryIds);
+        if (!Array.isArray(parsedDeliveryIds) || parsedDeliveryIds.length === 0) {
           throw new Error("Invalid delivery IDs");
         }
       } catch (e) {
         return res.status(400).json({
           success: false,
           message:
-            "Invalid delivery IDs format. Expected JSON array of delivery IDs.",
+            "Invalid delivery IDs format. Expected array of delivery IDs.",
         });
       }
-
-      const referenceNumber = req.body.referenceNumber || "";
-      const notes = req.body.notes || "";
-
-      // Get client info from token
-      const clientId = req.user.id;
-      const clientName = req.user.clientName || req.user.username || "Client";
-
-      // Upload the proof
-      const result = await paymentProofService.uploadProof(
-        req.file,
-        deliveryIds,
-        clientId,
-        clientName,
-        referenceNumber,
-        notes,
-      );
-
-      // Log the upload
-      await auditService.logCreate(
-        req.user.id,
-        req.user.username,
-        "payment_proof",
-        result.proofId,
-        {
-          deliveryCount: deliveryIds.length,
-          totalAmount: result.totalAmount,
-          referenceNumber: referenceNumber,
-        },
-      );
-
-      console.log("✅ Payment proof uploaded successfully:", result.proofId);
-
-      res.status(201).json({
-        success: true,
-        message: result.message,
-        data: {
-          proofId: result.proofId,
-          deliveryCount: result.deliveryCount,
-          totalAmount: result.totalAmount,
-        },
-      });
-    } catch (error) {
-      console.error("❌ Error uploading payment proof:", error);
-
-      // Clean up temp file if exists
-      if (req.file && req.file.path && fs.existsSync(req.file.path)) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (unlinkError) {
-          console.warn(
-            "Warning: Could not delete temp file:",
-            unlinkError.message,
-          );
-        }
-      }
-
-      res.status(error.message.includes("already") ? 400 : 500).json({
-        success: false,
-        message: error.message || "Failed to upload payment proof",
-      });
     }
-  },
-);
+
+    // Get client info - prefer clientId from request body if provided (frontend resolves this correctly)
+    // Fall back to auth middleware values
+    const clientId = req.body.clientId || req.user.clientId || req.user.id;
+    const clientName = req.user.clientName || req.user.username || "Client";
+
+    console.log("🔍 ClientID resolution:");
+    console.log(`   - req.body.clientId (from frontend): ${req.body.clientId}`);
+    console.log(`   - req.user.id: ${req.user.id}`);
+    console.log(`   - req.user.clientId: ${req.user.clientId}`);
+    console.log(`   - Using clientId: ${clientId}`);
+
+    // Upload the proof
+    const result = await paymentProofService.uploadProof(
+      fileObj,
+      parsedDeliveryIds,
+      clientId,
+      clientName,
+      referenceNumber || "",
+      notes || "",
+    );
+
+    // Log the upload
+    await auditService.logCreate(
+      req.user.id,
+      req.user.username,
+      "payment_proof",
+      result.proofId,
+      {
+        deliveryCount: parsedDeliveryIds.length,
+        totalAmount: result.totalAmount,
+        referenceNumber: referenceNumber || "",
+      },
+    );
+
+    console.log("✅ Payment proof uploaded successfully:", result.proofId);
+
+    res.status(201).json({
+      success: true,
+      message: result.message,
+      data: {
+        proofId: result.proofId,
+        deliveryCount: result.deliveryCount,
+        totalAmount: result.totalAmount,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error uploading payment proof:", error);
+
+    res.status(error.message.includes("already") ? 400 : 500).json({
+      success: false,
+      message: error.message || "Failed to upload payment proof",
+    });
+  }
+});
 
 // ─── GET /api/payments/:paymentId/proof ──────────────────────────────────────
 // Get proof details for a specific payment/delivery (Admin or Owner)
@@ -1357,9 +1397,17 @@ router.get("/:paymentId/proof", authenticateJWT, async (req, res) => {
       });
     }
 
+    // Use proofUrl from Firestore if available (Firebase Storage), otherwise fallback to local file endpoint
+    const proofUrl = proof.proofUrl || (proof.proofFilePath
+      ? `/api/payments/proof-file/${proof.id}`
+      : null);
+
     res.json({
       success: true,
-      data: proof,
+      data: {
+        ...proof,
+        proofUrl: proofUrl,
+      },
     });
   } catch (error) {
     console.error("❌ Error getting proof:", error);
@@ -1552,7 +1600,23 @@ router.get("/proof-file/:proofId", authenticateJWT, async (req, res) => {
       });
     }
 
+    // If proof has Firebase Storage URL, redirect to it
+    if (proof.proofUrl && proof.storageType === "firebase") {
+      return res.redirect(proof.proofUrl);
+    }
+
+    // Fallback: Serve from local file system
     const filePath = paymentProofService.getProofFilePath(proof.proofFilePath);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error("❌ Proof file not found:", filePath);
+      return res.status(404).json({
+        success: false,
+        message: "Proof file not found. The file may have been deleted after a server restart. Please ask the client to re-upload the proof.",
+      });
+    }
+
     const contentType = paymentProofService.getContentType(proof.proofFilePath);
 
     res.setHeader("Content-Type", contentType);
@@ -1572,4 +1636,121 @@ router.get("/proof-file/:proofId", authenticateJWT, async (req, res) => {
   }
 });
 
+// ─── GET /api/payments/receipt/:proofId ───────────────────────────────────────
+// Get/download payment receipt for an approved proof
+router.get("/receipt/:proofId", authenticateJWT, async (req, res) => {
+  try {
+    const { proofId } = req.params;
+
+    console.log("🧾 GET /api/payments/receipt/:proofId - Fetching receipt");
+    console.log("   ProofId:", proofId);
+
+    // Get the receipt by proof ID
+    const receipt = await receiptService.getReceiptByProofId(proofId);
+
+    if (!receipt) {
+      return res.status(404).json({
+        success: false,
+        message: "Receipt not found for this proof",
+      });
+    }
+
+    // Check if user is authorized (admin or the client who owns the receipt)
+    if (req.user.role !== "admin" && req.user.id !== receipt.clientId) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to view this receipt",
+      });
+    }
+
+    // Get the file path
+    const filePath = receiptService.getReceiptFilePath(receipt.filePath);
+
+    // Set headers for inline viewing
+    res.setHeader("Content-Type", "text/html");
+    res.setHeader(
+      "Content-Disposition",
+      `inline; filename="receipt_${receipt.receiptNumber}.html"`,
+    );
+
+    // Stream the file
+    const fileStream = fs.createReadStream(filePath);
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("❌ Error serving receipt:", error);
+    res.status(error.message.includes("not found") ? 404 : 500).json({
+      success: false,
+      message: error.message || "Failed to retrieve receipt",
+    });
+  }
+});
+
+// ─── GET /api/payments/receipt/by-delivery/:deliveryId ────────────────────────
+// Get receipt info by delivery ID (for client profile)
+router.get("/receipt/by-delivery/:deliveryId", authenticateJWT, async (req, res) => {
+  try {
+    const { deliveryId } = req.params;
+
+    console.log("🧾 GET /api/payments/receipt/by-delivery/:deliveryId");
+    console.log("   DeliveryId:", deliveryId);
+
+    // Get delivery to find the proof ID
+    const { db } = require("../config/firebase");
+    const deliveryDoc = await db.collection("deliveries").doc(deliveryId).get();
+
+    if (!deliveryDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery not found",
+      });
+    }
+
+    const delivery = deliveryDoc.data();
+
+    // Check authorization
+    if (req.user.role !== "admin" && req.user.id !== delivery.clientId) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    // Check if delivery has a proof
+    if (!delivery.proofId) {
+      return res.status(404).json({
+        success: false,
+        message: "No payment proof for this delivery",
+      });
+    }
+
+    // Get receipt by proof ID
+    const receipt = await receiptService.getReceiptByProofId(delivery.proofId);
+
+    if (!receipt) {
+      return res.status(404).json({
+        success: false,
+        message: "Receipt not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        receiptId: receipt.id,
+        receiptNumber: receipt.receiptNumber,
+        proofId: receipt.proofId,
+        totalAmount: receipt.totalAmount,
+        generatedAt: receipt.generatedAt,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error getting receipt info:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get receipt info",
+    });
+  }
+});
+
 module.exports = router;
+

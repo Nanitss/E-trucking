@@ -247,6 +247,11 @@ const AdminBillings = ({ currentUser }) => {
     }
   };
 
+  const handleOpenRejectDialog = () => {
+    setRejectionReason("");
+    setRejectDialogOpen(true);
+  };
+
   const handleRejectProof = async () => {
     if (!viewingProof?.id || !rejectionReason.trim()) return;
     try {
@@ -303,6 +308,37 @@ const AdminBillings = ({ currentUser }) => {
             <button onClick={() => setAlert({ ...alert, show: false })} className="ml-auto hover:opacity-75">
               <TbX size={18} />
             </button>
+          </div>
+        )}
+
+        {/* Pending Verification Banner - Shows when there are proofs awaiting review */}
+        {stats.pendingVerificationPayments > 0 && (
+          <div className="mb-6 p-5 rounded-2xl border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500 text-white rounded-xl shadow-md animate-pulse">
+                  <TbReceipt size={28} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-blue-900 flex items-center gap-2">
+                    Payment Proofs Awaiting Review
+                    <span className="inline-flex items-center justify-center w-7 h-7 text-sm font-bold bg-blue-600 text-white rounded-full">
+                      {stats.pendingVerificationPayments}
+                    </span>
+                  </h3>
+                  <p className="text-sm text-blue-700 mt-0.5">
+                    Total amount: <span className="font-semibold">{formatCurrency(stats.pendingVerificationAmount)}</span> requires your verification
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setStatusFilter("pending_verification")}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md transition-all duration-200 hover:shadow-lg"
+              >
+                <TbEye size={20} />
+                Review Now
+              </button>
+            </div>
           </div>
         )}
 

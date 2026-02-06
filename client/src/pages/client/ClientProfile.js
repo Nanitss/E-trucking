@@ -192,38 +192,73 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
     try {
       setUploadingProof(true);
       const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("proofFile", proofFile);
-      formData.append("deliveryIds", JSON.stringify(selectedDeliveries));
-      formData.append("referenceNumber", proofForm.referenceNumber);
-      formData.append("notes", proofForm.notes);
 
-      const response = await axios.post(
-        "/api/payments/upload-proof",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(proofFile);
 
-      if (response.data.success) {
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result; // includes data:mime;base64, prefix
+
+          const response = await axios.post(
+            "/api/payments/upload-proof",
+            {
+              file: {
+                data: base64Data,
+                name: proofFile.name,
+                type: proofFile.type,
+                size: proofFile.size,
+              },
+              deliveryIds: selectedDeliveries,
+              referenceNumber: proofForm.referenceNumber,
+              notes: proofForm.notes,
+              clientId: getClientId(), // Pass the frontend-resolved clientId
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+
+          if (response.data.success) {
+            setUploadAlert({
+              show: true,
+              type: "success",
+              message:
+                response.data.message ||
+                "Payment proof uploaded successfully! Awaiting admin verification.",
+            });
+            setProofUploadModalOpen(false);
+            setProofFile(null);
+            setProofForm({ referenceNumber: "", notes: "" });
+            setSelectedDeliveries([]);
+            // Refresh billing data
+            await fetchBillingData();
+          }
+        } catch (error) {
+          console.error("Error uploading proof:", error);
+          setUploadAlert({
+            show: true,
+            type: "error",
+            message:
+              error.response?.data?.message || "Failed to upload payment proof",
+          });
+        } finally {
+          setUploadingProof(false);
+        }
+      };
+
+      reader.onerror = () => {
         setUploadAlert({
           show: true,
-          type: "success",
-          message:
-            response.data.message ||
-            "Payment proof uploaded successfully! Awaiting admin verification.",
+          type: "error",
+          message: "Failed to read the file. Please try again.",
         });
-        setProofUploadModalOpen(false);
-        setProofFile(null);
-        setProofForm({ referenceNumber: "", notes: "" });
-        setSelectedDeliveries([]);
-        // Refresh billing data
-        await fetchBillingData();
-      }
+        setUploadingProof(false);
+      };
     } catch (error) {
       console.error("Error uploading proof:", error);
       setUploadAlert({
@@ -232,7 +267,6 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         message:
           error.response?.data?.message || "Failed to upload payment proof",
       });
-    } finally {
       setUploadingProof(false);
     }
   };
@@ -739,6 +773,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                   const isOverdue = actualStatus === "overdue";
                   const isPaid = actualStatus === "paid";
                   const isPending = actualStatus === "pending";
+                  const isPendingVerification = payment.status === "pending_verification";
 
                   let rowClass =
                     "hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-none";
@@ -748,20 +783,27 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                     <tr key={payment.id || index} className={rowClass}>
                       <td className="px-6 py-4 w-12 align-middle">
                         {payment.status !== "paid" &&
-                          payment.status !== "pending_verification" && (
-                            <input
-                              type="checkbox"
-                              checked={selectedDeliveries.includes(
+                          payment.status !== "pending_verification" ? (
+                          <input
+                            type="checkbox"
+                            checked={selectedDeliveries.includes(
+                              payment.id || payment.deliveryId,
+                            )}
+                            onChange={() =>
+                              handleSelectDelivery(
                                 payment.id || payment.deliveryId,
-                              )}
-                              onChange={() =>
-                                handleSelectDelivery(
-                                  payment.id || payment.deliveryId,
-                                )
-                              }
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                            />
-                          )}
+                              )
+                            }
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                          />
+                        ) : isPendingVerification ? (
+                          <div
+                            className="w-4 h-4 rounded bg-blue-100 border border-blue-300 flex items-center justify-center cursor-not-allowed"
+                            title="Awaiting admin verification - cannot be selected"
+                          >
+                            <FaClock className="text-blue-500 text-[10px]" />
+                          </div>
+                        ) : null}
                       </td>
                       <td className="px-6 py-4 text-sm align-middle">
                         <div className="flex flex-col gap-1">
@@ -815,19 +857,30 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm align-middle">
-                        <span
-                          className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
-                          ${isPaid ? "bg-emerald-100 text-emerald-700" : ""}
-                          ${isOverdue ? "bg-red-100 text-red-700" : ""}
-                          ${isPending ? "bg-amber-100 text-amber-700" : ""}
-                        `}
-                        >
-                          {isPaid && <FaCheckCircle />}
-                          {isOverdue && <FaExclamationTriangle />}
-                          {isPending && <FaClock />}
-                          {actualStatus.charAt(0).toUpperCase() +
-                            actualStatus.slice(1)}
-                        </span>
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <span
+                            className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
+                            ${isPaid ? "bg-emerald-100 text-emerald-700" : ""}
+                            ${isOverdue ? "bg-red-100 text-red-700" : ""}
+                            ${isPending && !isPendingVerification ? "bg-amber-100 text-amber-700" : ""}
+                            ${isPendingVerification ? "bg-blue-100 text-blue-700 border border-blue-200" : ""}
+                          `}
+                          >
+                            {isPaid && <FaCheckCircle />}
+                            {isOverdue && <FaExclamationTriangle />}
+                            {isPending && !isPendingVerification && <FaClock />}
+                            {isPendingVerification && <FaClock />}
+                            {isPendingVerification
+                              ? "Pending Approval"
+                              : actualStatus.charAt(0).toUpperCase() +
+                              actualStatus.slice(1)}
+                          </span>
+                          {isPendingVerification && (
+                            <span className="text-[10px] text-blue-600 font-medium text-center">
+                              Awaiting admin verification
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

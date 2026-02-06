@@ -48,16 +48,16 @@ class PaymentService {
       deliveriesSnapshot.forEach(doc => {
         const delivery = doc.data();
         const deliveryId = doc.id;
-        
+
         // Skip cancelled deliveries - they should not be billed
         if (delivery.deliveryStatus === 'cancelled' || delivery.paymentStatus === 'cancelled') {
           console.log('ℹ️ TEST MODE: Skipping cancelled delivery from payment summary:', deliveryId);
           return;
         }
-        
+
         // Get delivery rate (amount)
         const amount = parseFloat(delivery.deliveryRate || delivery.DeliveryRate || 98);
-        
+
         // Get delivery date
         let deliveryDate = new Date();
         if (delivery.deliveryDate) {
@@ -87,14 +87,17 @@ class PaymentService {
           // For pending deliveries, make them payable immediately but due in 30 days
           dueDate = new Date(deliveryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
         }
-        
+
         // Determine payment status - Allow payment for all deliveries regardless of completion status
         let paymentStatus = 'pending';
         const now = new Date();
-        
-        // Check if payment has been made
+
+        // Check if payment has been made or is pending verification
         if (delivery.paymentStatus === 'paid') {
           paymentStatus = 'paid';
+        } else if (delivery.paymentStatus === 'pending_verification') {
+          // Preserve pending_verification status - has uploaded proof awaiting admin approval
+          paymentStatus = 'pending_verification';
         } else if (dueDate < now) {
           // Any unpaid delivery past due date is overdue
           paymentStatus = 'overdue';
@@ -123,8 +126,12 @@ class PaymentService {
         };
 
         payments.push(paymentInfo);
-        
+
         if (paymentStatus === 'pending') {
+          pendingPayments++;
+          totalAmountDue += amount;
+        } else if (paymentStatus === 'pending_verification') {
+          // Count as pending since it's awaiting approval (not yet paid)
           pendingPayments++;
           totalAmountDue += amount;
         } else if (paymentStatus === 'overdue') {
@@ -167,13 +174,13 @@ class PaymentService {
       // Since we're treating delivery IDs as payment IDs, get the delivery record
       const deliveryRef = this.db.collection('deliveries').doc(paymentId);
       const deliveryDoc = await deliveryRef.get();
-      
+
       if (!deliveryDoc.exists) {
         return null;
       }
 
       const delivery = deliveryDoc.data();
-      
+
       // Convert delivery to payment format
       return {
         id: paymentId,
@@ -200,10 +207,10 @@ class PaymentService {
   async markPaymentAsPaid(paymentId, paymentDetails) {
     try {
       console.log('🧪 TEST MODE: Simulating payment completion for payment:', paymentId);
-      
+
       // Update the delivery record with payment information
       const deliveryRef = this.db.collection('deliveries').doc(paymentId);
-      
+
       await deliveryRef.update({
         paymentStatus: 'paid',
         paidAt: this.admin.firestore.Timestamp.fromDate(new Date(paymentDetails.paidAt)),
@@ -229,17 +236,17 @@ class PaymentService {
   async cancelPayment(deliveryId) {
     try {
       console.log('🧪 TEST MODE: Cancelling payment for delivery:', deliveryId);
-      
+
       // In test mode, we just update the delivery record
       const deliveryRef = this.db.collection('deliveries').doc(deliveryId);
       const deliveryDoc = await deliveryRef.get();
-      
+
       if (!deliveryDoc.exists) {
         throw new Error('Delivery not found');
       }
-      
+
       const delivery = deliveryDoc.data();
-      
+
       // Check if payment was already paid
       if (delivery.paymentStatus === 'paid') {
         console.log('⚠️ TEST MODE: Cannot cancel already paid payment for delivery:', deliveryId);
@@ -249,7 +256,7 @@ class PaymentService {
           paymentStatus: 'paid'
         };
       }
-      
+
       // Update delivery payment status to cancelled
       await deliveryRef.update({
         paymentStatus: 'cancelled',
@@ -258,7 +265,7 @@ class PaymentService {
         testMode: true,
         updated_at: this.admin.firestore.FieldValue.serverTimestamp()
       });
-      
+
       console.log('✅ TEST MODE: Payment cancelled successfully for delivery:', deliveryId);
       return {
         success: true,
@@ -270,7 +277,7 @@ class PaymentService {
           currency: 'PHP'
         }]
       };
-      
+
     } catch (error) {
       console.error('❌ TEST MODE: Error cancelling payment:', error);
       throw new Error(`Failed to cancel payment: ${error.message}`);
@@ -281,10 +288,10 @@ class PaymentService {
   async updatePaymentSource(paymentId, sourceData) {
     try {
       console.log('🧪 TEST MODE: Updating payment source for payment:', paymentId);
-      
+
       // Update the delivery record with source information
       const deliveryRef = this.db.collection('deliveries').doc(paymentId);
-      
+
       await deliveryRef.update({
         sourceId: sourceData.sourceId,
         sourceType: sourceData.sourceType,
@@ -305,7 +312,7 @@ class PaymentService {
   async createSource(sourceData) {
     try {
       console.log('🧪 TEST MODE: Creating mock e-wallet source for:', sourceData.type);
-      
+
       // Return a simulated source since we're in test mode
       const mockSource = {
         id: 'src_test_' + Date.now(),

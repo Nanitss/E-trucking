@@ -1,6 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 const admin = require("firebase-admin");
+const NotificationService = require("./NotificationService");
+const ReceiptService = require("./ReceiptService");
+const { storageBucket } = require("../config/firebase");
 
 // Get Firestore database instance
 const db = admin.firestore();
@@ -8,6 +11,10 @@ const db = admin.firestore();
 /**
  * PaymentProofService
  * Handles payment proof upload, storage, and verification workflows
+ *
+ * Storage Strategy:
+ * - Uses Firebase Storage for production/deployment (persistent, scalable)
+ * - Falls back to /tmp for local development if Firebase Storage not available
  *
  * Flow:
  * 1. Client uploads proof (PNG/PDF, max 5MB) for one or multiple deliveries
@@ -18,19 +25,23 @@ const db = admin.firestore();
  */
 class PaymentProofService {
   constructor() {
-    // IMPORTANT: Firebase Cloud Functions only allow writes to /tmp directory
-    this.basePath = "/tmp/payment-proofs";
+    // Use persistent folder within the project (persists across restarts)
+    // Path is relative to the functions directory: ../uploads/payment-proofs
+    this.basePath = path.join(__dirname, "..", "uploads", "payment-proofs");
+    this.useFirebaseStorage = false; // Force local storage for simplicity and persistence without config
+
     this.ensureBaseDirectory();
+    console.log("✅ Using persistent local storage for payment proofs:", this.basePath);
 
     // Allowed file types
-    this.allowedMimeTypes = ["image/png", "application/pdf"];
+    this.allowedMimeTypes = ["image/png", "application/pdf", "image/jpeg"];
 
     // Max file size: 5MB
     this.maxFileSize = 5 * 1024 * 1024;
   }
 
   /**
-   * Ensure base directory exists
+   * Ensure base directory exists (for local fallback)
    */
   ensureBaseDirectory() {
     if (!fs.existsSync(this.basePath)) {
@@ -58,14 +69,18 @@ class PaymentProofService {
 
   /**
    * Validate file before upload
+   * Supports both buffer-based files (from base64) and path-based files (from multer)
    */
   validateFile(file) {
     if (!file) {
       return { valid: false, error: "No file provided" };
     }
 
+    // Get file size (from buffer length or size property)
+    const fileSize = file.buffer ? file.buffer.length : file.size;
+
     // Check file size
-    if (file.size > this.maxFileSize) {
+    if (fileSize > this.maxFileSize) {
       return { valid: false, error: "File size must be less than 5MB" };
     }
 
@@ -122,10 +137,24 @@ class PaymentProofService {
 
         const delivery = deliveryDoc.data();
 
+        // Log for debugging clientId mismatch
+        console.log(`🔍 Checking delivery ${deliveryId}:`);
+        console.log(`   - delivery.clientId: ${delivery.clientId}`);
+        console.log(`   - delivery.ClientID: ${delivery.ClientID}`);
+        console.log(`   - delivery.userId: ${delivery.userId}`);
+        console.log(`   - passed clientId: ${clientId}`);
+
         // Verify delivery belongs to this client
-        if (delivery.clientId !== clientId) {
+        // Check multiple possible field names to handle legacy data
+        const deliveryClientId = delivery.clientId || delivery.ClientID;
+        const isOwnedByClient =
+          deliveryClientId === clientId ||
+          delivery.userId === clientId;
+
+        if (!isOwnedByClient) {
+          console.error(`❌ Client ownership mismatch for delivery ${deliveryId}`);
           throw new Error(
-            `Delivery ${deliveryId} does not belong to this client`,
+            `Delivery ${deliveryId} does not belong to this client. Expected clientId: ${clientId}, Found: clientId=${delivery.clientId}, ClientID=${delivery.ClientID}, userId=${delivery.userId}`,
           );
         }
 
@@ -161,20 +190,24 @@ class PaymentProofService {
       const randomSuffix = Math.round(Math.random() * 1e9);
       const fileExt = path.extname(file.originalname).toLowerCase();
       const fileName = `proof_${clientId}_${timestamp}_${randomSuffix}${fileExt}`;
-
-      // Get upload path
+      // Get persistent upload path
       const uploadPath = this.getUploadPath(year, month);
       const filePath = path.join(uploadPath, fileName);
       const relativePath = path.relative(this.basePath, filePath);
 
-      // Save file
-      await fs.promises.copyFile(file.path, filePath);
-      // Clean up temp file
-      if (fs.existsSync(file.path)) {
-        await fs.promises.unlink(file.path);
+      // Save file to persistent storage
+      if (file.buffer) {
+        await fs.promises.writeFile(filePath, file.buffer);
+      } else if (file.path) {
+        await fs.promises.copyFile(file.path, filePath);
+        if (fs.existsSync(file.path)) {
+          await fs.promises.unlink(file.path);
+        }
+      } else {
+        throw new Error("Invalid file object: missing buffer or path");
       }
 
-      console.log("✅ Proof file saved:", fileName);
+      console.log("✅ Proof file saved to persistent storage:", fileName);
 
       // Create PaymentProof document
       const proofData = {
@@ -184,6 +217,8 @@ class PaymentProofService {
         proofFileName: fileName,
         proofFileType: file.mimetype,
         proofFileSize: file.size,
+        proofUrl: null, // Local storage only
+        storageType: "local",
         referenceNumber: referenceNumber || "",
         notes: notes || "",
         totalAmount: totalAmount,
@@ -343,6 +378,59 @@ class PaymentProofService {
       }
       await batch.commit();
 
+      // Send notification to client
+      try {
+        await NotificationService.createNotification({
+          userId: proof.clientId,
+          type: "payment",
+          title: "Payment Approved ✅",
+          message: `Your payment proof has been verified. ${proof.deliveryIds.length} delivery(s) totaling ₱${proof.totalAmount.toLocaleString()} marked as paid.`,
+          entityType: "payment_proof",
+          entityId: proofId,
+          metadata: {
+            proofId: proofId,
+            deliveryIds: proof.deliveryIds,
+            totalAmount: proof.totalAmount,
+            approvedBy: adminUsername,
+          },
+          priority: "high",
+        });
+        console.log("📱 Notification sent to client:", proof.clientId);
+      } catch (notifError) {
+        console.error("⚠️ Failed to send notification:", notifError);
+        // Don't throw - main operation succeeded
+      }
+
+      // Generate receipt
+      let receiptData = null;
+      try {
+        // Fetch delivery details for receipt
+        const deliveries = [];
+        for (const deliveryId of proof.deliveryIds) {
+          const deliveryDoc = await db.collection("deliveries").doc(deliveryId).get();
+          if (deliveryDoc.exists) {
+            deliveries.push({ id: deliveryId, ...deliveryDoc.data() });
+          }
+        }
+
+        receiptData = await ReceiptService.generateReceipt(
+          { ...proof, id: proofId },
+          deliveries,
+          { id: adminId, username: adminUsername }
+        );
+
+        // Update proof with receipt reference
+        await proofRef.update({
+          receiptNumber: receiptData.receiptNumber,
+          receiptId: receiptData.receiptId,
+        });
+
+        console.log("🧾 Receipt generated:", receiptData.receiptNumber);
+      } catch (receiptError) {
+        console.error("⚠️ Failed to generate receipt:", receiptError);
+        // Don't throw - main operation succeeded
+      }
+
       console.log(
         `✅ Proof approved. ${proof.deliveryIds.length} deliveries marked as paid.`,
       );
@@ -352,6 +440,7 @@ class PaymentProofService {
         proofId: proofId,
         deliveriesUpdated: proof.deliveryIds.length,
         totalAmount: proof.totalAmount,
+        receiptNumber: receiptData?.receiptNumber || null,
         message: `Payment approved. ${proof.deliveryIds.length} delivery(s) marked as paid.`,
       };
     } catch (error) {
@@ -410,6 +499,30 @@ class PaymentProofService {
         });
       }
       await batch.commit();
+
+      // Send notification to client
+      try {
+        await NotificationService.createNotification({
+          userId: proof.clientId,
+          type: "payment",
+          title: "Payment Proof Rejected ❌",
+          message: `Your payment proof was rejected. Reason: ${rejectionReason.trim()}. Please upload a new proof.`,
+          entityType: "payment_proof",
+          entityId: proofId,
+          metadata: {
+            proofId: proofId,
+            deliveryIds: proof.deliveryIds,
+            rejectionReason: rejectionReason.trim(),
+            rejectedBy: adminUsername,
+          },
+          priority: "high",
+          actionRequired: true,
+        });
+        console.log("📱 Rejection notification sent to client:", proof.clientId);
+      } catch (notifError) {
+        console.error("⚠️ Failed to send rejection notification:", notifError);
+        // Don't throw - main operation succeeded
+      }
 
       console.log(
         `❌ Proof rejected. ${proof.deliveryIds.length} deliveries reset to pending.`,

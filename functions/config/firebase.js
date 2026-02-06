@@ -131,11 +131,28 @@ try {
   };
 }
 
+// Initialize Firebase Storage bucket
+let storageBucket;
+try {
+  if (admin.apps.length > 0) {
+    const bucketName = process.env.FB_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET || 'e-trucking-8d905.appspot.com';
+    storageBucket = admin.storage().bucket(bucketName);
+    console.log('✅ Firebase Storage initialized with bucket:', bucketName);
+  } else {
+    console.log('⚠️ Firebase Storage not available - Firebase not initialized');
+    storageBucket = null;
+  }
+} catch (error) {
+  console.error('❌ Firebase Storage initialization error:', error.message);
+  storageBucket = null;
+}
+
 // Export the admin SDK and database references
 module.exports = {
   admin,
   db,
   realtimeDb,
+  storageBucket,
 
   // Helper function to handle quota exceeded errors
   isQuotaExceeded: (error) => {

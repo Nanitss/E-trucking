@@ -22,7 +22,7 @@ const validationRoutes = require('./routes/validation');
 const auditRoutes = require('./routes/auditRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
-const paymentRoutes = require('./routes/payments');
+const paymentRoutes = require('./routes/paymentRoutes');
 const trackingRoutes = require('./routes/trackingRoutes');
 const simpleFileRoutes = require('./routes/simpleFileRoutes');
 const truckRoutes = require('./routes/truckRoutes');
@@ -135,8 +135,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'x-client-id'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(fileUpload({
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   abortOnLimit: true,

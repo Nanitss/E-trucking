@@ -314,35 +314,69 @@ const PaymentManagement = () => {
     try {
       setUploadingProof(true);
       const token = localStorage.getItem("token");
-      const formData = new FormData();
-      formData.append("proofFile", proofFile);
-      formData.append("deliveryIds", JSON.stringify(selectedDeliveries));
-      formData.append("referenceNumber", proofForm.referenceNumber);
-      formData.append("notes", proofForm.notes);
 
-      const response = await axios.post(
-        "/api/payments/upload-proof",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.readAsDataURL(proofFile);
 
-      if (response.data.success) {
+      reader.onload = async () => {
+        try {
+          const base64Data = reader.result; // includes data:mime;base64, prefix
+
+          const response = await axios.post(
+            "/api/payments/upload-proof",
+            {
+              file: {
+                data: base64Data,
+                name: proofFile.name,
+                type: proofFile.type,
+                size: proofFile.size,
+              },
+              deliveryIds: selectedDeliveries,
+              referenceNumber: proofForm.referenceNumber,
+              notes: proofForm.notes,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
+
+          if (response.data.success) {
+            setAlert({
+              show: true,
+              type: "success",
+              message: response.data.message,
+            });
+            setProofUploadModalOpen(false);
+            setProofFile(null);
+            setProofForm({ referenceNumber: "", notes: "" });
+            setSelectedDeliveries([]);
+            await fetchPaymentSummary();
+          }
+        } catch (error) {
+          console.error("Error uploading proof:", error);
+          setAlert({
+            show: true,
+            type: "error",
+            message:
+              error.response?.data?.message || "Failed to upload payment proof",
+          });
+        } finally {
+          setUploadingProof(false);
+        }
+      };
+
+      reader.onerror = () => {
         setAlert({
           show: true,
-          type: "success",
-          message: response.data.message,
+          type: "error",
+          message: "Failed to read the file. Please try again.",
         });
-        setProofUploadModalOpen(false);
-        setProofFile(null);
-        setProofForm({ referenceNumber: "", notes: "" });
-        setSelectedDeliveries([]);
-        await fetchPaymentSummary();
-      }
+        setUploadingProof(false);
+      };
     } catch (error) {
       console.error("Error uploading proof:", error);
       setAlert({
@@ -351,7 +385,6 @@ const PaymentManagement = () => {
         message:
           error.response?.data?.message || "Failed to upload payment proof",
       });
-    } finally {
       setUploadingProof(false);
     }
   };
@@ -955,8 +988,8 @@ const PaymentManagement = () => {
               {alert.show && (
                 <div
                   className={`p-3 rounded-lg text-sm ${alert.type === "error"
-                      ? "bg-red-50 text-red-700 border border-red-200"
-                      : "bg-blue-50 text-blue-700 border border-blue-200"
+                    ? "bg-red-50 text-red-700 border border-red-200"
+                    : "bg-blue-50 text-blue-700 border border-blue-200"
                     }`}
                 >
                   {alert.message}
