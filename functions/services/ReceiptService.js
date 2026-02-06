@@ -1,12 +1,13 @@
 /**
  * ReceiptService
- * Generates payment receipts for approved payment proofs
- * Uses HTML-to-text format that can be viewed/printed by clients
+ * Generates PDF payment receipts for approved payment proofs
+ * Uses pdfkit for professional PDF generation with company branding
  */
 
 const fs = require("fs");
 const path = require("path");
 const admin = require("firebase-admin");
+const PDFDocument = require("pdfkit");
 
 const db = admin.firestore();
 
@@ -63,20 +64,17 @@ class ReceiptService {
         deliveries: deliveries.map((d) => ({
           id: d.id,
           deliveryDate: d.deliveryDate,
-          amount: d.amount || d.deliveryRate,
-          truckPlate: d.truckPlate,
+          amount: d.amount || d.deliveryRate || d.DeliveryRate || 0,
+          truckPlate: d.truckPlate || d.TruckPlate,
           pickupLocation: d.pickupLocation,
           deliveryAddress: d.deliveryAddress || d.dropoffLocation,
         })),
         approvedBy: adminInfo.username,
         approvedAt: now,
-        referenceNumber: proofData.referenceNumber || "N/A",
+        referenceNumber: proofData.referenceNumber || this.generateReferenceNumber(),
       };
 
-      // Generate HTML receipt
-      const htmlContent = this.generateHTMLReceipt(receiptData);
-
-      // Save receipt file
+      // Generate PDF receipt
       const year = now.getFullYear();
       const month = String(now.getMonth() + 1).padStart(2, "0");
       const receiptDir = path.join(this.basePath, String(year), month);
@@ -85,11 +83,11 @@ class ReceiptService {
         fs.mkdirSync(receiptDir, { recursive: true });
       }
 
-      const fileName = `receipt_${receiptNumber}.html`;
+      const fileName = `receipt_${receiptNumber}.pdf`;
       const filePath = path.join(receiptDir, fileName);
       const relativePath = path.relative(this.basePath, filePath);
 
-      fs.writeFileSync(filePath, htmlContent, "utf8");
+      await this.generatePDFReceipt(receiptData, filePath);
 
       // Save receipt record to Firestore
       const receiptRef = await db.collection("paymentReceipts").add({
@@ -103,10 +101,11 @@ class ReceiptService {
         approvedBy: adminInfo.id,
         approvedByName: adminInfo.username,
         filePath: relativePath,
+        fileType: "application/pdf",
         generatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
-      console.log(`✅ Receipt generated: ${receiptNumber}`);
+      console.log(`✅ PDF Receipt generated: ${receiptNumber}`);
 
       return {
         success: true,
@@ -135,133 +134,273 @@ class ReceiptService {
   }
 
   /**
-   * Generate HTML receipt content
+   * Generate an auto reference number when client doesn't provide one
    */
-  generateHTMLReceipt(data) {
-    const formatCurrency = (amount) =>
-      `₱${Number(amount || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
-    const formatDate = (date) => {
-      if (!date) return "N/A";
-      const d = date instanceof Date ? date : new Date(date);
-      return d.toLocaleDateString("en-PH", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    };
+  generateReferenceNumber() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(Math.random() * 100000)
+      .toString()
+      .padStart(5, "0");
+    return `REF-${year}${month}${day}-${random}`;
+  }
 
-    const deliveryRows = data.deliveries
-      .map(
-        (d, i) => `
-      <tr>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${i + 1}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace;">${d.id}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${d.truckPlate || "N/A"}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDate(d.deliveryDate)}</td>
-        <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${formatCurrency(d.amount)}</td>
-      </tr>
-    `,
-      )
-      .join("");
+  /**
+   * Format currency for the receipt
+   */
+  formatCurrency(amount) {
+    return `PHP ${Number(amount || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 
-    return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Payment Receipt - ${data.receiptNumber}</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f3f4f6; padding: 40px; }
-    .receipt { max-width: 800px; margin: 0 auto; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden; }
-    .header { background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; padding: 30px 40px; }
-    .header h1 { font-size: 28px; margin-bottom: 5px; }
-    .header p { opacity: 0.9; font-size: 14px; }
-    .content { padding: 40px; }
-    .meta-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-bottom: 30px; }
-    .meta-item { background: #f9fafb; padding: 15px 20px; border-radius: 10px; }
-    .meta-label { font-size: 12px; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; }
-    .meta-value { font-size: 16px; font-weight: 600; color: #111827; }
-    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-    th { background: #f3f4f6; padding: 12px 10px; text-align: left; font-size: 12px; text-transform: uppercase; color: #6b7280; }
-    .total-row { background: #ecfdf5; }
-    .total-row td { padding: 15px 10px; font-weight: 700; font-size: 18px; color: #059669; }
-    .footer { background: #f9fafb; padding: 20px 40px; text-align: center; font-size: 12px; color: #6b7280; border-top: 1px solid #e5e7eb; }
-    .status-badge { display: inline-block; background: #dcfce7; color: #16a34a; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-    @media print {
-      body { background: white; padding: 0; }
-      .receipt { box-shadow: none; border-radius: 0; }
+  /**
+   * Format date for the receipt
+   * Handles: Date objects, Firestore Timestamps, serialized timestamps, ISO strings
+   */
+  formatDate(date) {
+    if (!date) return "N/A";
+    let d;
+    if (date instanceof Date) {
+      d = date;
+    } else if (date?.toDate && typeof date.toDate === 'function') {
+      d = date.toDate();
+    } else if (date?._seconds) {
+      d = new Date(date._seconds * 1000);
+    } else if (date?.seconds) {
+      d = new Date(date.seconds * 1000);
+    } else {
+      d = new Date(date);
     }
-  </style>
-</head>
-<body>
-  <div class="receipt">
-    <div class="header">
-      <h1>E-Trucking Management System</h1>
-      <p>Payment Receipt</p>
-    </div>
-    
-    <div class="content">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-        <div>
-          <h2 style="font-size: 20px; color: #111827; margin-bottom: 5px;">Receipt #${data.receiptNumber}</h2>
-          <p style="color: #6b7280; font-size: 14px;">Generated on ${formatDate(data.generatedAt)}</p>
-        </div>
-        <span class="status-badge">✓ PAID</span>
-      </div>
+    if (isNaN(d.getTime())) return "N/A";
+    return d.toLocaleDateString("en-PH", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  }
 
-      <div class="meta-grid">
-        <div class="meta-item">
-          <div class="meta-label">Client Name</div>
-          <div class="meta-value">${data.clientName}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">Reference Number</div>
-          <div class="meta-value">${data.referenceNumber}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">Payment Approved By</div>
-          <div class="meta-value">${data.approvedBy}</div>
-        </div>
-        <div class="meta-item">
-          <div class="meta-label">Approval Date</div>
-          <div class="meta-value">${formatDate(data.approvedAt)}</div>
-        </div>
-      </div>
+  /**
+   * Generate PDF receipt using pdfkit
+   */
+  async generatePDFReceipt(data, filePath) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: "A4",
+          margins: { top: 40, bottom: 40, left: 50, right: 50 },
+          info: {
+            Title: `Payment Receipt - ${data.receiptNumber}`,
+            Author: "E-Trucking Management System",
+            Subject: "Payment Receipt",
+          },
+        });
 
-      <h3 style="font-size: 14px; text-transform: uppercase; color: #6b7280; margin-bottom: 15px;">Paid Deliveries (${data.deliveries.length})</h3>
-      
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 40px;">#</th>
-            <th>Delivery ID</th>
-            <th>Truck</th>
-            <th>Date</th>
-            <th style="text-align: right;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${deliveryRows}
-        </tbody>
-        <tfoot>
-          <tr class="total-row">
-            <td colspan="4" style="text-align: right;">Total Amount Paid:</td>
-            <td style="text-align: right;">${formatCurrency(data.totalAmount)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+        const writeStream = fs.createWriteStream(filePath);
+        doc.pipe(writeStream);
 
-    <div class="footer">
-      <p>This is an official payment receipt from E-Trucking Management System.</p>
-      <p style="margin-top: 5px;">For inquiries, please contact support.</p>
-    </div>
-  </div>
-</body>
-</html>
-    `.trim();
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
+        // ═══════════════════════════════════════
+        // HEADER - Company branding
+        // ═══════════════════════════════════════
+        doc.rect(0, 0, doc.page.width, 120).fill("#1e40af");
+
+        // Company name
+        doc.fontSize(24).font("Helvetica-Bold").fillColor("#ffffff");
+        doc.text("E-Trucking Management System", 50, 35, { width: pageWidth });
+
+        // Subtitle
+        doc.fontSize(12).font("Helvetica").fillColor("#bfdbfe");
+        doc.text("Official Payment Receipt", 50, 65, { width: pageWidth });
+
+        // PAID badge on the right
+        const badgeX = doc.page.width - 150;
+        doc.roundedRect(badgeX, 40, 100, 30, 15).fill("#22c55e");
+        doc.fontSize(12).font("Helvetica-Bold").fillColor("#ffffff");
+        doc.text("PAID", badgeX, 48, { width: 100, align: "center" });
+
+        // Company address line
+        doc.fontSize(9).font("Helvetica").fillColor("#93c5fd");
+        doc.text("Trusted Trucking & Logistics Services", 50, 90, { width: pageWidth });
+
+        // ═══════════════════════════════════════
+        // RECEIPT INFO SECTION
+        // ═══════════════════════════════════════
+        let yPos = 140;
+
+        // Receipt number and date row
+        doc.fontSize(16).font("Helvetica-Bold").fillColor("#111827");
+        doc.text(`Receipt #${data.receiptNumber}`, 50, yPos);
+
+        doc.fontSize(10).font("Helvetica").fillColor("#6b7280");
+        doc.text(`Generated on ${this.formatDate(data.generatedAt)}`, 50, yPos + 22);
+
+        yPos += 55;
+
+        // ═══════════════════════════════════════
+        // META INFO GRID (2 columns)
+        // ═══════════════════════════════════════
+        const colWidth = (pageWidth - 15) / 2;
+        const metaItems = [
+          { label: "CLIENT NAME", value: data.clientName },
+          { label: "REFERENCE NUMBER", value: data.referenceNumber },
+          { label: "APPROVED BY", value: data.approvedBy },
+          { label: "APPROVAL DATE", value: this.formatDate(data.approvedAt) },
+        ];
+
+        metaItems.forEach((item, index) => {
+          const col = index % 2;
+          const row = Math.floor(index / 2);
+          const x = 50 + col * (colWidth + 15);
+          const y = yPos + row * 55;
+
+          // Background box
+          doc.roundedRect(x, y, colWidth, 45, 6).fill("#f9fafb");
+
+          // Label
+          doc.fontSize(8).font("Helvetica-Bold").fillColor("#6b7280");
+          doc.text(item.label, x + 12, y + 8, { width: colWidth - 24 });
+
+          // Value
+          doc.fontSize(11).font("Helvetica-Bold").fillColor("#111827");
+          doc.text(item.value || "N/A", x + 12, y + 22, { width: colWidth - 24 });
+        });
+
+        yPos += 125;
+
+        // ═══════════════════════════════════════
+        // DELIVERIES TABLE
+        // ═══════════════════════════════════════
+        doc.fontSize(10).font("Helvetica-Bold").fillColor("#6b7280");
+        doc.text(`PAID DELIVERIES (${data.deliveries.length})`, 50, yPos);
+        yPos += 20;
+
+        // Table header
+        const tableX = 50;
+        const colWidths = [30, 140, 80, 110, 100];
+        const headers = ["#", "Delivery ID", "Truck", "Date", "Amount"];
+
+        doc.rect(tableX, yPos, pageWidth, 25).fill("#f3f4f6");
+        doc.fontSize(8).font("Helvetica-Bold").fillColor("#6b7280");
+
+        let headerX = tableX + 8;
+        headers.forEach((header, i) => {
+          const align = i === headers.length - 1 ? "right" : "left";
+          const textX = i === headers.length - 1 ? headerX - 8 : headerX;
+          doc.text(header, textX, yPos + 8, {
+            width: colWidths[i],
+            align,
+          });
+          headerX += colWidths[i];
+        });
+
+        yPos += 25;
+
+        // Table rows
+        data.deliveries.forEach((delivery, index) => {
+          // Alternate row background
+          if (index % 2 === 0) {
+            doc.rect(tableX, yPos, pageWidth, 28).fill("#fafafa");
+          }
+
+          doc.fontSize(9).font("Helvetica").fillColor("#374151");
+
+          let cellX = tableX + 8;
+
+          // Row number
+          doc.text(`${index + 1}`, cellX, yPos + 8, { width: colWidths[0] });
+          cellX += colWidths[0];
+
+          // Delivery ID (truncated)
+          const shortId = delivery.id ? delivery.id.substring(0, 18) : "N/A";
+          doc.font("Courier").fontSize(8);
+          doc.text(shortId, cellX, yPos + 9, { width: colWidths[1] });
+          cellX += colWidths[1];
+
+          // Truck Plate
+          doc.font("Helvetica").fontSize(9);
+          doc.text(delivery.truckPlate || "N/A", cellX, yPos + 8, { width: colWidths[2] });
+          cellX += colWidths[2];
+
+          // Date
+          doc.text(this.formatDate(delivery.deliveryDate), cellX, yPos + 8, { width: colWidths[3] });
+          cellX += colWidths[3];
+
+          // Amount (right-aligned)
+          doc.font("Helvetica-Bold").fillColor("#111827");
+          doc.text(this.formatCurrency(delivery.amount), cellX - 8, yPos + 8, {
+            width: colWidths[4],
+            align: "right",
+          });
+
+          // Row divider line
+          doc.moveTo(tableX, yPos + 28).lineTo(tableX + pageWidth, yPos + 28).lineWidth(0.5).strokeColor("#e5e7eb").stroke();
+
+          yPos += 28;
+        });
+
+        // ═══════════════════════════════════════
+        // TOTAL ROW
+        // ═══════════════════════════════════════
+        yPos += 5;
+        doc.rect(tableX, yPos, pageWidth, 35).fill("#ecfdf5");
+
+        doc.fontSize(12).font("Helvetica-Bold").fillColor("#059669");
+        doc.text("Total Amount Paid:", tableX + 8, yPos + 10, {
+          width: pageWidth - colWidths[4] - 24,
+          align: "right",
+        });
+        doc.text(this.formatCurrency(data.totalAmount), tableX + pageWidth - colWidths[4] - 8, yPos + 10, {
+          width: colWidths[4],
+          align: "right",
+        });
+
+        yPos += 55;
+
+        // ═══════════════════════════════════════
+        // FOOTER
+        // ═══════════════════════════════════════
+        // Separator line
+        doc.moveTo(50, yPos).lineTo(50 + pageWidth, yPos).lineWidth(1).strokeColor("#e5e7eb").stroke();
+        yPos += 15;
+
+        doc.fontSize(9).font("Helvetica").fillColor("#6b7280");
+        doc.text(
+          "This is an official payment receipt from E-Trucking Management System.",
+          50,
+          yPos,
+          { width: pageWidth, align: "center" },
+        );
+        doc.text(
+          "This document confirms that payment has been received and verified.",
+          50,
+          yPos + 14,
+          { width: pageWidth, align: "center" },
+        );
+        doc.text(
+          "For inquiries, please contact our support team.",
+          50,
+          yPos + 28,
+          { width: pageWidth, align: "center" },
+        );
+
+        // Finalize PDF
+        doc.end();
+
+        writeStream.on("finish", () => {
+          console.log(`✅ PDF written to: ${filePath}`);
+          resolve();
+        });
+
+        writeStream.on("error", (err) => {
+          console.error("❌ Error writing PDF:", err);
+          reject(err);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
   }
 
   /**

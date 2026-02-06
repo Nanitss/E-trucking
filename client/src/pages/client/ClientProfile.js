@@ -279,14 +279,23 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         responseType: "blob",
       });
 
-      const blob = new Blob([response.data], { type: "text/html" });
+      // Detect content type from response (PDF or HTML for legacy receipts)
+      const contentType = response.headers["content-type"] || "application/pdf";
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, "_blank");
 
       setTimeout(() => window.URL.revokeObjectURL(url), 10000);
     } catch (err) {
       console.error("Error fetching receipt:", err);
-      // Could show a toast here if needed
+      const status = err?.response?.status;
+      if (status === 404) {
+        alert("Receipt not yet available for this payment. It may have been approved before receipt generation was enabled.");
+      } else if (status === 403) {
+        alert("You are not authorized to view this receipt.");
+      } else {
+        alert("Failed to load receipt. Please try again later.");
+      }
     }
   };
 

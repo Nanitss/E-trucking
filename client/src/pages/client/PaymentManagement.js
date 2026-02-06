@@ -335,6 +335,7 @@ const PaymentManagement = () => {
               deliveryIds: selectedDeliveries,
               referenceNumber: proofForm.referenceNumber,
               notes: proofForm.notes,
+              clientId: getUserData()?.id,
             },
             {
               headers: {

@@ -1679,7 +1679,9 @@ router.get("/receipt/:proofId", authenticateJWT, async (req, res) => {
     }
 
     // Check if user is authorized (admin or the client who owns the receipt)
-    if (req.user.role !== "admin" && req.user.id !== receipt.clientId) {
+    // For client users, req.user.id is auth ID and req.user.clientId is Firestore doc ID
+    const isOwner = req.user.id === receipt.clientId || req.user.clientId === receipt.clientId;
+    if (req.user.role !== "admin" && !isOwner) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view this receipt",
@@ -1689,11 +1691,16 @@ router.get("/receipt/:proofId", authenticateJWT, async (req, res) => {
     // Get the file path
     const filePath = receiptService.getReceiptFilePath(receipt.filePath);
 
-    // Set headers for inline viewing
-    res.setHeader("Content-Type", "text/html");
+    // Determine content type from receipt record or file extension
+    const isPdf = receipt.fileType === "application/pdf" || receipt.filePath.endsWith(".pdf");
+    const contentType = isPdf ? "application/pdf" : "text/html";
+    const fileExt = isPdf ? "pdf" : "html";
+
+    // Set headers for inline viewing / download
+    res.setHeader("Content-Type", contentType);
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="receipt_${receipt.receiptNumber}.html"`,
+      `inline; filename="receipt_${receipt.receiptNumber}.${fileExt}"`,
     );
 
     // Stream the file
@@ -1736,8 +1743,9 @@ router.get(
 
       const delivery = deliveryDoc.data();
 
-      // Check authorization
-      if (req.user.role !== "admin" && req.user.id !== delivery.clientId) {
+      // Check authorization - compare both auth ID and clientId
+      const isOwner = req.user.id === delivery.clientId || req.user.clientId === delivery.clientId;
+      if (req.user.role !== "admin" && !isOwner) {
         return res.status(403).json({
           success: false,
           message: "Not authorized",

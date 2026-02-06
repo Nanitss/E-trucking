@@ -47,7 +47,28 @@ class NotificationService extends FirebaseService {
       // Handle quota exceeded errors gracefully
       if (error.code === 8 || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('Quota exceeded')) {
         console.warn('⚠️ Firestore quota exceeded - returning empty notifications array');
-        return []; // Return empty array instead of throwing
+        return [];
+      }
+      
+      // Handle missing composite index - fall back to simple query and sort in memory
+      if (error.code === 9 || error.message.includes('FAILED_PRECONDITION') || error.message.includes('requires an index')) {
+        console.warn('⚠️ Firestore index missing for notifications - falling back to simple query');
+        try {
+          const fallbackQuery = this.collection
+            .where('userId', '==', userId)
+            .limit(limit);
+          const fallbackSnapshot = await fallbackQuery.get();
+          const docs = this._formatDocs(fallbackSnapshot);
+          // Sort in memory by created_at descending
+          return docs.sort((a, b) => {
+            const aTime = a.created_at?._seconds || a.created_at?.seconds || 0;
+            const bTime = b.created_at?._seconds || b.created_at?.seconds || 0;
+            return bTime - aTime;
+          });
+        } catch (fallbackError) {
+          console.error('Error in fallback notification query:', fallbackError);
+          return [];
+        }
       }
       
       throw error;
@@ -69,7 +90,25 @@ class NotificationService extends FirebaseService {
       // Handle quota exceeded errors gracefully
       if (error.code === 8 || error.message.includes('RESOURCE_EXHAUSTED') || error.message.includes('Quota exceeded')) {
         console.warn('⚠️ Firestore quota exceeded - returning 0 for unread count');
-        return 0; // Return 0 instead of throwing
+        return 0;
+      }
+      
+      // Handle missing composite index - fall back to simple query and filter in memory
+      if (error.code === 9 || error.message.includes('FAILED_PRECONDITION') || error.message.includes('requires an index')) {
+        console.warn('⚠️ Firestore index missing for unread count - falling back to simple query');
+        try {
+          const fallbackQuery = this.collection
+            .where('userId', '==', userId);
+          const fallbackSnapshot = await fallbackQuery.get();
+          let count = 0;
+          fallbackSnapshot.forEach(doc => {
+            if (doc.data().read === false) count++;
+          });
+          return count;
+        } catch (fallbackError) {
+          console.error('Error in fallback unread count query:', fallbackError);
+          return 0;
+        }
       }
       
       throw error;
@@ -94,21 +133,36 @@ class NotificationService extends FirebaseService {
   async markAllAsRead(userId) {
     try {
       const batch = admin.firestore().batch();
-      const query = this.collection
-        .where('userId', '==', userId)
-        .where('read', '==', false);
-      
-      const snapshot = await query.get();
+      let query;
+      let snapshot;
+
+      try {
+        query = this.collection
+          .where('userId', '==', userId)
+          .where('read', '==', false);
+        snapshot = await query.get();
+      } catch (indexError) {
+        // Fallback if composite index is missing
+        if (indexError.code === 9 || indexError.message.includes('FAILED_PRECONDITION') || indexError.message.includes('requires an index')) {
+          console.warn('⚠️ Firestore index missing for markAllAsRead - falling back to simple query');
+          query = this.collection.where('userId', '==', userId);
+          snapshot = await query.get();
+        } else {
+          throw indexError;
+        }
+      }
       
       if (snapshot.empty) {
         return true;
       }
       
       snapshot.forEach(doc => {
-        batch.update(doc.ref, { 
-          read: true,
-          read_at: admin.firestore.FieldValue.serverTimestamp()
-        });
+        if (doc.data().read === false) {
+          batch.update(doc.ref, { 
+            read: true,
+            read_at: admin.firestore.FieldValue.serverTimestamp()
+          });
+        }
       });
       
       await batch.commit();

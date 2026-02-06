@@ -8,12 +8,47 @@ const { authenticateJWT } = require('../middleware/auth');
 router.get('/', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user.id;
+    const clientId = req.user.clientId;
     
-    // Get user notifications
-    const notifications = await NotificationService.getUserNotifications(userId);
+    console.log('🔔 GET /notifications - userId:', userId, 'clientId:', clientId);
     
-    // Get unread count
-    const unreadCount = await NotificationService.getUnreadCount(userId);
+    // For client users, notifications may be stored under clientId (Firestore doc ID)
+    // rather than the auth user ID. Fetch from both sources and merge.
+    let notifications = [];
+    let unreadCount = 0;
+
+    if (clientId && clientId !== userId) {
+      // Fetch notifications for both auth ID and client doc ID, then merge
+      const [authNotifs, clientNotifs] = await Promise.all([
+        NotificationService.getUserNotifications(userId),
+        NotificationService.getUserNotifications(clientId),
+      ]);
+      console.log('🔔 Auth notifs:', authNotifs.length, '| Client notifs:', clientNotifs.length);
+
+      // Merge and deduplicate by ID
+      const notifMap = new Map();
+      [...authNotifs, ...clientNotifs].forEach(n => notifMap.set(n.id, n));
+      notifications = Array.from(notifMap.values())
+        .sort((a, b) => {
+          const aTime = a.created_at?._seconds || 0;
+          const bTime = b.created_at?._seconds || 0;
+          return bTime - aTime;
+        })
+        .slice(0, 30);
+
+      // Count unread across both
+      const [authCount, clientCount] = await Promise.all([
+        NotificationService.getUnreadCount(userId),
+        NotificationService.getUnreadCount(clientId),
+      ]);
+      // Subtract any overlap (notifications counted in both)
+      const unreadIds = new Set();
+      notifications.forEach(n => { if (!n.read) unreadIds.add(n.id); });
+      unreadCount = unreadIds.size;
+    } else {
+      notifications = await NotificationService.getUserNotifications(userId);
+      unreadCount = await NotificationService.getUnreadCount(userId);
+    }
     
     res.json({
       notifications,
@@ -50,8 +85,15 @@ router.put('/:id/read', authenticateJWT, async (req, res) => {
 router.put('/read-all', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user.id;
+    const clientId = req.user.clientId;
     
+    // Mark all as read for auth user ID
     await NotificationService.markAllAsRead(userId);
+    
+    // Also mark for clientId if different (payment notifications use clientId)
+    if (clientId && clientId !== userId) {
+      await NotificationService.markAllAsRead(clientId);
+    }
     
     res.json({
       success: true,

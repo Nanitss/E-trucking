@@ -313,8 +313,9 @@ const AdminBillings = ({ currentUser }) => {
         },
       );
 
-      // Create a blob URL and open in new tab
-      const blob = new Blob([response.data], { type: "text/html" });
+      // Detect content type from response (PDF or HTML for legacy receipts)
+      const contentType = response.headers["content-type"] || "application/pdf";
+      const blob = new Blob([response.data], { type: contentType });
       const url = window.URL.createObjectURL(blob);
       window.open(url, "_blank");
 
@@ -850,28 +851,95 @@ const AdminBillings = ({ currentUser }) => {
               )}
             </div>
 
-            <div className="p-6 border-t border-gray-100 bg-white flex justify-end gap-3">
-              <button
-                onClick={handleOpenRejectDialog}
-                disabled={approvingProof || rejectingProof}
-                className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium"
-              >
-                Reject Proof
-              </button>
-              <button
-                onClick={handleApproveProof}
-                disabled={approvingProof || rejectingProof}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2"
-              >
-                {approvingProof ? (
-                  "Approving..."
+            <div className="p-6 border-t border-gray-100 bg-white">
+              {/* Proof metadata */}
+              {viewingProof.referenceNumber && (
+                <div className="mb-4 text-sm text-gray-600">
+                  <span className="font-medium text-gray-700">Ref #:</span> {viewingProof.referenceNumber}
+                  {viewingProof.clientName && (
+                    <span className="ml-4"><span className="font-medium text-gray-700">Client:</span> {viewingProof.clientName}</span>
+                  )}
+                  {viewingProof.totalAmount && (
+                    <span className="ml-4"><span className="font-medium text-gray-700">Amount:</span> {formatCurrency(viewingProof.totalAmount)}</span>
+                  )}
+                </div>
+              )}
+
+              <div className="flex justify-end gap-3">
+                {viewingProof.status === "pending" ? (
+                  <>
+                    <button
+                      onClick={handleOpenRejectDialog}
+                      disabled={approvingProof || rejectingProof}
+                      className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium"
+                    >
+                      Reject Proof
+                    </button>
+                    <button
+                      onClick={handleApproveProof}
+                      disabled={approvingProof || rejectingProof}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2"
+                    >
+                      {approvingProof ? (
+                        "Approving..."
+                      ) : (
+                        <>
+                          <TbCheck /> Approve Payment
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : viewingProof.status === "approved" ? (
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200">
+                      <TbCheck size={16} /> Approved
+                    </span>
+                    {viewingProof.payment?.proofId && (
+                      <button
+                        onClick={() => {
+                          setProofViewerOpen(false);
+                          handleViewReceipt(viewingProof.payment);
+                        }}
+                        className="px-4 py-2 text-purple-600 border border-purple-200 hover:bg-purple-50 rounded-lg transition-all font-medium flex items-center gap-2"
+                      >
+                        <TbDownload size={16} /> View Receipt
+                      </button>
+                    )}
+                  </div>
+                ) : viewingProof.status === "rejected" ? (
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-800 rounded-full text-sm font-medium border border-red-200">
+                      <TbX size={16} /> Rejected
+                    </span>
+                    {viewingProof.rejectionReason && (
+                      <span className="text-sm text-gray-500">Reason: {viewingProof.rejectionReason}</span>
+                    )}
+                  </div>
                 ) : (
                   <>
-                    {" "}
-                    <TbCheck /> Approve Payment{" "}
+                    <button
+                      onClick={handleOpenRejectDialog}
+                      disabled={approvingProof || rejectingProof}
+                      className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium"
+                    >
+                      Reject Proof
+                    </button>
+                    <button
+                      onClick={handleApproveProof}
+                      disabled={approvingProof || rejectingProof}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2"
+                    >
+                      {approvingProof ? (
+                        "Approving..."
+                      ) : (
+                        <>
+                          <TbCheck /> Approve Payment
+                        </>
+                      )}
+                    </button>
                   </>
                 )}
-              </button>
+              </div>
             </div>
           </div>
         </div>

@@ -116,6 +116,8 @@ class PaymentService {
           createdAt: delivery.created_at ? (delivery.created_at.seconds ? new Date(delivery.created_at.seconds * 1000).toISOString() : new Date(delivery.created_at).toISOString()) : deliveryDate.toISOString(),
           transactionFee: 0, // No transaction fee for now
           testMode: this.isTestMode, // Mark as test payment
+          proofId: delivery.proofId || null,
+          proofStatus: delivery.proofStatus || null,
           metadata: {
             clientName: delivery.clientName || 'Client',
             truckPlate: delivery.truckPlate || 'Unknown',

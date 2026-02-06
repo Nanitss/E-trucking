@@ -58,7 +58,13 @@ export const NotificationProvider = ({ children }) => {
   // Mark a notification as read
   const markAsRead = async (notificationId) => {
     try {
-      await axios.put(`/api/notifications/${notificationId}/read`);
+      let token = null;
+      try { token = localStorage.getItem('token'); } catch (e) { /* ignore */ }
+      if (!token) return;
+
+      await axios.put(`${API_BASE_URL}/api/notifications/${notificationId}/read`, null, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       // Update the state locally
       setNotifications(prevNotifications =>
@@ -76,7 +82,13 @@ export const NotificationProvider = ({ children }) => {
   // Mark all notifications as read
   const markAllAsRead = async () => {
     try {
-      await axios.put('/api/notifications/read-all');
+      let token = null;
+      try { token = localStorage.getItem('token'); } catch (e) { /* ignore */ }
+      if (!token) return;
+
+      await axios.put(`${API_BASE_URL}/api/notifications/read-all`, null, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
       // Update the state locally
       setNotifications(prevNotifications =>
