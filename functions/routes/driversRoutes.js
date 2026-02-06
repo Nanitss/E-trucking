@@ -22,6 +22,26 @@ router.get('/', authenticateJWT, async (req, res) => {
   }
 });
 
+// ─── GET /api/drivers/profile ──────────────────────────────────────────────
+router.get('/profile', authenticateJWT, async (req, res) => {
+  try {
+    console.log(`GET /api/drivers/profile - Fetching profile for user ${req.user.id}`);
+    const driver = await DriverService.getDriverByUserId(req.user.id);
+
+    if (!driver) {
+      return res.status(404).json({ message: 'Driver profile not found' });
+    }
+
+    res.json(driver);
+  } catch (err) {
+    console.error('Error fetching driver profile:', err);
+    res.status(500).json({
+      message: 'Server error while fetching driver profile',
+      error: err.message
+    });
+  }
+});
+
 // ─── GET /api/drivers/:id ────────────────────────────────────────────────────────
 router.get('/:id', authenticateJWT, async (req, res) => {
   try {
@@ -45,7 +65,7 @@ router.post('/', authenticateJWT, async (req, res) => {
   try {
     console.log('POST /api/drivers - Creating new driver', req.body);
     const driver = await DriverService.createDriver(req.body);
-    
+
     // Log the creation action to audit trail
     await AuditService.logCreate(
       req.user.id,
@@ -57,9 +77,9 @@ router.post('/', authenticateJWT, async (req, res) => {
         requestBody: req.body
       }
     );
-    
+
     console.log(`✅ Driver creation logged to audit trail for driver ${driver.id}`);
-    
+
     res.status(201).json({
       id: driver.id,
       message: 'Driver created successfully'
@@ -81,7 +101,7 @@ router.put('/:id', authenticateJWT, async (req, res) => {
   try {
     console.log(`PUT /api/drivers/${req.params.id} - Updating driver`, req.body);
     const driver = await DriverService.updateDriver(req.params.id, req.body);
-    
+
     // Log the update action to audit trail
     await AuditService.logUpdate(
       req.user.id,
@@ -93,9 +113,9 @@ router.put('/:id', authenticateJWT, async (req, res) => {
         requestBody: req.body
       }
     );
-    
+
     console.log(`✅ Driver update logged to audit trail for driver ${req.params.id}`);
-    
+
     console.log(`Driver ${req.params.id} updated successfully`);
     res.json({
       message: 'Driver updated successfully',
@@ -120,13 +140,13 @@ router.put('/:id', authenticateJWT, async (req, res) => {
 router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
   try {
     console.log('🔧 POST /api/drivers/fix-stuck-statuses - Fixing stuck driver statuses');
-    
+
     const { db } = require('../config/firebase');
-    
+
     // Get all deliveries that are delivered, completed, or cancelled
     const finalStatuses = ['delivered', 'completed', 'cancelled'];
     const deliveriesSnapshot = await db.collection('deliveries').get();
-    
+
     const finishedDeliveries = [];
     deliveriesSnapshot.forEach(doc => {
       const delivery = doc.data();
@@ -137,9 +157,9 @@ router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
         });
       }
     });
-    
+
     console.log(`Found ${finishedDeliveries.length} finished deliveries`);
-    
+
     // Track unique drivers to restore
     const driversToRestore = new Set();
     finishedDeliveries.forEach(delivery => {
@@ -147,21 +167,21 @@ router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
         driversToRestore.add(delivery.driverId);
       }
     });
-    
+
     console.log(`Drivers to check: ${driversToRestore.size}`);
-    
+
     // Restore driver statuses
     let driversFixed = 0;
     const fixedDrivers = [];
-    
+
     for (const driverId of driversToRestore) {
       const driverRef = db.collection('drivers').doc(driverId);
       const driverDoc = await driverRef.get();
-      
+
       if (driverDoc.exists) {
         const driver = driverDoc.data();
         const currentStatus = driver.DriverStatus || driver.driverStatus;
-        
+
         // Only update if not already active
         if (currentStatus && currentStatus.toLowerCase() !== 'active') {
           await driverRef.update({
@@ -169,7 +189,7 @@ router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
             driverStatus: 'active',
             updated_at: new Date()
           });
-          
+
           const driverName = driver.DriverName || driver.driverName || driverId;
           console.log(`✅ Restored driver: ${driverName} (${currentStatus} → active)`);
           fixedDrivers.push({ id: driverId, name: driverName, oldStatus: currentStatus });
@@ -177,14 +197,14 @@ router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
         }
       }
     }
-    
+
     res.json({
       message: `Successfully restored ${driversFixed} driver(s) to active status`,
       totalChecked: driversToRestore.size,
       fixed: driversFixed,
       drivers: fixedDrivers
     });
-    
+
   } catch (error) {
     console.error('Error fixing stuck driver statuses:', error);
     res.status(500).json({
@@ -198,12 +218,12 @@ router.post('/fix-stuck-statuses', authenticateJWT, async (req, res) => {
 router.delete('/:id', authenticateJWT, async (req, res) => {
   try {
     console.log(`DELETE /api/drivers/${req.params.id}`);
-    
+
     // Get driver details before deletion for audit log
     const driver = await DriverService.getDriverById(req.params.id);
-    
+
     await DriverService.deleteDriver(req.params.id);
-    
+
     // Log the delete action to audit trail
     await AuditService.logDelete(
       req.user.id,
@@ -214,9 +234,9 @@ router.delete('/:id', authenticateJWT, async (req, res) => {
         name: driver.DriverName
       }
     );
-    
+
     console.log(`✅ Driver deletion logged to audit trail for driver ${req.params.id}`);
-    
+
     res.json({ message: 'Driver deleted successfully' });
   } catch (err) {
     console.error('Error deleting driver:', err);
@@ -252,9 +272,9 @@ router.post('/location', authenticateJWT, async (req, res) => {
     const { lat, lng, accuracy, speed, heading, altitude, timestamp, isFinal, deviceInfo } = req.body;
 
     if (!lat || !lng) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        message: 'Latitude and longitude are required' 
+        message: 'Latitude and longitude are required'
       });
     }
 
@@ -283,12 +303,12 @@ router.post('/location', authenticateJWT, async (req, res) => {
 
     // Check if driver has an assigned truck and update truck GPS data
     const driver = await DriverService.getDriverById(req.user.id);
-    
+
     if (driver && driver.assignedTruckId) {
       try {
         // Import Firebase admin if not already imported
         const admin = require('firebase-admin');
-        
+
         // Update truck GPS data in Firebase Realtime Database
         const gpsRef = admin.database().ref(`Trucks/${driver.assignedTruckId}/data`);
         await gpsRef.update({
@@ -324,10 +344,10 @@ router.post('/location', authenticateJWT, async (req, res) => {
     });
   } catch (error) {
     console.error('❌ Update location error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
       message: 'Server error updating location',
-      error: error.message 
+      error: error.message
     });
   }
 });

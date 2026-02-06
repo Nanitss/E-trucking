@@ -1,50 +1,31 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  CircularProgress,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Tooltip,
-  Grid,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  TablePagination,
-} from "@mui/material";
-import {
-  Payment as PaymentIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Schedule as ScheduleIcon,
-  Edit as EditIcon,
-  Search as SearchIcon,
-  FilterList as FilterListIcon,
-  Close as CloseIcon,
-  FilterListOff as FilterListOffIcon,
-} from "@mui/icons-material";
 import { format, differenceInDays } from "date-fns";
+import {
+  TbReceipt,
+  TbAlertTriangle,
+  TbCheck,
+  TbClock,
+  TbEdit,
+  TbSearch,
+  TbFilter,
+  TbX,
+  TbFilterOff,
+  TbEye,
+  TbFileInvoice,
+  TbChevronLeft,
+  TbChevronRight,
+  TbCreditCard,
+  TbCalendar,
+  TbBuilding,
+  TbTruck,
+  TbCurrencyPeso
+} from "react-icons/tb";
 import AdminHeader from "../../../components/common/AdminHeader";
+import { useTimeframe } from "../../../contexts/TimeframeContext";
 
 const AdminBillings = ({ currentUser }) => {
+  const { isWithinTimeframe } = useTimeframe();
   const [allPayments, setAllPayments] = useState([]);
   const [filteredPayments, setFilteredPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,7 +33,7 @@ const AdminBillings = ({ currentUser }) => {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
-  const [newStatus, setNewStatus] = useState("");
+
   const [alert, setAlert] = useState({
     show: false,
     type: "info",
@@ -76,14 +57,7 @@ const AdminBillings = ({ currentUser }) => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [showFilters, setShowFilters] = useState(false);
 
-  // Calculate active filters count
-  const activeFilterCount = [
-    statusFilter !== "all" ? statusFilter : null,
-    startDate ? startDate : null,
-    endDate ? endDate : null,
-  ].filter(Boolean).length;
-
-  // Summary statistics
+  // Stats state
   const [stats, setStats] = useState({
     totalPayments: 0,
     totalAmount: 0,
@@ -97,13 +71,20 @@ const AdminBillings = ({ currentUser }) => {
     pendingVerificationAmount: 0,
   });
 
+  const activeFilterCount = [
+    statusFilter !== "all",
+    startDate,
+    endDate,
+  ].filter(Boolean).length;
+
   useEffect(() => {
     fetchAllPayments();
   }, []);
 
+  // Re-filter when timeframe changes from header
   useEffect(() => {
     filterPayments();
-  }, [allPayments, statusFilter, searchQuery, startDate, endDate]);
+  }, [allPayments, statusFilter, searchQuery, startDate, endDate, isWithinTimeframe]);
 
   useEffect(() => {
     calculateStats();
@@ -112,42 +93,18 @@ const AdminBillings = ({ currentUser }) => {
   const fetchAllPayments = async () => {
     try {
       setLoading(true);
-      setError(null);
       const token = localStorage.getItem("token");
-
-      if (!token) {
-        setError("Authentication token missing. Please login again.");
-        setLoading(false);
-        return;
-      }
-
-      console.log("🔍 Fetching all payments from /api/payments/all");
+      if (!token) throw new Error("Authentication token missing");
 
       const response = await axios.get("/api/payments/all", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("✅ Payments response:", response.data);
-      console.log("📊 Number of payments:", response.data.data?.length || 0);
-
-      const paymentsData = response.data.data || [];
-      setAllPayments(paymentsData);
-
-      if (paymentsData.length === 0) {
-        console.log(
-          "⚠️ No payment records found. This means you have no deliveries in the database.",
-        );
-      }
-
+      setAllPayments(response.data.data || []);
       setError(null);
-    } catch (error) {
-      console.error("❌ Error fetching payments:", error);
-      console.error("Error details:", error.response?.data);
-      const errorMsg =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to load payments";
-      setError(errorMsg);
+    } catch (err) {
+      console.error("Error fetching payments:", err);
+      setError(err.response?.data?.message || "Failed to load payments");
     } finally {
       setLoading(false);
     }
@@ -156,12 +113,16 @@ const AdminBillings = ({ currentUser }) => {
   const filterPayments = () => {
     let filtered = [...allPayments];
 
-    // Status filter
+    // Apply timeframe filter from header
+    filtered = filtered.filter((p) => {
+      const paymentDate = p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
+      return isWithinTimeframe(paymentDate);
+    });
+
     if (statusFilter !== "all") {
       filtered = filtered.filter((p) => p.status === statusFilter);
     }
 
-    // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(
@@ -169,33 +130,25 @@ const AdminBillings = ({ currentUser }) => {
           p.deliveryId?.toLowerCase().includes(query) ||
           p.clientName?.toLowerCase().includes(query) ||
           p.clientId?.toLowerCase().includes(query) ||
-          p.metadata?.truckPlate?.toLowerCase().includes(query),
+          p.metadata?.truckPlate?.toLowerCase().includes(query)
       );
     }
 
-    // Date range filter
     if (startDate || endDate) {
       filtered = filtered.filter((p) => {
-        // Get the payment/delivery date (try multiple field names)
-        const paymentDate =
-          p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
-        if (!paymentDate) return true; // Include payments without dates
+        const paymentDate = p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
+        if (!paymentDate) return true;
 
         const date = new Date(paymentDate);
         const start = startDate ? new Date(startDate) : null;
         const end = endDate ? new Date(endDate) : null;
 
-        // Set time to start/end of day for accurate comparison
         if (start) start.setHours(0, 0, 0, 0);
         if (end) end.setHours(23, 59, 59, 999);
 
-        if (start && end) {
-          return date >= start && date <= end;
-        } else if (start) {
-          return date >= start;
-        } else if (end) {
-          return date <= end;
-        }
+        if (start && end) return date >= start && date <= end;
+        if (start) return date >= start;
+        if (end) return date <= end;
         return true;
       });
     }
@@ -220,7 +173,6 @@ const AdminBillings = ({ currentUser }) => {
 
     filteredPayments.forEach((payment) => {
       newStats.totalAmount += payment.amount || 0;
-
       if (payment.status === "paid") {
         newStats.paidPayments++;
         newStats.paidAmount += payment.amount || 0;
@@ -239,31 +191,6 @@ const AdminBillings = ({ currentUser }) => {
     setStats(newStats);
   };
 
-  const handleViewProof = async (payment) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`/api/payments/${payment.id}/proof`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.data.success) {
-        setViewingProof({
-          ...response.data.data,
-          payment: payment,
-        });
-        setProofViewerOpen(true);
-      }
-    } catch (error) {
-      console.error("Error fetching proof:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message:
-          error.response?.data?.message || "Failed to load payment proof",
-      });
-    }
-  };
-
   const handleMarkAsPaid = (payment) => {
     setSelectedPayment(payment);
     setEditDialogOpen(true);
@@ -271,991 +198,431 @@ const AdminBillings = ({ currentUser }) => {
 
   const handleConfirmMarkAsPaid = async () => {
     if (!selectedPayment) return;
-
     try {
       setUpdatingStatus(true);
       const token = localStorage.getItem("token");
-
-      const response = await axios.put(
+      await axios.put(
         `/api/payments/${selectedPayment.id}/status`,
         { status: "paid" },
-        { headers: { Authorization: `Bearer ${token}` } },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.success) {
-        setAlert({
-          show: true,
-          type: "success",
-          message: "Payment status updated successfully",
-        });
-
-        // Refresh payments
-        await fetchAllPayments();
-        setEditDialogOpen(false);
-      }
-    } catch (error) {
-      console.error("Error updating payment status:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message:
-          error.response?.data?.message || "Failed to update payment status",
-      });
+      setAlert({ show: true, type: "success", message: "Payment updated successfully" });
+      await fetchAllPayments();
+      setEditDialogOpen(false);
+    } catch (err) {
+      setAlert({ show: true, type: "error", message: err.response?.data?.message || "Update failed" });
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  // Approve payment proof - marks all linked deliveries as paid
+  const handleViewProof = async (payment) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`/api/payments/${payment.id}/proof`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data.success) {
+        setViewingProof({ ...response.data.data, payment });
+        setProofViewerOpen(true);
+      }
+    } catch (err) {
+      setAlert({ show: true, type: "error", message: "Failed to load proof" });
+    }
+  };
+
   const handleApproveProof = async () => {
     if (!viewingProof?.id) return;
-
     try {
       setApprovingProof(true);
       const token = localStorage.getItem("token");
-
-      const response = await axios.post(
-        "/api/payments/approve-proof",
-        { proofId: viewingProof.id },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        setAlert({
-          show: true,
-          type: "success",
-          message: `Payment approved! ${response.data.data.deliveriesUpdated} delivery(s) marked as paid.`,
-        });
-
-        setProofViewerOpen(false);
-        setViewingProof(null);
-        await fetchAllPayments();
-      }
-    } catch (error) {
-      console.error("Error approving proof:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message:
-          error.response?.data?.message || "Failed to approve payment proof",
-      });
+      await axios.post("/api/payments/approve-proof", { proofId: viewingProof.id }, { headers: { Authorization: `Bearer ${token}` } });
+      setAlert({ show: true, type: "success", message: "Payment approved!" });
+      setProofViewerOpen(false);
+      await fetchAllPayments();
+    } catch (err) {
+      setAlert({ show: true, type: "error", message: "Failed to approve proof" });
     } finally {
       setApprovingProof(false);
     }
   };
 
-  // Open rejection dialog
-  const handleOpenRejectDialog = () => {
-    setRejectDialogOpen(true);
-    setRejectionReason("");
-  };
-
-  // Reject payment proof - allows client to resubmit
   const handleRejectProof = async () => {
-    if (!viewingProof?.id || !rejectionReason.trim()) {
-      setAlert({
-        show: true,
-        type: "error",
-        message: "Please provide a reason for rejection",
-      });
-      return;
-    }
-
+    if (!viewingProof?.id || !rejectionReason.trim()) return;
     try {
       setRejectingProof(true);
       const token = localStorage.getItem("token");
-
-      const response = await axios.post(
-        "/api/payments/reject-proof",
-        {
-          proofId: viewingProof.id,
-          rejectionReason: rejectionReason.trim(),
-        },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
-
-      if (response.data.success) {
-        setAlert({
-          show: true,
-          type: "info",
-          message: `Payment proof rejected. Client can now submit a new proof.`,
-        });
-
-        setRejectDialogOpen(false);
-        setRejectionReason("");
-        setProofViewerOpen(false);
-        setViewingProof(null);
-        await fetchAllPayments();
-      }
-    } catch (error) {
-      console.error("Error rejecting proof:", error);
-      setAlert({
-        show: true,
-        type: "error",
-        message:
-          error.response?.data?.message || "Failed to reject payment proof",
-      });
+      await axios.post("/api/payments/reject-proof", { proofId: viewingProof.id, rejectionReason: rejectionReason.trim() }, { headers: { Authorization: `Bearer ${token}` } });
+      setAlert({ show: true, type: "info", message: "Proof rejected" });
+      setRejectDialogOpen(false);
+      setProofViewerOpen(false);
+      await fetchAllPayments();
+    } catch (err) {
+      setAlert({ show: true, type: "error", message: "Failed to reject proof" });
     } finally {
       setRejectingProof(false);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return `₱${new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount)}`;
-  };
-
-  const formatDate = (date) => {
-    if (!date) return "N/A";
-    try {
-      return format(new Date(date), "MMM dd, yyyy");
-    } catch (error) {
-      return "Invalid Date";
-    }
-  };
-
-  const getDaysUntilDue = (dueDate) => {
-    if (!dueDate) return null;
-    const days = differenceInDays(new Date(dueDate), new Date());
-    return days;
-  };
-
+  // Helper functions
+  const formatCurrency = (amount) => `₱${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(amount)}`;
+  const formatDate = (date) => date ? format(new Date(date), "MMM dd, yyyy") : "N/A";
   const getStatusColor = (status) => {
     switch (status) {
-      case "paid":
-        return "success";
-      case "overdue":
-        return "error";
-      case "failed":
-        return "error";
-      case "pending":
-        return "warning";
-      default:
-        return "default";
+      case "paid": return "bg-green-100 text-green-800 border-green-200";
+      case "overdue": return "bg-red-100 text-red-800 border-red-200";
+      case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "pending_verification": return "bg-blue-100 text-blue-800 border-blue-200";
+      default: return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "paid":
-        return <CheckCircleIcon />;
-      case "overdue":
-        return <WarningIcon />;
-      case "failed":
-        return <WarningIcon />;
-      case "pending":
-        return <ScheduleIcon />;
-      default:
-        return <PaymentIcon />;
-    }
+  const getStatusLabel = (status) => {
+    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
-
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  if (loading && allPayments.length === 0) {
-    return (
-      <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        minHeight="400px"
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
 
   return (
-    <Box>
+    <div className="min-h-screen bg-gray-50/50">
       <AdminHeader currentUser={currentUser} />
 
-      <Box p={3} sx={{ paddingTop: "24px" }}>
-        {/* Page Title */}
-        <Typography variant="h4" component="h1" mb={3}>
-          Billing Management
-        </Typography>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">Billing Management</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage and track all payment records</p>
+        </div>
 
+        {/* Alerts */}
         {alert.show && (
-          <Alert
-            severity={alert.type}
-            onClose={() => setAlert({ show: false })}
-            sx={{ mb: 3 }}
-          >
-            {alert.message}
-          </Alert>
+          <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${alert.type === "error" ? "bg-red-50 border-red-200 text-red-700" :
+            alert.type === "success" ? "bg-green-50 border-green-200 text-green-700" :
+              "bg-blue-50 border-blue-200 text-blue-700"
+            }`}>
+            {alert.type === "error" ? <TbAlertTriangle size={20} /> : <TbCheck size={20} />}
+            <span className="text-sm font-medium">{alert.message}</span>
+            <button onClick={() => setAlert({ ...alert, show: false })} className="ml-auto hover:opacity-75">
+              <TbX size={18} />
+            </button>
+          </div>
         )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-
-        {/* Statistics Cards */}
-        {/* Statistics Cards - Custom Grid Layout */}
-        <div className="billing-stats-container">
-          {/* Total Billings */}
-          <div className="billing-stat-card">
-            <Typography color="textSecondary" gutterBottom noWrap>
-              Total Billings
-            </Typography>
-            <Typography variant="h5" component="h2">
-              {stats.totalPayments}
-            </Typography>
-            <Typography variant="body2" color="primary" noWrap>
-              {formatCurrency(stats.totalAmount)}
-            </Typography>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                <TbFileInvoice size={24} />
+              </div>
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Total</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.totalPayments}</h3>
+            <p className="text-sm text-gray-500 mt-1">Total Billings</p>
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <span className="text-sm font-semibold text-indigo-600">{formatCurrency(stats.totalAmount)}</span>
+            </div>
           </div>
 
-          {/* Overdue Payments */}
-          <div className="billing-stat-card">
-            <Typography color="textSecondary" gutterBottom noWrap>
-              Overdue Payments
-            </Typography>
-            <Typography variant="h5" component="h2" color="error">
-              {stats.overduePayments}
-            </Typography>
-            <Typography variant="body2" color="error" noWrap>
-              {formatCurrency(stats.overdueAmount)}
-            </Typography>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-red-50 text-red-600 rounded-xl">
+                <TbAlertTriangle size={24} />
+              </div>
+              <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">Overdue</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.overduePayments}</h3>
+            <p className="text-sm text-gray-500 mt-1">Overdue Payments</p>
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <span className="text-sm font-semibold text-red-600">{formatCurrency(stats.overdueAmount)}</span>
+            </div>
           </div>
 
-          {/* Pending Payments */}
-          <div className="billing-stat-card">
-            <Typography color="textSecondary" gutterBottom noWrap>
-              Pending Payments
-            </Typography>
-            <Typography variant="h5" component="h2" color="warning.main">
-              {stats.pendingPayments}
-            </Typography>
-            <Typography variant="body2" color="warning.main" noWrap>
-              {formatCurrency(stats.pendingAmount)}
-            </Typography>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-yellow-50 text-yellow-600 rounded-xl">
+                <TbClock size={24} />
+              </div>
+              <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">Pending</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.pendingPayments}</h3>
+            <p className="text-sm text-gray-500 mt-1">Pending Payments</p>
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <span className="text-sm font-semibold text-yellow-600">{formatCurrency(stats.pendingAmount)}</span>
+            </div>
           </div>
 
-          {/* Paid */}
-          <div className="billing-stat-card">
-            <Typography color="textSecondary" gutterBottom noWrap>
-              Paid
-            </Typography>
-            <Typography variant="h5" component="h2" color="success.main">
-              {stats.paidPayments}
-            </Typography>
-            <Typography variant="body2" color="success.main" noWrap>
-              {formatCurrency(stats.paidAmount)}
-            </Typography>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-green-50 text-green-600 rounded-xl">
+                <TbCheck size={24} />
+              </div>
+              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Paid</span>
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900">{stats.paidPayments}</h3>
+            <p className="text-sm text-gray-500 mt-1">Completed Payments</p>
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <span className="text-sm font-semibold text-green-600">{formatCurrency(stats.paidAmount)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Modern Filter Bar - Popup Style */}
-        <Box sx={{ position: "relative", mb: 3 }}>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Search Input */}
-            <TextField
-              placeholder="Search by delivery ID, client, or truck..."
+        {/* Filters */}
+        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:max-w-md">
+            <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search delivery ID, client, or truck..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <SearchIcon sx={{ color: "action.active", mr: 1 }} />
-                ),
-              }}
-              sx={{ flex: "0 0 350px" }}
-              size="small"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
             />
+          </div>
 
-            {/* Filter Toggle Button */}
-            <Button
-              variant={showFilters ? "contained" : "outlined"}
-              startIcon={<FilterListIcon />}
+          <div className="flex gap-2 w-full md:w-auto">
+            <button
               onClick={() => setShowFilters(!showFilters)}
-              sx={{
-                height: "40px",
-                position: "relative",
-                paddingRight: activeFilterCount > 0 ? "48px" : "16px",
-              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${showFilters || activeFilterCount > 0 ? "bg-primary-50 border-primary-200 text-primary-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+                }`}
             >
+              <TbFilter size={18} />
               Filters
               {activeFilterCount > 0 && (
-                <Box
-                  component="span"
-                  sx={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: showFilters
-                      ? "rgba(255,255,255,0.3)"
-                      : "primary.main",
-                    color: showFilters ? "inherit" : "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                    minWidth: "20px",
-                    textAlign: "center",
-                  }}
-                >
-                  {activeFilterCount}
-                </Box>
+                <span className="bg-primary-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">{activeFilterCount}</span>
               )}
-            </Button>
-          </Box>
-
-          {/* Filter Count Display */}
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1.5 }}>
-            Showing {filteredPayments.length} of {allPayments.length}
-          </Typography>
-
-          {/* Filter Popup */}
-          {showFilters && (
-            <Paper
-              elevation={4}
-              sx={{
-                position: "absolute",
-                top: "52px",
-                left: 0,
-                zIndex: 1000,
-                width: "480px",
-                maxWidth: "90vw",
-                p: 2.5,
-                borderRadius: 2,
-              }}
-            >
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={2}
+            </button>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => { setSearchQuery(""); setStatusFilter("all"); setStartDate(""); setEndDate(""); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 text-sm font-medium transition-all"
               >
-                <Typography variant="h6" sx={{ fontSize: "1.1rem" }}>
-                  Filter Options
-                </Typography>
-                <IconButton size="small" onClick={() => setShowFilters(false)}>
-                  <CloseIcon />
-                </IconButton>
-              </Box>
+                <TbFilterOff size={18} /> Reset
+              </button>
+            )}
+          </div>
+        </div>
 
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={6}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Status</InputLabel>
-                    <Select
-                      value={statusFilter}
-                      label="Status"
-                      onChange={(e) => setStatusFilter(e.target.value)}
-                    >
-                      <MenuItem value="all">All Status</MenuItem>
-                      <MenuItem value="pending">Pending</MenuItem>
-                      <MenuItem value="pending_verification">
-                        Pending Verification
-                      </MenuItem>
-                      <MenuItem value="overdue">Overdue</MenuItem>
-                      <MenuItem value="paid">Paid</MenuItem>
-                      <MenuItem value="failed">Failed</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    label="From Date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ max: endDate || undefined }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    type="date"
-                    label="To Date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: startDate || undefined }}
-                  />
-                </Grid>
-              </Grid>
-
-              <Box
-                display="flex"
-                justifyContent="flex-end"
-                gap={1}
-                pt={2}
-                sx={{ borderTop: "1px solid #e0e0e0" }}
+        {/* Extended Filters */}
+        {showFilters && (
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-down">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
               >
-                <Button
-                  variant="text"
-                  startIcon={<FilterListOffIcon />}
-                  onClick={() => {
-                    setSearchQuery("");
-                    setStatusFilter("all");
-                    setStartDate("");
-                    setEndDate("");
-                  }}
-                  size="small"
-                >
-                  Reset
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => setShowFilters(false)}
-                  size="small"
-                >
-                  Apply Filters
-                </Button>
-              </Box>
-            </Paper>
-          )}
-        </Box>
+                <option value="all">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="pending_verification">Pending Verification</option>
+                <option value="overdue">Overdue</option>
+                <option value="paid">Paid</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none"
+              />
+            </div>
+          </div>
+        )}
 
-        {/* Payments Table */}
-        <Card>
-          <CardContent>
-            <TableContainer component={Paper}>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell>Delivery ID</TableCell>
-                    <TableCell>Client</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Delivery Date</TableCell>
-                    <TableCell>Due Date</TableCell>
-                    <TableCell>Status</TableCell>
-                    <TableCell>Days Until Due</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredPayments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={8} align="center">
-                        <Box py={6}>
-                          <PaymentIcon
-                            sx={{ fontSize: 60, color: "text.disabled", mb: 2 }}
-                          />
-                          <Typography
-                            variant="h6"
-                            color="textSecondary"
-                            gutterBottom
-                          >
-                            No Billing Records Found
-                          </Typography>
-                          <Typography
-                            variant="body2"
-                            color="textSecondary"
-                            mb={2}
-                          >
-                            {allPayments.length === 0
-                              ? "There are no deliveries in your system yet. Billing records are automatically created when clients book deliveries."
-                              : "No records match your current filters. Try adjusting the search or status filter."}
-                          </Typography>
-                          {allPayments.length === 0 && (
-                            <Typography
-                              variant="body2"
-                              color="primary"
-                              sx={{ mt: 2 }}
+        {/* Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {loading ? (
+            <div className="p-12 flex justify-center">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary-600"></div>
+            </div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                <TbReceipt size={32} />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">No records found</h3>
+              <p className="text-gray-500 mt-1">Try adjusting your search or filters</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery ID</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Client</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filteredPayments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((payment) => (
+                    <tr key={payment.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <span className="font-medium text-gray-900 block">{payment.deliveryId || "N/A"}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                            {payment.clientName?.charAt(0).toUpperCase() || "C"}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{payment.clientName || "Unknown Client"}</div>
+                            <div className="text-xs text-gray-500">ID: {payment.clientId?.substring(0, 8)}...</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
+                          {getStatusLabel(payment.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {formatDate(payment.dueDate)}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {payment.status === "pending_verification" && (
+                            <button
+                              onClick={() => handleViewProof(payment)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                              title="View Proof"
                             >
-                              💡 To create billing records: Navigate to
-                              Deliveries → Add Delivery
-                            </Typography>
+                              <TbEye size={18} />
+                            </button>
                           )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredPayments
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage,
-                      )
-                      .map((payment) => {
-                        const daysUntilDue = getDaysUntilDue(payment.dueDate);
-                        return (
-                          <TableRow key={payment.id} hover>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight="bold">
-                                {payment.deliveryId || "N/A"}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="textSecondary"
-                              >
-                                Truck: {payment.metadata?.truckPlate || "N/A"}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight="bold">
-                                {payment.clientName ||
-                                  payment.metadata?.clientName ||
-                                  "Unknown"}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                color="textSecondary"
-                              >
-                                ID: {payment.clientId || "N/A"}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body1" fontWeight="bold">
-                                {formatCurrency(payment.amount)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              {formatDate(payment.deliveryDate)}
-                            </TableCell>
-                            <TableCell>{formatDate(payment.dueDate)}</TableCell>
-                            <TableCell>
-                              <Chip
-                                icon={getStatusIcon(payment.status)}
-                                label={
-                                  payment.status?.toUpperCase() || "UNKNOWN"
-                                }
-                                color={getStatusColor(payment.status)}
-                                size="small"
-                              />
-                            </TableCell>
-                            <TableCell>
-                              {payment.status === "pending" &&
-                              daysUntilDue !== null ? (
-                                <Typography
-                                  variant="body2"
-                                  color={
-                                    daysUntilDue <= 5
-                                      ? "error"
-                                      : daysUntilDue <= 10
-                                        ? "warning.main"
-                                        : "textSecondary"
-                                  }
-                                >
-                                  {daysUntilDue > 0
-                                    ? `${daysUntilDue} days`
-                                    : `${Math.abs(daysUntilDue)} days overdue`}
-                                </Typography>
-                              ) : payment.status === "paid" ? (
-                                <Typography
-                                  variant="body2"
-                                  color="success.main"
-                                >
-                                  Paid
-                                </Typography>
-                              ) : payment.status === "overdue" ? (
-                                <Typography variant="body2" color="error">
-                                  Overdue
-                                </Typography>
-                              ) : (
-                                <Typography
-                                  variant="body2"
-                                  color="textSecondary"
-                                >
-                                  -
-                                </Typography>
-                              )}
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" gap={1} flexWrap="wrap">
-                                {/* View Proof Button - show if proof exists */}
-                                {payment.status === "pending_verification" && (
-                                  <Button
-                                    variant="outlined"
-                                    color="info"
-                                    size="small"
-                                    onClick={() => handleViewProof(payment)}
-                                    sx={{
-                                      textTransform: "none",
-                                      fontSize: "0.75rem",
-                                    }}
-                                  >
-                                    View Proof
-                                  </Button>
-                                )}
+                          {payment.status !== "paid" && (
+                            <button
+                              onClick={() => handleMarkAsPaid(payment)}
+                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
+                              title="Mark as Paid"
+                            >
+                              <TbCheck size={18} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-                                {/* Mark as Paid Button */}
-                                {payment.status !== "paid" ? (
-                                  <Button
-                                    variant="contained"
-                                    color="success"
-                                    size="small"
-                                    onClick={() => handleMarkAsPaid(payment)}
-                                    sx={{
-                                      textTransform: "none",
-                                      fontSize: "0.75rem",
-                                    }}
-                                  >
-                                    Mark as Paid
-                                  </Button>
-                                ) : (
-                                  <Typography
-                                    variant="body2"
-                                    color="success.main"
-                                  >
-                                    ✓ Paid
-                                  </Typography>
-                                )}
-                              </Box>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+          {/* Pagination */}
+          {!loading && filteredPayments.length > 0 && (
+            <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing <span className="font-medium">{page * rowsPerPage + 1}</span> to <span className="font-medium">{Math.min((page + 1) * rowsPerPage, filteredPayments.length)}</span> of <span className="font-medium">{filteredPayments.length}</span> results
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setPage(Math.max(0, page - 1))}
+                  disabled={page === 0}
+                  className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <TbChevronLeft size={18} />
+                </button>
+                <button
+                  onClick={() => setPage(page + 1)}
+                  disabled={(page + 1) * rowsPerPage >= filteredPayments.length}
+                  className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <TbChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
-            <TablePagination
-              rowsPerPageOptions={[5, 10, 25, 50]}
-              component="div"
-              count={filteredPayments.length}
-              rowsPerPage={rowsPerPage}
-              page={page}
-              onPageChange={handleChangePage}
-              onRowsPerPageChange={handleChangeRowsPerPage}
-            />
-          </CardContent>
-        </Card>
+      {/* Edit Status Modal */}
+      {editDialogOpen && selectedPayment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl animate-scale-up">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Mark as Paid?</h3>
+            <p className="text-gray-500 mb-6">Are you sure you want to mark this payment of <span className="font-semibold text-gray-900">{formatCurrency(selectedPayment.amount)}</span> as paid?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setEditDialogOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+              <button onClick={handleConfirmMarkAsPaid} disabled={updatingStatus} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all flex items-center gap-2">
+                {updatingStatus ? "Updating..." : "Confirm Payment"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Mark as Paid Confirmation Dialog */}
-        <Dialog
-          open={editDialogOpen}
-          onClose={() => !updatingStatus && setEditDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Confirm Payment</DialogTitle>
-          <DialogContent>
-            {selectedPayment && (
-              <Box>
-                <Typography variant="body1" gutterBottom>
-                  Are you sure you want to mark this payment as{" "}
-                  <strong>Paid</strong>?
-                </Typography>
+      {/* Proof Viewer Modal */}
+      {proofViewerOpen && viewingProof && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setProofViewerOpen(false)}>
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <TbEye className="text-primary-600" />
+                Payment Proof
+              </h3>
+              <button onClick={() => setProofViewerOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><TbX /></button>
+            </div>
 
-                <Box sx={{ mt: 2, p: 2, bgcolor: "#f5f5f5", borderRadius: 1 }}>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Delivery ID:</strong> {selectedPayment.deliveryId}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Client:</strong>{" "}
-                    {selectedPayment.clientName ||
-                      selectedPayment.metadata?.clientName ||
-                      "Unknown"}
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    <strong>Amount:</strong>{" "}
-                    {formatCurrency(selectedPayment.amount)}
-                  </Typography>
-                </Box>
-
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  This action will update the payment status to Paid.
-                </Alert>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setEditDialogOpen(false)}
-              disabled={updatingStatus}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleConfirmMarkAsPaid}
-              variant="contained"
-              color="success"
-              disabled={updatingStatus}
-            >
-              {updatingStatus ? (
-                <CircularProgress size={20} />
+            <div className="flex-1 overflow-auto bg-gray-100 p-4 flex items-center justify-center">
+              {viewingProof.proofUrl ? (
+                <img src={viewingProof.proofUrl} alt="Proof" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
               ) : (
-                "Confirm Payment"
+                <div className="text-gray-500 flex flex-col items-center gap-2">
+                  <TbAlertTriangle size={32} />
+                  No proof image available
+                </div>
               )}
-            </Button>
-          </DialogActions>
-        </Dialog>
+            </div>
 
-        {/* Proof Viewer Modal */}
-        <Dialog
-          open={proofViewerOpen}
-          onClose={() => setProofViewerOpen(false)}
-          maxWidth="md"
-          fullWidth
-        >
-          <DialogTitle>
-            Payment Proof
-            <IconButton
-              onClick={() => setProofViewerOpen(false)}
-              sx={{ position: "absolute", right: 8, top: 8 }}
-            >
-              <CloseIcon />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent dividers>
-            {viewingProof && (
-              <Box>
-                {/* Client & Proof Info */}
-                <Paper sx={{ p: 2, mb: 2, bgcolor: "#f5f5f5" }}>
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Client:</strong>{" "}
-                        {viewingProof.clientName || "N/A"}
-                      </Typography>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Reference Number:</strong>{" "}
-                        {viewingProof.referenceNumber || "N/A"}
-                      </Typography>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Uploaded At:</strong>{" "}
-                        {viewingProof.uploadedAt
-                          ? formatDate(viewingProof.uploadedAt)
-                          : "N/A"}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Total Amount:</strong>{" "}
-                        {formatCurrency(
-                          viewingProof.totalAmount ||
-                            viewingProof.payment?.amount ||
-                            0,
-                        )}
-                      </Typography>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Status:</strong>{" "}
-                        <Chip
-                          label={
-                            viewingProof.status === "pending"
-                              ? "Pending Verification"
-                              : viewingProof.status
-                          }
-                          color={
-                            viewingProof.status === "approved"
-                              ? "success"
-                              : viewingProof.status === "rejected"
-                                ? "error"
-                                : "info"
-                          }
-                          size="small"
-                        />
-                      </Typography>
-                      <Typography variant="subtitle2" gutterBottom>
-                        <strong>Deliveries Covered:</strong>{" "}
-                        {viewingProof.deliveryIds?.length || 1}
-                      </Typography>
-                    </Grid>
-                  </Grid>
-                  {viewingProof.notes && (
-                    <Typography variant="subtitle2" sx={{ mt: 1 }}>
-                      <strong>Notes:</strong> {viewingProof.notes}
-                    </Typography>
-                  )}
-                </Paper>
+            <div className="p-6 border-t border-gray-100 bg-white flex justify-end gap-3">
+              <button onClick={handleOpenRejectDialog} disabled={approvingProof || rejectingProof} className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium">
+                Reject Proof
+              </button>
+              <button onClick={handleApproveProof} disabled={approvingProof || rejectingProof} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2">
+                {approvingProof ? "Approving..." : <> <TbCheck /> Approve Payment </>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-                {/* Linked Deliveries List */}
-                {viewingProof.deliveries &&
-                  viewingProof.deliveries.length > 0 && (
-                    <Paper sx={{ p: 2, mb: 2, bgcolor: "#fff" }}>
-                      <Typography
-                        variant="subtitle2"
-                        gutterBottom
-                        sx={{ fontWeight: "bold" }}
-                      >
-                        Deliveries Covered by This Proof:
-                      </Typography>
-                      <Table size="small">
-                        <TableHead>
-                          <TableRow>
-                            <TableCell>Delivery ID</TableCell>
-                            <TableCell>Truck</TableCell>
-                            <TableCell align="right">Amount</TableCell>
-                          </TableRow>
-                        </TableHead>
-                        <TableBody>
-                          {viewingProof.deliveries.map((delivery) => (
-                            <TableRow key={delivery.id}>
-                              <TableCell>
-                                {delivery.id?.substring(0, 8)}...
-                              </TableCell>
-                              <TableCell>
-                                {delivery.truckPlate || "N/A"}
-                              </TableCell>
-                              <TableCell align="right">
-                                {formatCurrency(delivery.amount || 0)}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </Paper>
-                  )}
-
-                <Typography
-                  variant="subtitle2"
-                  sx={{ mb: 1, fontWeight: "bold" }}
-                >
-                  Uploaded Proof:
-                </Typography>
-
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    minHeight: 300,
-                    border: "1px solid #ddd",
-                    borderRadius: 1,
-                    p: 2,
-                    bgcolor: "white",
-                  }}
-                >
-                  {viewingProof.proofFileType === "application/pdf" ||
-                  viewingProof.proofFileName?.endsWith(".pdf") ? (
-                    <Box textAlign="center">
-                      <Typography variant="body2" color="textSecondary" mb={2}>
-                        PDF Document
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        href={`/api/payments/proof-file/${viewingProof.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Open PDF
-                      </Button>
-                    </Box>
-                  ) : viewingProof.id ? (
-                    <img
-                      src={`/api/payments/proof-file/${viewingProof.id}`}
-                      alt="Payment Proof"
-                      style={{
-                        maxWidth: "100%",
-                        maxHeight: "500px",
-                        objectFit: "contain",
-                      }}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src =
-                          "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23999'%3EImage not found%3C/text%3E%3C/svg%3E";
-                      }}
-                    />
-                  ) : (
-                    <Typography color="textSecondary">
-                      No proof file available
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ p: 2, gap: 1 }}>
-            <Button
-              onClick={() => setProofViewerOpen(false)}
-              color="inherit"
-              disabled={approvingProof || rejectingProof}
-            >
-              Close
-            </Button>
-            {viewingProof?.status === "pending" && (
-              <>
-                <Button
-                  onClick={handleOpenRejectDialog}
-                  variant="outlined"
-                  color="error"
-                  disabled={approvingProof || rejectingProof}
-                >
-                  Reject
-                </Button>
-                <Button
-                  onClick={handleApproveProof}
-                  variant="contained"
-                  color="success"
-                  disabled={approvingProof || rejectingProof}
-                  startIcon={
-                    approvingProof ? (
-                      <CircularProgress size={16} color="inherit" />
-                    ) : null
-                  }
-                >
-                  {approvingProof
-                    ? "Approving..."
-                    : `Approve All (${viewingProof.deliveryIds?.length || 1} Deliveries)`}
-                </Button>
-              </>
-            )}
-          </DialogActions>
-        </Dialog>
-
-        {/* Rejection Reason Dialog */}
-        <Dialog
-          open={rejectDialogOpen}
-          onClose={() => !rejectingProof && setRejectDialogOpen(false)}
-          maxWidth="sm"
-          fullWidth
-        >
-          <DialogTitle>Reject Payment Proof</DialogTitle>
-          <DialogContent>
-            <Typography variant="body1" gutterBottom sx={{ mb: 2 }}>
-              Please provide a reason for rejecting this payment proof. The
-              client will be able to see this reason and submit a new proof.
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              label="Rejection Reason"
+      {/* Reject Dialog */}
+      {rejectDialogOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl animate-scale-up">
+            <h3 className="text-xl font-semibold text-gray-900 mb-2 text-red-600 flex items-center gap-2"><TbAlertTriangle /> Reject Proof</h3>
+            <p className="text-gray-500 mb-4 text-sm">Please provide a reason for rejecting this payment proof. The client will be notified.</p>
+            <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
-              placeholder="e.g., Reference number does not match, Amount is incorrect, Image is unclear..."
-              disabled={rejectingProof}
+              placeholder="Enter rejection reason..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none min-h-[100px] mb-4 text-sm"
             />
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setRejectDialogOpen(false)}
-              disabled={rejectingProof}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleRejectProof}
-              variant="contained"
-              color="error"
-              disabled={rejectingProof || !rejectionReason.trim()}
-              startIcon={
-                rejectingProof ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : null
-              }
-            >
-              {rejectingProof ? "Rejecting..." : "Confirm Rejection"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
-    </Box>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setRejectDialogOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
+              <button onClick={handleRejectProof} disabled={rejectingProof} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg shadow-red-500/30 transition-all">
+                {rejectingProof ? "Rejecting..." : "Confirm Rejection"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -186,25 +186,15 @@ const AdminHeader = ({ currentUser }) => {
             </button>
 
             {showUserDropdown && (
-              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden animate-slide-up origin-top-right">
-                <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
-                  <p className="text-xs text-gray-500">Signed in as</p>
-                  <p className="text-sm font-bold text-gray-800 truncate">
-                    {currentUser?.username}
-                  </p>
-                </div>
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-1 overflow-hidden animate-slide-up origin-top-right z-50">
+
                 <Link
                   to="/profile"
                   className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary-600"
                 >
                   My Profile
                 </Link>
-                <Link
-                  to="/settings"
-                  className="block px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-primary-600"
-                >
-                  Settings
-                </Link>
+
                 <div className="my-1 border-t border-gray-100"></div>
                 <Link
                   to="/logout"
@@ -241,13 +231,12 @@ const AdminHeader = ({ currentUser }) => {
           </Link>
           <Link
             to="/admin/drivers/driverslist"
-            className={`py-3 text-sm font-medium border-b-2 border-transparent transition-all ${
-              location.pathname.includes("/drivers") ||
+            className={`py-3 text-sm font-medium border-b-2 border-transparent transition-all ${location.pathname.includes("/drivers") ||
               location.pathname.includes("/staffs") ||
               location.pathname.includes("/clients")
-                ? "text-primary-600 border-b-2 border-primary-600 font-semibold"
-                : "text-gray-500 hover:text-gray-800"
-            }`}
+              ? "text-primary-600 border-b-2 border-primary-600 font-semibold"
+              : "text-gray-500 hover:text-gray-800"
+              }`}
           >
             Personnel
           </Link>

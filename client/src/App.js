@@ -18,6 +18,7 @@ import Login from "./pages/auth/Login";
 import Logout from "./pages/auth/Logout";
 import Home from "./pages/Home";
 import NotFound from "./pages/shared/NotFound";
+import Profile from "./pages/shared/Profile";
 import SimpleFileUpload from "./components/SimpleFileUpload";
 import FileUploadTest from "./pages/FileUploadTest";
 
@@ -87,6 +88,9 @@ function App() {
 
                   {/* Reports page STANDALONE */}
                   <Route exact path="/staff/reports" component={Reports} />
+
+                  {/* Shared Profile Route */}
+                  <ProtectedRoute path="/profile" component={Profile} />
 
                   {/* Staff Vehicle Rate Management */}
                   <ProtectedRoute

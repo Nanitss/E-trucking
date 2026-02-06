@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import axios from "axios";
 import {
   TbX,
@@ -11,6 +12,7 @@ import {
   TbDownload,
   TbRefresh,
   TbReceipt,
+  TbFileExport,
 } from "react-icons/tb";
 import TruckFilters from "./filters/TruckFilters";
 import DriverFilters from "./filters/DriverFilters";
@@ -33,25 +35,18 @@ const ExportReportModal = ({ isOpen, onClose }) => {
     { id: "trucks", label: "Trucks", icon: TbTruck, color: "#3b82f6" },
     { id: "drivers", label: "Drivers", icon: TbUser, color: "#10b981" },
     { id: "helpers", label: "Helpers", icon: TbUsers, color: "#8b5cf6" },
-    {
-      id: "deliveries",
-      label: "Deliveries",
-      icon: TbPackage,
-      color: "#f59e0b",
-    },
+    { id: "deliveries", label: "Deliveries", icon: TbPackage, color: "#f59e0b" },
     { id: "clients", label: "Clients", icon: TbBuilding, color: "#ef4444" },
     { id: "staff", label: "Staff", icon: TbClipboard, color: "#06b6d4" },
     { id: "billings", label: "Billings", icon: TbReceipt, color: "#ec4899" },
   ];
 
-  // Reset filters when tab changes
   useEffect(() => {
     setFilters({});
     setRecordCount(0);
     setPreviewData(null);
   }, [activeTab]);
 
-  // Fetch record count when filters change
   useEffect(() => {
     if (isOpen) {
       fetchRecordCount();
@@ -64,29 +59,14 @@ const ExportReportModal = ({ isOpen, onClose }) => {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Handle "All Records" tab
       if (activeTab === "all") {
-        // Fetch counts for all entity types
-        const entityTypes = [
-          "trucks",
-          "drivers",
-          "helpers",
-          "deliveries",
-          "clients",
-          "staff",
-          "billings",
-        ];
+        const entityTypes = ["trucks", "drivers", "helpers", "deliveries", "clients", "staff", "billings"];
         const promises = entityTypes.map((type) =>
-          axios
-            .get(`/api/reports/${type}/count`, { headers })
-            .catch(() => ({ data: { count: 0 } })),
+          axios.get(`/api/reports/${type}/count`, { headers }).catch(() => ({ data: { count: 0 } }))
         );
 
         const results = await Promise.all(promises);
-        const totalCount = results.reduce(
-          (sum, res) => sum + (res.data.count || 0),
-          0,
-        );
+        const totalCount = results.reduce((sum, res) => sum + (res.data.count || 0), 0);
 
         setRecordCount(totalCount);
         setPreviewData({
@@ -100,11 +80,7 @@ const ExportReportModal = ({ isOpen, onClose }) => {
         });
       } else {
         const queryParams = new URLSearchParams(filters).toString();
-        const response = await axios.get(
-          `/api/reports/${activeTab}/count?${queryParams}`,
-          { headers },
-        );
-
+        const response = await axios.get(`/api/reports/${activeTab}/count?${queryParams}`, { headers });
         setRecordCount(response.data.count || 0);
         setPreviewData(response.data.preview || null);
       }
@@ -130,26 +106,14 @@ const ExportReportModal = ({ isOpen, onClose }) => {
       const token = localStorage.getItem("token");
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-      // Handle "All Records" export
       if (activeTab === "all") {
-        const entityTypes = [
-          "trucks",
-          "drivers",
-          "helpers",
-          "deliveries",
-          "clients",
-          "staff",
-          "billings",
-        ];
+        const entityTypes = ["trucks", "drivers", "helpers", "deliveries", "clients", "staff", "billings"];
         const promises = entityTypes.map((type) =>
-          axios
-            .get(`/api/reports/${type}`, { headers })
-            .catch(() => ({ data: { data: [] } })),
+          axios.get(`/api/reports/${type}`, { headers }).catch(() => ({ data: { data: [] } }))
         );
 
         const results = await Promise.all(promises);
 
-        // Generate separate PDFs for each entity type
         for (let i = 0; i < entityTypes.length; i++) {
           if (results[i].data.data && results[i].data.data.length > 0) {
             await exportToPDFWithCharts(results[i].data, {
@@ -160,28 +124,18 @@ const ExportReportModal = ({ isOpen, onClose }) => {
           }
         }
 
-        alert(
-          `✅ All records exported successfully! (${recordCount} total records across 7 PDFs)`,
-        );
+        alert(`✅ All records exported successfully! (${recordCount} total records across 7 PDFs)`);
       } else {
-        // Fetch full data with filters
         const queryParams = new URLSearchParams(filters).toString();
-        const response = await axios.get(
-          `/api/reports/${activeTab}?${queryParams}`,
-          { headers },
-        );
+        const response = await axios.get(`/api/reports/${activeTab}?${queryParams}`, { headers });
 
-        // Generate PDF with charts and graphs
         await exportToPDFWithCharts(response.data, {
           reportType: activeTab,
           filters: filters,
           recordCount: recordCount,
         });
 
-        // Show success message
-        alert(
-          `✅ ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report exported successfully! (${recordCount} records)`,
-        );
+        alert(`✅ ${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} report exported successfully! (${recordCount} records)`);
       }
     } catch (error) {
       console.error("Error exporting PDF:", error);
@@ -192,33 +146,32 @@ const ExportReportModal = ({ isOpen, onClose }) => {
   };
 
   const renderFilterForm = () => {
-    const filterProps = {
-      filters,
-      onChange: handleFilterChange,
-    };
+    const filterProps = { filters, onChange: handleFilterChange };
 
     switch (activeTab) {
       case "all":
         return (
-          <div className="all-records-info">
-            <div className="info-icon">📊</div>
-            <h3>Export All Records</h3>
-            <p>
-              This will export <strong>all records</strong> from all entity
-              types into separate PDF files.
-            </p>
-            <ul>
-              <li>✅ Trucks Report</li>
-              <li>✅ Drivers Report</li>
-              <li>✅ Helpers Report</li>
-              <li>✅ Deliveries Report</li>
-              <li>✅ Clients Report</li>
-              <li>✅ Staff Report</li>
-              <li>✅ Billings Report</li>
-            </ul>
-            <p className="note">
-              Note: 7 PDF files will be generated and downloaded automatically.
-            </p>
+          <div className="flex items-center justify-center h-full min-h-[280px]">
+            <div className="text-center py-6">
+              <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center">
+                <TbFileExport size={32} className="text-indigo-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Export All Records</h3>
+              <p className="text-gray-500 text-sm mb-4">
+                This will export <span className="font-semibold text-gray-700">all records</span> from all entity types into separate PDF files.
+              </p>
+              <div className="grid grid-cols-2 gap-2 max-w-xs mx-auto text-left">
+                {["Trucks", "Drivers", "Helpers", "Deliveries", "Clients", "Staff", "Billings"].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-sm text-gray-600">
+                    <span className="w-5 h-5 rounded-full bg-success-100 text-success-600 flex items-center justify-center text-xs">✓</span>
+                    {item} Report
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 mt-4 bg-gray-50 rounded-lg px-3 py-2 inline-block">
+                📥 7 PDF files will be generated and downloaded automatically.
+              </p>
+            </div>
           </div>
         );
       case "trucks":
@@ -242,93 +195,160 @@ const ExportReportModal = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="export-modal-overlay" onClick={onClose}>
-      <div className="export-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="export-modal-header">
-          <div className="modal-header-content">
-            <h2>Export Report</h2>
-            <p>Select report type and apply filters</p>
-          </div>
-          <button className="modal-close-btn" onClick={onClose}>
-            <TbX size={24} />
-          </button>
-        </div>
+  return ReactDOM.createPortal(
+    <div className="fixed inset-0 z-[9999] overflow-y-auto" onClick={onClose}>
+      {/* Backdrop - no blur */}
+      <div className="fixed inset-0 bg-black/50" />
 
-        <div className="export-modal-tabs">
-          {reportTabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                className={`export-tab ${activeTab === tab.id ? "active" : ""}`}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  "--tab-color": activeTab === tab.id ? tab.color : "#64748b",
-                }}
-              >
-                <Icon size={20} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="export-modal-body">
-          <div className="filter-section">
-            <div className="filter-header">
-              <h3>Filters</h3>
-              <button
-                className="reset-filters-btn"
-                onClick={handleResetFilters}
-              >
-                <TbRefresh size={16} />
-                Reset
-              </button>
+      {/* Modal positioning container - centered */}
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+          style={{ animation: 'modal-enter 0.2s ease-out forwards' }}
+        >
+          {/* Header */}
+          <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4 flex items-center justify-between flex-shrink-0">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <TbFileExport size={22} />
+                Export Report
+              </h2>
+              <p className="text-primary-100 text-sm mt-0.5">Select report type and apply filters</p>
             </div>
-            <div className="filter-form">{renderFilterForm()}</div>
+            <button
+              className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition-colors"
+              onClick={onClose}
+            >
+              <TbX size={20} />
+            </button>
           </div>
 
-          <div className="preview-section">
-            <div className="preview-card">
-              <div className="preview-stat">
-                <span className="stat-label">Records Found</span>
-                <span className="stat-value">
-                  {isLoading ? "..." : recordCount.toLocaleString()}
-                </span>
-              </div>
-              {previewData && (
-                <div className="preview-summary">
-                  <h4>Summary</h4>
-                  {Object.entries(previewData).map(([key, value]) => (
-                    <div key={key} className="summary-item">
-                      <span>{key}:</span>
-                      <strong>{value}</strong>
-                    </div>
-                  ))}
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-100 bg-gray-50/50 px-4 py-2 overflow-x-auto hide-scrollbar flex-shrink-0">
+            <div className="flex gap-1 min-w-max">
+              {reportTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    className={`flex items-center gap-.5 px-2.5 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${isActive
+                      ? "bg-white shadow-md text-gray-800 border border-gray-200"
+                      : "text-gray-500 hover:text-gray-700 hover:bg-white/60"
+                      }`}
+                    onClick={() => setActiveTab(tab.id)}
+                  >
+                    <Icon size={18} style={{ color: isActive ? tab.color : undefined }} />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Body */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Filter Section */}
+              <div className="lg:col-span-2">
+                <div className="bg-gray-50 rounded-xl border border-gray-100 p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                      <span className="w-1.5 h-5 bg-primary-500 rounded-full"></span>
+                      Filters
+                    </h3>
+                    {activeTab !== "all" && (
+                      <button
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-500 hover:text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 transition-all"
+                        onClick={handleResetFilters}
+                      >
+                        <TbRefresh size={14} />
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="min-h-[180px]">
+                    {renderFilterForm()}
+                  </div>
                 </div>
-              )}
+              </div>
+
+              {/* Preview Section */}
+              <div className="lg:col-span-1">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-4 h-full">
+                  <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <span className="w-1.5 h-5 bg-success-500 rounded-full"></span>
+                    Preview
+                  </h3>
+
+                  {/* Record Count */}
+                  <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
+                    <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Records Found</span>
+                    <div className="text-3xl font-bold text-gray-800 mt-1">
+                      {isLoading ? (
+                        <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
+                      ) : (
+                        recordCount.toLocaleString()
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  {previewData && (
+                    <div className="space-y-2">
+                      <h4 className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Summary</h4>
+                      {Object.entries(previewData).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm border border-gray-100">
+                          <span className="text-gray-600">{key}</span>
+                          <span className="font-semibold text-gray-800">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="export-modal-footer">
-          <button className="btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="btn-primary"
-            onClick={handleExportPDF}
-            disabled={isLoading || recordCount === 0}
-          >
-            <TbDownload size={18} />
-            {isLoading
-              ? "Generating..."
-              : `Export PDF (${recordCount} records)`}
-          </button>
+          {/* Footer */}
+          <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-4 flex items-center justify-end gap-3 flex-shrink-0">
+            <button
+              className="px-5 py-2.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button
+              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white rounded-xl transition-all ${isLoading || recordCount === 0
+                ? "bg-gray-300 cursor-not-allowed"
+                : "bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
+                }`}
+              onClick={handleExportPDF}
+              disabled={isLoading || recordCount === 0}
+            >
+              <TbDownload size={18} />
+              {isLoading ? "Generating..." : `Export PDF (${recordCount} records)`}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Animation styles */}
+      <style>{`
+        @keyframes modal-enter {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
+    </div>,
+    document.body
   );
 };
 
