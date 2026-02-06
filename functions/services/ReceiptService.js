@@ -11,127 +11,148 @@ const admin = require("firebase-admin");
 const db = admin.firestore();
 
 class ReceiptService {
-    constructor() {
-        // Store receipts in /tmp for cloud functions compatibility
-        this.basePath = "/tmp/receipts";
-        this.ensureBaseDirectory();
+  constructor() {
+    // Use persistent folder within the project (persists across restarts)
+    // Path is relative to the functions directory: ../uploads/receipts
+    this.basePath = path.join(__dirname, "..", "uploads", "receipts");
+    this.ensureBaseDirectory();
+    console.log(
+      "✅ Using persistent local storage for receipts:",
+      this.basePath,
+    );
+  }
+
+  ensureBaseDirectory() {
+    if (!fs.existsSync(this.basePath)) {
+      fs.mkdirSync(this.basePath, { recursive: true });
     }
+  }
 
-    ensureBaseDirectory() {
-        if (!fs.existsSync(this.basePath)) {
-            fs.mkdirSync(this.basePath, { recursive: true });
-        }
+  /**
+   * Generate a receipt for an approved payment proof
+   * @param {Object} proofData - The approved payment proof data
+   * @param {Array} deliveries - Array of delivery objects that were paid
+   * @param {Object} adminInfo - Admin who approved the payment
+   * @returns {Object} Receipt data with file path
+   */
+  async generateReceipt(proofData, deliveries, adminInfo) {
+    try {
+      const receiptNumber = this.generateReceiptNumber();
+      const now = new Date();
+
+      // Get client info
+      const clientDoc = await db
+        .collection("clients")
+        .doc(proofData.clientId)
+        .get();
+      const clientData = clientDoc.exists ? clientDoc.data() : {};
+
+      // Build receipt data
+      const receiptData = {
+        receiptNumber,
+        generatedAt: now,
+        clientId: proofData.clientId,
+        clientName:
+          clientData.name ||
+          clientData.companyName ||
+          proofData.clientName ||
+          "Client",
+        clientEmail: clientData.email || "",
+        proofId: proofData.id,
+        totalAmount: proofData.totalAmount,
+        deliveries: deliveries.map((d) => ({
+          id: d.id,
+          deliveryDate: d.deliveryDate,
+          amount: d.amount || d.deliveryRate,
+          truckPlate: d.truckPlate,
+          pickupLocation: d.pickupLocation,
+          deliveryAddress: d.deliveryAddress || d.dropoffLocation,
+        })),
+        approvedBy: adminInfo.username,
+        approvedAt: now,
+        referenceNumber: proofData.referenceNumber || "N/A",
+      };
+
+      // Generate HTML receipt
+      const htmlContent = this.generateHTMLReceipt(receiptData);
+
+      // Save receipt file
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const receiptDir = path.join(this.basePath, String(year), month);
+
+      if (!fs.existsSync(receiptDir)) {
+        fs.mkdirSync(receiptDir, { recursive: true });
+      }
+
+      const fileName = `receipt_${receiptNumber}.html`;
+      const filePath = path.join(receiptDir, fileName);
+      const relativePath = path.relative(this.basePath, filePath);
+
+      fs.writeFileSync(filePath, htmlContent, "utf8");
+
+      // Save receipt record to Firestore
+      const receiptRef = await db.collection("paymentReceipts").add({
+        receiptNumber,
+        proofId: proofData.id,
+        clientId: proofData.clientId,
+        clientName: receiptData.clientName,
+        totalAmount: receiptData.totalAmount,
+        deliveryIds: proofData.deliveryIds,
+        deliveryCount: proofData.deliveryIds.length,
+        approvedBy: adminInfo.id,
+        approvedByName: adminInfo.username,
+        filePath: relativePath,
+        generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`✅ Receipt generated: ${receiptNumber}`);
+
+      return {
+        success: true,
+        receiptId: receiptRef.id,
+        receiptNumber,
+        filePath: relativePath,
+      };
+    } catch (error) {
+      console.error("❌ Error generating receipt:", error);
+      throw error;
     }
+  }
 
-    /**
-     * Generate a receipt for an approved payment proof
-     * @param {Object} proofData - The approved payment proof data
-     * @param {Array} deliveries - Array of delivery objects that were paid
-     * @param {Object} adminInfo - Admin who approved the payment
-     * @returns {Object} Receipt data with file path
-     */
-    async generateReceipt(proofData, deliveries, adminInfo) {
-        try {
-            const receiptNumber = this.generateReceiptNumber();
-            const now = new Date();
+  /**
+   * Generate a unique receipt number
+   */
+  generateReceiptNumber() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    return `RCP-${year}${month}${day}-${random}`;
+  }
 
-            // Get client info
-            const clientDoc = await db.collection("clients").doc(proofData.clientId).get();
-            const clientData = clientDoc.exists ? clientDoc.data() : {};
+  /**
+   * Generate HTML receipt content
+   */
+  generateHTMLReceipt(data) {
+    const formatCurrency = (amount) =>
+      `₱${Number(amount || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+    const formatDate = (date) => {
+      if (!date) return "N/A";
+      const d = date instanceof Date ? date : new Date(date);
+      return d.toLocaleDateString("en-PH", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+    };
 
-            // Build receipt data
-            const receiptData = {
-                receiptNumber,
-                generatedAt: now,
-                clientId: proofData.clientId,
-                clientName: clientData.name || clientData.companyName || proofData.clientName || "Client",
-                clientEmail: clientData.email || "",
-                proofId: proofData.id,
-                totalAmount: proofData.totalAmount,
-                deliveries: deliveries.map(d => ({
-                    id: d.id,
-                    deliveryDate: d.deliveryDate,
-                    amount: d.amount || d.deliveryRate,
-                    truckPlate: d.truckPlate,
-                    pickupLocation: d.pickupLocation,
-                    deliveryAddress: d.deliveryAddress || d.dropoffLocation,
-                })),
-                approvedBy: adminInfo.username,
-                approvedAt: now,
-                referenceNumber: proofData.referenceNumber || "N/A",
-            };
-
-            // Generate HTML receipt
-            const htmlContent = this.generateHTMLReceipt(receiptData);
-
-            // Save receipt file
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, "0");
-            const receiptDir = path.join(this.basePath, String(year), month);
-
-            if (!fs.existsSync(receiptDir)) {
-                fs.mkdirSync(receiptDir, { recursive: true });
-            }
-
-            const fileName = `receipt_${receiptNumber}.html`;
-            const filePath = path.join(receiptDir, fileName);
-            const relativePath = path.relative(this.basePath, filePath);
-
-            fs.writeFileSync(filePath, htmlContent, "utf8");
-
-            // Save receipt record to Firestore
-            const receiptRef = await db.collection("paymentReceipts").add({
-                receiptNumber,
-                proofId: proofData.id,
-                clientId: proofData.clientId,
-                clientName: receiptData.clientName,
-                totalAmount: receiptData.totalAmount,
-                deliveryIds: proofData.deliveryIds,
-                deliveryCount: proofData.deliveryIds.length,
-                approvedBy: adminInfo.id,
-                approvedByName: adminInfo.username,
-                filePath: relativePath,
-                generatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-
-            console.log(`✅ Receipt generated: ${receiptNumber}`);
-
-            return {
-                success: true,
-                receiptId: receiptRef.id,
-                receiptNumber,
-                filePath: relativePath,
-            };
-        } catch (error) {
-            console.error("❌ Error generating receipt:", error);
-            throw error;
-        }
-    }
-
-    /**
-     * Generate a unique receipt number
-     */
-    generateReceiptNumber() {
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, "0");
-        const day = String(now.getDate()).padStart(2, "0");
-        const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
-        return `RCP-${year}${month}${day}-${random}`;
-    }
-
-    /**
-     * Generate HTML receipt content
-     */
-    generateHTMLReceipt(data) {
-        const formatCurrency = (amount) => `₱${Number(amount || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
-        const formatDate = (date) => {
-            if (!date) return "N/A";
-            const d = date instanceof Date ? date : new Date(date);
-            return d.toLocaleDateString("en-PH", { year: "numeric", month: "long", day: "numeric" });
-        };
-
-        const deliveryRows = data.deliveries.map((d, i) => `
+    const deliveryRows = data.deliveries
+      .map(
+        (d, i) => `
       <tr>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${i + 1}</td>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-family: monospace;">${d.id}</td>
@@ -139,9 +160,11 @@ class ReceiptService {
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb;">${formatDate(d.deliveryDate)}</td>
         <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; text-align: right; font-weight: 600;">${formatCurrency(d.amount)}</td>
       </tr>
-    `).join("");
+    `,
+      )
+      .join("");
 
-        return `
+    return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -239,42 +262,43 @@ class ReceiptService {
 </body>
 </html>
     `.trim();
+  }
+
+  /**
+   * Get receipt file path for serving
+   */
+  getReceiptFilePath(relativePath) {
+    const fullPath = path.join(this.basePath, relativePath);
+
+    if (!fs.existsSync(fullPath)) {
+      throw new Error("Receipt file not found");
     }
 
-    /**
-     * Get receipt file path for serving
-     */
-    getReceiptFilePath(relativePath) {
-        const fullPath = path.join(this.basePath, relativePath);
+    return fullPath;
+  }
 
-        if (!fs.existsSync(fullPath)) {
-            throw new Error("Receipt file not found");
-        }
+  /**
+   * Get receipt by proof ID
+   */
+  async getReceiptByProofId(proofId) {
+    try {
+      const snapshot = await db
+        .collection("paymentReceipts")
+        .where("proofId", "==", proofId)
+        .limit(1)
+        .get();
 
-        return fullPath;
+      if (snapshot.empty) {
+        return null;
+      }
+
+      const doc = snapshot.docs[0];
+      return { id: doc.id, ...doc.data() };
+    } catch (error) {
+      console.error("Error getting receipt by proof ID:", error);
+      throw error;
     }
-
-    /**
-     * Get receipt by proof ID
-     */
-    async getReceiptByProofId(proofId) {
-        try {
-            const snapshot = await db.collection("paymentReceipts")
-                .where("proofId", "==", proofId)
-                .limit(1)
-                .get();
-
-            if (snapshot.empty) {
-                return null;
-            }
-
-            const doc = snapshot.docs[0];
-            return { id: doc.id, ...doc.data() };
-        } catch (error) {
-            console.error("Error getting receipt by proof ID:", error);
-            throw error;
-        }
-    }
+  }
 }
 
 module.exports = new ReceiptService();

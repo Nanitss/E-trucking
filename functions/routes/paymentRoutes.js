@@ -1263,8 +1263,7 @@ router.post("/upload-proof", authenticateJWT, async (req, res) => {
     if (!file || !file.data) {
       return res.status(400).json({
         success: false,
-        message:
-          "No file uploaded. Please upload a PNG or PDF file (max 5MB).",
+        message: "No file uploaded. Please upload a PNG or PDF file (max 5MB).",
       });
     }
 
@@ -1313,7 +1312,10 @@ router.post("/upload-proof", authenticateJWT, async (req, res) => {
     } else {
       try {
         parsedDeliveryIds = JSON.parse(deliveryIds);
-        if (!Array.isArray(parsedDeliveryIds) || parsedDeliveryIds.length === 0) {
+        if (
+          !Array.isArray(parsedDeliveryIds) ||
+          parsedDeliveryIds.length === 0
+        ) {
           throw new Error("Invalid delivery IDs");
         }
       } catch (e) {
@@ -1397,10 +1399,30 @@ router.get("/:paymentId/proof", authenticateJWT, async (req, res) => {
       });
     }
 
-    // Use proofUrl from Firestore if available (Firebase Storage), otherwise fallback to local file endpoint
-    const proofUrl = proof.proofUrl || (proof.proofFilePath
-      ? `/api/payments/proof-file/${proof.id}`
-      : null);
+    // Build the proof URL - return as base64 data URL for local files
+    // This is necessary because <img> tags cannot include JWT authentication headers
+    let proofUrl = null;
+    let proofType = proof.proofFileType || "image/png";
+
+    if (proof.proofUrl && proof.storageType === "firebase") {
+      // Use Firebase Storage URL directly (publicly accessible or signed)
+      proofUrl = proof.proofUrl;
+    } else if (proof.proofFilePath) {
+      // Read local file and convert to base64 data URL
+      try {
+        const filePath = paymentProofService.getProofFilePath(
+          proof.proofFilePath,
+        );
+        const fileBuffer = fs.readFileSync(filePath);
+        const base64Data = fileBuffer.toString("base64");
+        proofUrl = `data:${proofType};base64,${base64Data}`;
+        console.log("✅ Proof file converted to base64 data URL");
+      } catch (fileError) {
+        console.error("❌ Error reading proof file:", fileError);
+        // Return null for proofUrl if file cannot be read
+        proofUrl = null;
+      }
+    }
 
     res.json({
       success: true,
@@ -1613,7 +1635,8 @@ router.get("/proof-file/:proofId", authenticateJWT, async (req, res) => {
       console.error("❌ Proof file not found:", filePath);
       return res.status(404).json({
         success: false,
-        message: "Proof file not found. The file may have been deleted after a server restart. Please ask the client to re-upload the proof.",
+        message:
+          "Proof file not found. The file may have been deleted after a server restart. Please ask the client to re-upload the proof.",
       });
     }
 
@@ -1687,70 +1710,78 @@ router.get("/receipt/:proofId", authenticateJWT, async (req, res) => {
 
 // ─── GET /api/payments/receipt/by-delivery/:deliveryId ────────────────────────
 // Get receipt info by delivery ID (for client profile)
-router.get("/receipt/by-delivery/:deliveryId", authenticateJWT, async (req, res) => {
-  try {
-    const { deliveryId } = req.params;
+router.get(
+  "/receipt/by-delivery/:deliveryId",
+  authenticateJWT,
+  async (req, res) => {
+    try {
+      const { deliveryId } = req.params;
 
-    console.log("🧾 GET /api/payments/receipt/by-delivery/:deliveryId");
-    console.log("   DeliveryId:", deliveryId);
+      console.log("🧾 GET /api/payments/receipt/by-delivery/:deliveryId");
+      console.log("   DeliveryId:", deliveryId);
 
-    // Get delivery to find the proof ID
-    const { db } = require("../config/firebase");
-    const deliveryDoc = await db.collection("deliveries").doc(deliveryId).get();
+      // Get delivery to find the proof ID
+      const { db } = require("../config/firebase");
+      const deliveryDoc = await db
+        .collection("deliveries")
+        .doc(deliveryId)
+        .get();
 
-    if (!deliveryDoc.exists) {
-      return res.status(404).json({
+      if (!deliveryDoc.exists) {
+        return res.status(404).json({
+          success: false,
+          message: "Delivery not found",
+        });
+      }
+
+      const delivery = deliveryDoc.data();
+
+      // Check authorization
+      if (req.user.role !== "admin" && req.user.id !== delivery.clientId) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized",
+        });
+      }
+
+      // Check if delivery has a proof
+      if (!delivery.proofId) {
+        return res.status(404).json({
+          success: false,
+          message: "No payment proof for this delivery",
+        });
+      }
+
+      // Get receipt by proof ID
+      const receipt = await receiptService.getReceiptByProofId(
+        delivery.proofId,
+      );
+
+      if (!receipt) {
+        return res.status(404).json({
+          success: false,
+          message: "Receipt not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: {
+          receiptId: receipt.id,
+          receiptNumber: receipt.receiptNumber,
+          proofId: receipt.proofId,
+          totalAmount: receipt.totalAmount,
+          generatedAt: receipt.generatedAt,
+        },
+      });
+    } catch (error) {
+      console.error("❌ Error getting receipt info:", error);
+      res.status(500).json({
         success: false,
-        message: "Delivery not found",
+        message: error.message || "Failed to get receipt info",
       });
     }
-
-    const delivery = deliveryDoc.data();
-
-    // Check authorization
-    if (req.user.role !== "admin" && req.user.id !== delivery.clientId) {
-      return res.status(403).json({
-        success: false,
-        message: "Not authorized",
-      });
-    }
-
-    // Check if delivery has a proof
-    if (!delivery.proofId) {
-      return res.status(404).json({
-        success: false,
-        message: "No payment proof for this delivery",
-      });
-    }
-
-    // Get receipt by proof ID
-    const receipt = await receiptService.getReceiptByProofId(delivery.proofId);
-
-    if (!receipt) {
-      return res.status(404).json({
-        success: false,
-        message: "Receipt not found",
-      });
-    }
-
-    res.json({
-      success: true,
-      data: {
-        receiptId: receipt.id,
-        receiptNumber: receipt.receiptNumber,
-        proofId: receipt.proofId,
-        totalAmount: receipt.totalAmount,
-        generatedAt: receipt.generatedAt,
-      },
-    });
-  } catch (error) {
-    console.error("❌ Error getting receipt info:", error);
-    res.status(500).json({
-      success: false,
-      message: error.message || "Failed to get receipt info",
-    });
-  }
-});
+  },
+);
 
 module.exports = router;
-

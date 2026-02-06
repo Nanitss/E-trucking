@@ -19,7 +19,8 @@ import {
   TbCalendar,
   TbBuilding,
   TbTruck,
-  TbCurrencyPeso
+  TbCurrencyPeso,
+  TbDownload,
 } from "react-icons/tb";
 import AdminHeader from "../../../components/common/AdminHeader";
 import { useTimeframe } from "../../../contexts/TimeframeContext";
@@ -71,11 +72,9 @@ const AdminBillings = ({ currentUser }) => {
     pendingVerificationAmount: 0,
   });
 
-  const activeFilterCount = [
-    statusFilter !== "all",
-    startDate,
-    endDate,
-  ].filter(Boolean).length;
+  const activeFilterCount = [statusFilter !== "all", startDate, endDate].filter(
+    Boolean,
+  ).length;
 
   useEffect(() => {
     fetchAllPayments();
@@ -84,7 +83,14 @@ const AdminBillings = ({ currentUser }) => {
   // Re-filter when timeframe changes from header
   useEffect(() => {
     filterPayments();
-  }, [allPayments, statusFilter, searchQuery, startDate, endDate, isWithinTimeframe]);
+  }, [
+    allPayments,
+    statusFilter,
+    searchQuery,
+    startDate,
+    endDate,
+    isWithinTimeframe,
+  ]);
 
   useEffect(() => {
     calculateStats();
@@ -115,7 +121,8 @@ const AdminBillings = ({ currentUser }) => {
 
     // Apply timeframe filter from header
     filtered = filtered.filter((p) => {
-      const paymentDate = p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
+      const paymentDate =
+        p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
       return isWithinTimeframe(paymentDate);
     });
 
@@ -130,13 +137,14 @@ const AdminBillings = ({ currentUser }) => {
           p.deliveryId?.toLowerCase().includes(query) ||
           p.clientName?.toLowerCase().includes(query) ||
           p.clientId?.toLowerCase().includes(query) ||
-          p.metadata?.truckPlate?.toLowerCase().includes(query)
+          p.metadata?.truckPlate?.toLowerCase().includes(query),
       );
     }
 
     if (startDate || endDate) {
       filtered = filtered.filter((p) => {
-        const paymentDate = p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
+        const paymentDate =
+          p.dueDate || p.createdAt || p.created_at || p.deliveryDate;
         if (!paymentDate) return true;
 
         const date = new Date(paymentDate);
@@ -204,13 +212,21 @@ const AdminBillings = ({ currentUser }) => {
       await axios.put(
         `/api/payments/${selectedPayment.id}/status`,
         { status: "paid" },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
-      setAlert({ show: true, type: "success", message: "Payment updated successfully" });
+      setAlert({
+        show: true,
+        type: "success",
+        message: "Payment updated successfully",
+      });
       await fetchAllPayments();
       setEditDialogOpen(false);
     } catch (err) {
-      setAlert({ show: true, type: "error", message: err.response?.data?.message || "Update failed" });
+      setAlert({
+        show: true,
+        type: "error",
+        message: err.response?.data?.message || "Update failed",
+      });
     } finally {
       setUpdatingStatus(false);
     }
@@ -236,12 +252,20 @@ const AdminBillings = ({ currentUser }) => {
     try {
       setApprovingProof(true);
       const token = localStorage.getItem("token");
-      await axios.post("/api/payments/approve-proof", { proofId: viewingProof.id }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        "/api/payments/approve-proof",
+        { proofId: viewingProof.id },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       setAlert({ show: true, type: "success", message: "Payment approved!" });
       setProofViewerOpen(false);
       await fetchAllPayments();
     } catch (err) {
-      setAlert({ show: true, type: "error", message: "Failed to approve proof" });
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Failed to approve proof",
+      });
     } finally {
       setApprovingProof(false);
     }
@@ -257,33 +281,81 @@ const AdminBillings = ({ currentUser }) => {
     try {
       setRejectingProof(true);
       const token = localStorage.getItem("token");
-      await axios.post("/api/payments/reject-proof", { proofId: viewingProof.id, rejectionReason: rejectionReason.trim() }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        "/api/payments/reject-proof",
+        { proofId: viewingProof.id, rejectionReason: rejectionReason.trim() },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
       setAlert({ show: true, type: "info", message: "Proof rejected" });
       setRejectDialogOpen(false);
       setProofViewerOpen(false);
       await fetchAllPayments();
     } catch (err) {
-      setAlert({ show: true, type: "error", message: "Failed to reject proof" });
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Failed to reject proof",
+      });
     } finally {
       setRejectingProof(false);
     }
   };
 
+  // Handle viewing receipt for paid payments
+  const handleViewReceipt = async (payment) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(
+        `/api/payments/receipt/${payment.proofId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        },
+      );
+
+      // Create a blob URL and open in new tab
+      const blob = new Blob([response.data], { type: "text/html" });
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, "_blank");
+
+      // Clean up the URL after a delay
+      setTimeout(() => window.URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error("Error fetching receipt:", err);
+      setAlert({
+        show: true,
+        type: "error",
+        message:
+          "Failed to load receipt. The receipt may not have been generated yet.",
+      });
+    }
+  };
+
   // Helper functions
-  const formatCurrency = (amount) => `₱${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(amount)}`;
-  const formatDate = (date) => date ? format(new Date(date), "MMM dd, yyyy") : "N/A";
+  const formatCurrency = (amount) =>
+    `₱${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(amount)}`;
+  const formatDate = (date) =>
+    date ? format(new Date(date), "MMM dd, yyyy") : "N/A";
   const getStatusColor = (status) => {
     switch (status) {
-      case "paid": return "bg-green-100 text-green-800 border-green-200";
-      case "overdue": return "bg-red-100 text-red-800 border-red-200";
-      case "pending": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "pending_verification": return "bg-blue-100 text-blue-800 border-blue-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
+      case "paid":
+        return "bg-green-100 text-green-800 border-green-200";
+      case "overdue":
+        return "bg-red-100 text-red-800 border-red-200";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "pending_verification":
+        return "bg-blue-100 text-blue-800 border-blue-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
   };
 
   const getStatusLabel = (status) => {
-    return status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    return status
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   return (
@@ -293,19 +365,35 @@ const AdminBillings = ({ currentUser }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Billing Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage and track all payment records</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Billing Management
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage and track all payment records
+          </p>
         </div>
 
         {/* Alerts */}
         {alert.show && (
-          <div className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${alert.type === "error" ? "bg-red-50 border-red-200 text-red-700" :
-            alert.type === "success" ? "bg-green-50 border-green-200 text-green-700" :
-              "bg-blue-50 border-blue-200 text-blue-700"
-            }`}>
-            {alert.type === "error" ? <TbAlertTriangle size={20} /> : <TbCheck size={20} />}
+          <div
+            className={`mb-6 p-4 rounded-xl border flex items-center gap-3 ${
+              alert.type === "error"
+                ? "bg-red-50 border-red-200 text-red-700"
+                : alert.type === "success"
+                  ? "bg-green-50 border-green-200 text-green-700"
+                  : "bg-blue-50 border-blue-200 text-blue-700"
+            }`}
+          >
+            {alert.type === "error" ? (
+              <TbAlertTriangle size={20} />
+            ) : (
+              <TbCheck size={20} />
+            )}
             <span className="text-sm font-medium">{alert.message}</span>
-            <button onClick={() => setAlert({ ...alert, show: false })} className="ml-auto hover:opacity-75">
+            <button
+              onClick={() => setAlert({ ...alert, show: false })}
+              className="ml-auto hover:opacity-75"
+            >
               <TbX size={18} />
             </button>
           </div>
@@ -327,7 +415,11 @@ const AdminBillings = ({ currentUser }) => {
                     </span>
                   </h3>
                   <p className="text-sm text-blue-700 mt-0.5">
-                    Total amount: <span className="font-semibold">{formatCurrency(stats.pendingVerificationAmount)}</span> requires your verification
+                    Total amount:{" "}
+                    <span className="font-semibold">
+                      {formatCurrency(stats.pendingVerificationAmount)}
+                    </span>{" "}
+                    requires your verification
                   </p>
                 </div>
               </div>
@@ -349,12 +441,18 @@ const AdminBillings = ({ currentUser }) => {
               <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
                 <TbFileInvoice size={24} />
               </div>
-              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">Total</span>
+              <span className="text-xs font-medium text-gray-400 bg-gray-50 px-2 py-1 rounded-full">
+                Total
+              </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{stats.totalPayments}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {stats.totalPayments}
+            </h3>
             <p className="text-sm text-gray-500 mt-1">Total Billings</p>
             <div className="mt-4 pt-4 border-t border-gray-50">
-              <span className="text-sm font-semibold text-indigo-600">{formatCurrency(stats.totalAmount)}</span>
+              <span className="text-sm font-semibold text-indigo-600">
+                {formatCurrency(stats.totalAmount)}
+              </span>
             </div>
           </div>
 
@@ -363,12 +461,18 @@ const AdminBillings = ({ currentUser }) => {
               <div className="p-3 bg-red-50 text-red-600 rounded-xl">
                 <TbAlertTriangle size={24} />
               </div>
-              <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">Overdue</span>
+              <span className="text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
+                Overdue
+              </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{stats.overduePayments}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {stats.overduePayments}
+            </h3>
             <p className="text-sm text-gray-500 mt-1">Overdue Payments</p>
             <div className="mt-4 pt-4 border-t border-gray-50">
-              <span className="text-sm font-semibold text-red-600">{formatCurrency(stats.overdueAmount)}</span>
+              <span className="text-sm font-semibold text-red-600">
+                {formatCurrency(stats.overdueAmount)}
+              </span>
             </div>
           </div>
 
@@ -377,12 +481,18 @@ const AdminBillings = ({ currentUser }) => {
               <div className="p-3 bg-yellow-50 text-yellow-600 rounded-xl">
                 <TbClock size={24} />
               </div>
-              <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">Pending</span>
+              <span className="text-xs font-medium text-yellow-600 bg-yellow-50 px-2 py-1 rounded-full">
+                Pending
+              </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{stats.pendingPayments}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {stats.pendingPayments}
+            </h3>
             <p className="text-sm text-gray-500 mt-1">Pending Payments</p>
             <div className="mt-4 pt-4 border-t border-gray-50">
-              <span className="text-sm font-semibold text-yellow-600">{formatCurrency(stats.pendingAmount)}</span>
+              <span className="text-sm font-semibold text-yellow-600">
+                {formatCurrency(stats.pendingAmount)}
+              </span>
             </div>
           </div>
 
@@ -391,12 +501,18 @@ const AdminBillings = ({ currentUser }) => {
               <div className="p-3 bg-green-50 text-green-600 rounded-xl">
                 <TbCheck size={24} />
               </div>
-              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Paid</span>
+              <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+                Paid
+              </span>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900">{stats.paidPayments}</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              {stats.paidPayments}
+            </h3>
             <p className="text-sm text-gray-500 mt-1">Completed Payments</p>
             <div className="mt-4 pt-4 border-t border-gray-50">
-              <span className="text-sm font-semibold text-green-600">{formatCurrency(stats.paidAmount)}</span>
+              <span className="text-sm font-semibold text-green-600">
+                {formatCurrency(stats.paidAmount)}
+              </span>
             </div>
           </div>
         </div>
@@ -404,7 +520,10 @@ const AdminBillings = ({ currentUser }) => {
         {/* Filters */}
         <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="relative w-full md:max-w-md">
-            <TbSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+            <TbSearch
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Search delivery ID, client, or truck..."
@@ -417,18 +536,28 @@ const AdminBillings = ({ currentUser }) => {
           <div className="flex gap-2 w-full md:w-auto">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${showFilters || activeFilterCount > 0 ? "bg-primary-50 border-primary-200 text-primary-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
-                }`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                showFilters || activeFilterCount > 0
+                  ? "bg-primary-50 border-primary-200 text-primary-700"
+                  : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"
+              }`}
             >
               <TbFilter size={18} />
               Filters
               {activeFilterCount > 0 && (
-                <span className="bg-primary-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">{activeFilterCount}</span>
+                <span className="bg-primary-600 text-white text-xs px-1.5 py-0.5 rounded-full ml-1">
+                  {activeFilterCount}
+                </span>
               )}
             </button>
             {activeFilterCount > 0 && (
               <button
-                onClick={() => { setSearchQuery(""); setStatusFilter("all"); setStartDate(""); setEndDate(""); }}
+                onClick={() => {
+                  setSearchQuery("");
+                  setStatusFilter("all");
+                  setStartDate("");
+                  setEndDate("");
+                }}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 text-gray-600 bg-white hover:bg-gray-50 text-sm font-medium transition-all"
               >
                 <TbFilterOff size={18} /> Reset
@@ -441,7 +570,9 @@ const AdminBillings = ({ currentUser }) => {
         {showFilters && (
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in-down">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Status
+              </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -449,13 +580,17 @@ const AdminBillings = ({ currentUser }) => {
               >
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
-                <option value="pending_verification">Pending Verification</option>
+                <option value="pending_verification">
+                  Pending Verification
+                </option>
                 <option value="overdue">Overdue</option>
                 <option value="paid">Paid</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                From Date
+              </label>
               <input
                 type="date"
                 value={startDate}
@@ -464,7 +599,9 @@ const AdminBillings = ({ currentUser }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">To Date</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                To Date
+              </label>
               <input
                 type="date"
                 value={endDate}
@@ -486,74 +623,115 @@ const AdminBillings = ({ currentUser }) => {
               <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
                 <TbReceipt size={32} />
               </div>
-              <h3 className="text-lg font-medium text-gray-900">No records found</h3>
-              <p className="text-gray-500 mt-1">Try adjusting your search or filters</p>
+              <h3 className="text-lg font-medium text-gray-900">
+                No records found
+              </h3>
+              <p className="text-gray-500 mt-1">
+                Try adjusting your search or filters
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery ID</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Client</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Amount</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Due Date</th>
-                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Delivery ID
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Client
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Due Date
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filteredPayments.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-medium text-gray-900 block">{payment.deliveryId || "N/A"}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
-                            {payment.clientName?.charAt(0).toUpperCase() || "C"}
+                  {filteredPayments
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((payment) => (
+                      <tr
+                        key={payment.id}
+                        className="hover:bg-gray-50/50 transition-colors"
+                      >
+                        <td className="px-6 py-4">
+                          <span className="font-medium text-gray-900 block">
+                            {payment.deliveryId || "N/A"}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                              {payment.clientName?.charAt(0).toUpperCase() ||
+                                "C"}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {payment.clientName || "Unknown Client"}
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                ID: {payment.clientId?.substring(0, 8)}...
+                              </div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{payment.clientName || "Unknown Client"}</div>
-                            <div className="text-xs text-gray-500">ID: {payment.clientId?.substring(0, 8)}...</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(payment.amount)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}
+                          >
+                            {getStatusLabel(payment.status)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {formatDate(payment.dueDate)}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {payment.proofId && (
+                              <button
+                                onClick={() => handleViewProof(payment)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
+                                title="View Proof"
+                              >
+                                <TbEye size={18} />
+                              </button>
+                            )}
+                            {payment.status !== "paid" && (
+                              <button
+                                onClick={() => handleMarkAsPaid(payment)}
+                                className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
+                                title="Mark as Paid"
+                              >
+                                <TbCheck size={18} />
+                              </button>
+                            )}
+                            {payment.status === "paid" && payment.proofId && (
+                              <button
+                                onClick={() => handleViewReceipt(payment)}
+                                className="p-1.5 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors border border-transparent hover:border-purple-100"
+                                title="View Receipt"
+                              >
+                                <TbDownload size={18} />
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(payment.status)}`}>
-                          {getStatusLabel(payment.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDate(payment.dueDate)}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {payment.status === "pending_verification" && (
-                            <button
-                              onClick={() => handleViewProof(payment)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100"
-                              title="View Proof"
-                            >
-                              <TbEye size={18} />
-                            </button>
-                          )}
-                          {payment.status !== "paid" && (
-                            <button
-                              onClick={() => handleMarkAsPaid(payment)}
-                              className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors border border-transparent hover:border-green-100"
-                              title="Mark as Paid"
-                            >
-                              <TbCheck size={18} />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>
@@ -563,7 +741,14 @@ const AdminBillings = ({ currentUser }) => {
           {!loading && filteredPayments.length > 0 && (
             <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Showing <span className="font-medium">{page * rowsPerPage + 1}</span> to <span className="font-medium">{Math.min((page + 1) * rowsPerPage, filteredPayments.length)}</span> of <span className="font-medium">{filteredPayments.length}</span> results
+                Showing{" "}
+                <span className="font-medium">{page * rowsPerPage + 1}</span> to{" "}
+                <span className="font-medium">
+                  {Math.min((page + 1) * rowsPerPage, filteredPayments.length)}
+                </span>{" "}
+                of{" "}
+                <span className="font-medium">{filteredPayments.length}</span>{" "}
+                results
               </div>
               <div className="flex gap-2">
                 <button
@@ -590,11 +775,28 @@ const AdminBillings = ({ currentUser }) => {
       {editDialogOpen && selectedPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl animate-scale-up">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Mark as Paid?</h3>
-            <p className="text-gray-500 mb-6">Are you sure you want to mark this payment of <span className="font-semibold text-gray-900">{formatCurrency(selectedPayment.amount)}</span> as paid?</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Mark as Paid?
+            </h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to mark this payment of{" "}
+              <span className="font-semibold text-gray-900">
+                {formatCurrency(selectedPayment.amount)}
+              </span>{" "}
+              as paid?
+            </p>
             <div className="flex justify-end gap-3">
-              <button onClick={() => setEditDialogOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-              <button onClick={handleConfirmMarkAsPaid} disabled={updatingStatus} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all flex items-center gap-2">
+              <button
+                onClick={() => setEditDialogOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmMarkAsPaid}
+                disabled={updatingStatus}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all flex items-center gap-2"
+              >
                 {updatingStatus ? "Updating..." : "Confirm Payment"}
               </button>
             </div>
@@ -604,19 +806,42 @@ const AdminBillings = ({ currentUser }) => {
 
       {/* Proof Viewer Modal */}
       {proofViewerOpen && viewingProof && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={() => setProofViewerOpen(false)}>
-          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setProofViewerOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
               <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                 <TbEye className="text-primary-600" />
                 Payment Proof
               </h3>
-              <button onClick={() => setProofViewerOpen(false)} className="p-2 hover:bg-gray-200 rounded-full transition-colors"><TbX /></button>
+              <button
+                onClick={() => setProofViewerOpen(false)}
+                className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                <TbX />
+              </button>
             </div>
 
             <div className="flex-1 overflow-auto bg-gray-100 p-4 flex items-center justify-center">
               {viewingProof.proofUrl ? (
-                <img src={viewingProof.proofUrl} alt="Proof" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+                viewingProof.proofFileType === "application/pdf" ? (
+                  <embed
+                    src={viewingProof.proofUrl}
+                    type="application/pdf"
+                    className="w-full h-[60vh] rounded-lg shadow-lg"
+                  />
+                ) : (
+                  <img
+                    src={viewingProof.proofUrl}
+                    alt="Proof"
+                    className="max-w-full max-h-full object-contain shadow-lg rounded-lg"
+                  />
+                )
               ) : (
                 <div className="text-gray-500 flex flex-col items-center gap-2">
                   <TbAlertTriangle size={32} />
@@ -626,11 +851,26 @@ const AdminBillings = ({ currentUser }) => {
             </div>
 
             <div className="p-6 border-t border-gray-100 bg-white flex justify-end gap-3">
-              <button onClick={handleOpenRejectDialog} disabled={approvingProof || rejectingProof} className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium">
+              <button
+                onClick={handleOpenRejectDialog}
+                disabled={approvingProof || rejectingProof}
+                className="px-4 py-2 text-red-600 border border-red-200 hover:bg-red-50 rounded-lg transition-all font-medium"
+              >
                 Reject Proof
               </button>
-              <button onClick={handleApproveProof} disabled={approvingProof || rejectingProof} className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2">
-                {approvingProof ? "Approving..." : <> <TbCheck /> Approve Payment </>}
+              <button
+                onClick={handleApproveProof}
+                disabled={approvingProof || rejectingProof}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg shadow-lg shadow-green-500/30 transition-all font-medium flex items-center gap-2"
+              >
+                {approvingProof ? (
+                  "Approving..."
+                ) : (
+                  <>
+                    {" "}
+                    <TbCheck /> Approve Payment{" "}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -641,8 +881,13 @@ const AdminBillings = ({ currentUser }) => {
       {rejectDialogOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl animate-scale-up">
-            <h3 className="text-xl font-semibold text-gray-900 mb-2 text-red-600 flex items-center gap-2"><TbAlertTriangle /> Reject Proof</h3>
-            <p className="text-gray-500 mb-4 text-sm">Please provide a reason for rejecting this payment proof. The client will be notified.</p>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2 text-red-600 flex items-center gap-2">
+              <TbAlertTriangle /> Reject Proof
+            </h3>
+            <p className="text-gray-500 mb-4 text-sm">
+              Please provide a reason for rejecting this payment proof. The
+              client will be notified.
+            </p>
             <textarea
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
@@ -650,8 +895,17 @@ const AdminBillings = ({ currentUser }) => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none min-h-[100px] mb-4 text-sm"
             />
             <div className="flex justify-end gap-3">
-              <button onClick={() => setRejectDialogOpen(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">Cancel</button>
-              <button onClick={handleRejectProof} disabled={rejectingProof} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg shadow-red-500/30 transition-all">
+              <button
+                onClick={() => setRejectDialogOpen(false)}
+                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRejectProof}
+                disabled={rejectingProof}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow-lg shadow-red-500/30 transition-all"
+              >
                 {rejectingProof ? "Rejecting..." : "Confirm Rejection"}
               </button>
             </div>
