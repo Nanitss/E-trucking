@@ -16,6 +16,9 @@ import {
   FaTimesCircle,
   FaMoneyBillWave,
   FaInfoCircle,
+  FaCalendarAlt,
+  FaRoute,
+  FaShippingFast,
 } from "react-icons/fa";
 import { AuthContext } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationContext";
@@ -221,6 +224,12 @@ const ClientHeader = () => {
                                 <FaTimesCircle size={14} />
                               ) : notification.type === "payment" ? (
                                 <FaMoneyBillWave size={14} />
+                              ) : notification.type === "delivery" && notification.metadata?.action === "rebook" ? (
+                                <FaCalendarAlt size={14} />
+                              ) : notification.type === "delivery" && notification.metadata?.action === "reroute" ? (
+                                <FaRoute size={14} />
+                              ) : notification.type === "delivery" ? (
+                                <FaShippingFast size={14} />
                               ) : (
                                 <FaInfoCircle size={14} />
                               )}

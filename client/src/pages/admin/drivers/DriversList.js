@@ -32,6 +32,7 @@ import DriverForm from "./DriverForm";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import StatusBadge from "../../../components/common/StatusBadge";
 import { API_BASE_URL } from "../../../config/api";
 
 const DriversList = ({ currentUser }) => {
@@ -992,9 +993,7 @@ const DriversList = ({ currentUser }) => {
                         {driver.licenseNumber || "N/A"}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={getDisplayStatusBadgeClass(driver)}>
-                          {getDisplayStatus(driver)}
-                        </span>
+                        <StatusBadge status={getDisplayStatus(driver)} />
                       </td>
                       <td className="px-6 py-4 text-sm">
                         {/* License Status Column */}
@@ -1099,9 +1098,7 @@ const DriversList = ({ currentUser }) => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <span className={getDisplayStatusBadgeClass(driver)}>
-                        {getDisplayStatus(driver)}
-                      </span>
+                      <StatusBadge status={getDisplayStatus(driver)} />
                     </div>
                   </div>
 

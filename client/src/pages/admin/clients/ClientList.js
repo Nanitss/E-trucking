@@ -27,6 +27,7 @@ import {
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import StatusBadge from "../../../components/common/StatusBadge";
 import { API_BASE_URL } from "../../../config/api";
 
 const ClientList = ({ currentUser }) => {
@@ -690,39 +691,20 @@ const ClientList = ({ currentUser }) => {
                             : "N/A"}
                         </td>
                         <td className="py-4 px-6">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${client.ClientStatus?.toLowerCase() === "active"
-                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                : client.ClientStatus?.toLowerCase() ===
-                                  "inactive"
-                                  ? "bg-gray-50 text-gray-600 border-gray-100"
-                                  : "bg-amber-50 text-amber-700 border-amber-100"
-                              }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${client.ClientStatus?.toLowerCase() === "active"
-                                  ? "bg-emerald-500"
-                                  : client.ClientStatus?.toLowerCase() ===
-                                    "inactive"
-                                    ? "bg-gray-400"
-                                    : "bg-amber-500"
-                                }`}
-                            ></span>
-                            {formatStatus(client.ClientStatus)}
-                          </span>
+                          <StatusBadge status={client.ClientStatus || "Active"} />
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="flex items-center justify-end gap-2">
                             <button
                               onClick={() => handleViewDetails(client)}
-                              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                               title="View Details"
                             >
                               <TbEye size={18} />
                             </button>
                             <Link
                               to={`/admin/clients/edit/${client.ClientID}`}
-                              className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                              className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                               title="Edit Client"
                             >
                               <TbEdit size={18} />

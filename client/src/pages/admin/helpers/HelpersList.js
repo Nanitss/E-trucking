@@ -1,4 +1,4 @@
-// src/pages/admin/helpers/HelpersList.js - Enhanced with truck-like functionality
+// src/pages/admin/helpers/HelpersList.js - Tailwind UI matching DriversList
 
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
@@ -7,9 +7,8 @@ import {
   TbUser,
   TbEye,
   TbEdit,
-  TbSettings,
   TbCheck,
-  TbClock,
+  TbX,
   TbFileText,
   TbActivity,
   TbArrowUp,
@@ -18,15 +17,20 @@ import {
   TbLayoutGrid,
   TbFilter,
   TbFilterOff,
-  TbX,
+  TbSearch,
+  TbPlus,
+  TbCalendar,
+  TbTruck,
+  TbAlertCircle,
 } from "react-icons/tb";
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import StatusBadge from "../../../components/common/StatusBadge";
 import { API_BASE_URL } from "../../../config/api";
 
 const HelpersList = ({ currentUser }) => {
-  // Define baseURL for API calls
   const baseURL = API_BASE_URL;
   const { isWithinTimeframe, getFormattedDateRange } = useTimeframe();
 
@@ -38,7 +42,7 @@ const HelpersList = ({ currentUser }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHelper, setSelectedHelper] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [viewMode, setViewMode] = useState("table"); // 'table' or 'cards'
+  const [viewMode, setViewMode] = useState("table");
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
@@ -211,43 +215,21 @@ const HelpersList = ({ currentUser }) => {
     setFilteredHelpers(filtered);
   }, [helpers, statusFilter, searchQuery, isWithinTimeframe]);
 
-  // Helper function to get status badge class
-  const getStatusBadgeClass = (status) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return "status-active";
-      case "available":
-        return "status-active"; // Available should display same as active
-      case "inactive":
-        return "status-inactive";
-      case "on leave":
-        return "status-on-leave";
-      case "on-delivery":
-      case "on_delivery":
-      case "on delivery":
-        return "status-on-delivery";
-      case "terminated":
-        return "status-terminated";
-      default:
-        return "status-default";
-    }
-  };
-
   // Helper functions for compliance
   const getComplianceClass = (helper) => {
-    if (!helper.documentCompliance) return "compliance-pending";
+    if (!helper.documentCompliance) return "bg-gray-50 border-gray-200 text-gray-700";
     const status = helper.documentCompliance.overallStatus;
-    if (status === "complete") return "compliance-complete";
-    if (status === "incomplete") return "compliance-incomplete";
-    return "compliance-pending";
+    if (status === "complete") return "bg-emerald-50 border-emerald-200 text-emerald-700";
+    if (status === "incomplete") return "bg-amber-50 border-amber-200 text-amber-700";
+    return "bg-gray-50 border-gray-200 text-gray-700";
   };
 
   const getComplianceIcon = (helper) => {
-    if (!helper.documentCompliance) return "⚙️";
+    if (!helper.documentCompliance) return <TbAlertCircle className="text-gray-400" size={16} />;
     const status = helper.documentCompliance.overallStatus;
-    if (status === "complete") return "✅";
-    if (status === "incomplete") return "⚠️";
-    return "⚙️";
+    if (status === "complete") return <TbCheck className="text-emerald-600" size={16} />;
+    if (status === "incomplete") return <TbAlertCircle className="text-amber-600" size={16} />;
+    return <TbAlertCircle className="text-gray-400" size={16} />;
   };
 
   const getComplianceStatus = (helper) => {
@@ -270,89 +252,93 @@ const HelpersList = ({ currentUser }) => {
 
   if (loading) {
     return (
-      <div className="helpers-list-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <p>Loading helpers...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="helpers-list-container">
-        <div className="error-container">
-          <h2>Error Loading Helpers</h2>
-          <p>{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="btn btn-primary"
-          >
-            Retry
-          </button>
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-500 font-medium">Loading helpers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="admin-page-container">
-      <AdminHeader currentUser={null} />
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      <AdminHeader currentUser={currentUser} />
+      <PersonnelSubNav activeTab="helpers" />
 
-      <div className="admin-content">
+      <div className="flex-1 p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
         {/* Greeting and Summary Cards */}
-        <div className="greeting-section">
-          <h2 className="greeting-text">Helpers Management</h2>
-          <p className="greeting-subtitle">
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Helpers Management
+          </h2>
+          <p className="text-gray-500 mt-1">
             Manage helpers, assistant drivers, and support personnel
           </p>
-          <div className="timeframe-indicator">
-            <span className="timeframe-label">
-              Showing data for: {getFormattedDateRange()}
+          <div className="mt-4 inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 shadow-sm">
+            <TbCalendar size={16} className="text-gray-400" />
+            <span>
+              Showing data for:{" "}
+              <span className="font-medium text-gray-900">
+                {getFormattedDateRange()}
+              </span>
             </span>
           </div>
 
-          <div className="summary-cards">
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbUser size={24} />
-              </div>
-              <div className="card-content">
-                <div className="card-value">{helpers.length}</div>
-                <div className="card-label">Total Helpers</div>
-                <div className="card-change positive">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                  <TbUser size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
                   <TbArrowUp size={12} />
                   +2.5%
                 </div>
               </div>
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
+                  {helpers.length}
+                </div>
+                <div className="text-sm text-gray-500 font-medium">
+                  Total Helpers
+                </div>
+              </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbCheck size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                  <TbCheck size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">
+                  <TbArrowUp size={12} />
+                  +1.8%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     helpers.filter((h) => h.status?.toLowerCase() === "active")
                       .length
                   }
                 </div>
-                <div className="card-label">Active</div>
-                <div className="card-change positive">
-                  <TbArrowUp size={12} />
-                  +1.8%
-                </div>
+                <div className="text-sm text-gray-500 font-medium">Active</div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbActivity size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                  <TbTruck size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                  <TbActivity size={12} />
+                  0.0%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     helpers.filter((h) => {
                       const status = h.status
@@ -362,20 +348,24 @@ const HelpersList = ({ currentUser }) => {
                     }).length
                   }
                 </div>
-                <div className="card-label">On Delivery</div>
-                <div className="card-change neutral">
-                  <TbActivity size={12} />
-                  0.0%
+                <div className="text-sm text-gray-500 font-medium">
+                  On Delivery
                 </div>
               </div>
             </div>
 
-            <div className="summary-card">
-              <div className="card-icon">
-                <TbFileText size={24} />
+            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 bg-red-50 text-red-600 rounded-xl flex items-center justify-center">
+                  <TbFileText size={22} />
+                </div>
+                <div className="flex items-center gap-1 text-xs font-bold text-red-600 bg-red-50 px-2 py-1 rounded-lg">
+                  <TbArrowDown size={12} />
+                  -0.3%
+                </div>
               </div>
-              <div className="card-content">
-                <div className="card-value">
+              <div>
+                <div className="text-3xl font-bold text-gray-900 mb-1">
                   {
                     helpers.filter(
                       (h) =>
@@ -384,165 +374,91 @@ const HelpersList = ({ currentUser }) => {
                     ).length
                   }
                 </div>
-                <div className="card-label">Expired Licenses</div>
-                <div className="card-change negative">
-                  <TbArrowDown size={12} />
-                  -0.3%
+                <div className="text-sm text-gray-500 font-medium">
+                  Expired Licenses
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modern Filter Bar - Helpers List */}
-        <div
-          className="modern-filter-bar"
-          style={{ position: "relative", marginBottom: "24px" }}
-        >
-          <div
-            className="search-filter-row"
-            style={{
-              display: "flex",
-              gap: "12px",
-              alignItems: "center",
-              flexWrap: "wrap",
-            }}
-          >
-            {/* Search (Top Left) */}
-            <div className="search-container" style={{ flex: "0 0 350px" }}>
-              <div className="search-input-wrapper">
-                <div className="search-icon">🔍</div>
-                <input
-                  type="text"
-                  placeholder="Search by name, contact, license..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="modern-search-input"
-                />
-              </div>
+        {/* Modern Filter Bar */}
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-6">
+          <div className="relative flex-1 max-w-lg w-full">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <TbSearch size={20} />
             </div>
+            <input
+              type="text"
+              placeholder="Search by name, contact, license..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
+            />
+          </div>
 
-            {/* Filter Toggle Button */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <button
-              className={`btn btn-secondary ${showFilters ? "active" : ""}`}
-              style={{
-                height: "42px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                position: "relative",
-                paddingRight: activeFilterCount > 0 ? "36px" : "16px",
-              }}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <TbFilter size={18} />
               Filters
               {activeFilterCount > 0 && (
-                <span
-                  className="filter-count-badge"
-                  style={{
-                    position: "absolute",
-                    right: "8px",
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "rgba(255,255,255,0.2)",
-                    color: "white",
-                    borderRadius: "12px",
-                    padding: "2px 8px",
-                    fontSize: "0.75rem",
-                    fontWeight: "bold",
-                  }}
-                >
+                <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
                   {activeFilterCount}
                 </span>
               )}
             </button>
 
-            {/* View Mode Toggle (Aligned Right) */}
-            <div className="view-mode-toggle" style={{ marginLeft: "auto" }}>
+            <div className="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
               <button
                 onClick={() => setViewMode("table")}
-                className={`view-mode-btn ${viewMode === "table" ? "active" : ""
-                  }`}
+                className={`p-2 rounded-md transition-all ${viewMode === "table" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Table View"
               >
-                <TbList size={20} />
+                <TbList size={18} />
               </button>
               <button
                 onClick={() => setViewMode("cards")}
-                className={`view-mode-btn ${viewMode === "cards" ? "active" : ""
-                  }`}
+                className={`p-2 rounded-md transition-all ${viewMode === "cards" ? "bg-white shadow-sm text-blue-600" : "text-gray-500 hover:text-gray-700"}`}
                 title="Card View"
               >
-                <TbLayoutGrid size={20} />
+                <TbLayoutGrid size={18} />
               </button>
             </div>
           </div>
+        </div>
 
-          <div
-            className="filter-summary"
-            style={{ marginTop: "12px", color: "#64748b", fontSize: "0.9rem" }}
-          >
-            Showing {filteredHelpers.length} of {helpers.length} helpers
-          </div>
+        <div className="mt-3 text-gray-500 text-sm font-medium mb-6">
+          Showing {filteredHelpers.length} of {helpers.length} helpers
+        </div>
 
+        <div className="relative mb-6">
           {/* Filter Popup */}
           {showFilters && (
-            <div
-              className="filter-popup-card"
-              style={{
-                position: "absolute",
-                top: "48px",
-                left: "0",
-                zIndex: 100,
-                background: "white",
-                borderRadius: "12px",
-                boxShadow:
-                  "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
-                border: "1px solid #f1f5f9",
-                width: "320px",
-                maxWidth: "90vw",
-                padding: "20px",
-              }}
-            >
-              <div
-                className="popup-header"
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  marginBottom: "16px",
-                  alignItems: "center",
-                }}
-              >
-                <h4 style={{ margin: 0, color: "#1e293b", fontSize: "1.1rem" }}>
+            <div className="absolute top-0 right-0 md:left-0 z-50 bg-white rounded-xl shadow-xl border border-gray-100 w-80 max-w-[90vw] p-5 animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex justify-between items-center mb-4">
+                <h4 className="font-bold text-gray-900 text-lg">
                   Filter Options
                 </h4>
                 <button
-                  className="btn-ghost"
+                  className="p-1 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "32px", padding: "0 8px", width: "auto" }}
                 >
-                  <TbX />
+                  <TbX size={20} />
                 </button>
               </div>
 
-              <div
-                className="filters-grid-popup"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr",
-                  gap: "12px",
-                  marginBottom: "20px",
-                }}
-              >
-                {/* Status Filter */}
-                <div className="filter-group">
-                  <label className="filter-label">Status</label>
+              <div className="space-y-4 mb-6">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-gray-500 uppercase">
+                    Status
+                  </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="modern-filter-select"
-                    style={{ width: "100%" }}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                   >
                     <option value="all">All Status</option>
                     <option value="Active">Active</option>
@@ -554,30 +470,19 @@ const HelpersList = ({ currentUser }) => {
                 </div>
               </div>
 
-              <div
-                className="popup-footer"
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: "12px",
-                  paddingTop: "16px",
-                  borderTop: "1px solid #f1f5f9",
-                }}
-              >
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
                 <button
-                  className="btn-ghost"
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                   onClick={() => {
                     setStatusFilter("all");
                     setSearchQuery("");
                   }}
-                  style={{ width: "auto" }}
                 >
                   <TbFilterOff size={16} /> Reset
                 </button>
                 <button
-                  className="btn btn-primary"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-colors"
                   onClick={() => setShowFilters(false)}
-                  style={{ height: "42px", padding: "0 24px" }}
                 >
                   Apply Filters
                 </button>
@@ -588,123 +493,179 @@ const HelpersList = ({ currentUser }) => {
 
         {/* Helpers Content */}
         {filteredHelpers.length === 0 ? (
-          <div className="helpers-empty-state">
-            <div className="empty-state-icon">👤</div>
-            <h3 className="empty-state-title">No helpers found</h3>
-            <p className="empty-state-description">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6 text-gray-400">
+              <TbUser size={40} />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              No helpers found
+            </h3>
+            <p className="text-gray-500 max-w-md mx-auto mb-8">
               No helpers match your current filters. Try adjusting your search
               criteria or add a new helper.
             </p>
-            <Link to="/admin/helpers/add" className="btn btn-primary">
-              ➕ Add Your First Helper
+            <Link
+              to="/admin/helpers/add"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-sm shadow-blue-200 transition-colors"
+            >
+              <TbPlus size={20} /> Add Your First Helper
             </Link>
           </div>
         ) : viewMode === "table" ? (
           // TABLE VIEW
-          <div className="helpers-table-container">
-            <div className="table-wrapper">
-              <table className="helpers-table">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr>
-                    <th onClick={() => handleSort("name")} className="sortable">
-                      Helper Name{" "}
-                      {sortField === "name" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th
+                      onClick={() => handleSort("name")}
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-1">
+                        Helper Name{" "}
+                        {sortField === "name" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("contactNumber")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      Contact{" "}
-                      {sortField === "contactNumber" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Contact{" "}
+                        {sortField === "contactNumber" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("licenseType")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      License Type{" "}
-                      {sortField === "licenseType" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        License Type{" "}
+                        {sortField === "licenseType" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("licenseNumber")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      License #{" "}
-                      {sortField === "licenseNumber" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        License #{" "}
+                        {sortField === "licenseNumber" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("status")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
-                      Status{" "}
-                      {sortField === "status" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                      <div className="flex items-center gap-1">
+                        Status{" "}
+                        {sortField === "status" &&
+                          (sortDirection === "asc" ? (
+                            <TbArrowUp size={14} />
+                          ) : (
+                            <TbArrowDown size={14} />
+                          ))}
+                      </div>
                     </th>
                     <th
                       onClick={() => handleSort("documentCompliance")}
-                      className="sortable"
+                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
                       Compliance{" "}
                       {sortField === "documentCompliance" &&
-                        (sortDirection === "asc" ? "↑" : "↓")}
+                        (sortDirection === "asc" ? (
+                          <TbArrowUp size={14} />
+                        ) : (
+                          <TbArrowDown size={14} />
+                        ))}
                     </th>
-                    <th>Actions</th>
+                    <th className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {getSortedAndPaginatedHelpers().map((helper) => (
-                    <tr key={helper.id} className="helper-row">
-                      <td className="helper-name-cell">
-                        <div className="helper-name-wrapper">
-                          <TbUser className="helper-icon" />
-                          <span className="helper-name-text">
-                            {helper.name}
-                          </span>
+                    <tr
+                      key={helper.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm shrink-0">
+                            {helper.name?.charAt(0) || "H"}
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-gray-900">
+                              {helper.name}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              ID: {helper.id}
+                            </div>
+                          </div>
                         </div>
                       </td>
-                      <td>{helper.contactNumber || "N/A"}</td>
-                      <td>
-                        <span className="license-badge">
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {helper.contactNumber || "N/A"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="px-2.5 py-0.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-200">
                           {helper.licenseType || "N/A"}
                         </span>
                       </td>
-                      <td>{helper.licenseNumber || "N/A"}</td>
-                      <td>
-                        <span
-                          className={`status-badge ${getStatusBadgeClass(
-                            helper.status,
-                          )}`}
-                        >
-                          {helper.status || "Active"}
-                        </span>
+                      <td className="px-6 py-4 text-sm font-mono text-gray-600">
+                        {helper.licenseNumber || "N/A"}
                       </td>
-                      <td>
-                        <div className="compliance-cell">
-                          <span className="compliance-icon">
+                      <td className="px-6 py-4">
+                        <StatusBadge status={helper.status || "Active"} />
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg">
                             {getComplianceIcon(helper)}
                           </span>
-                          <span className="compliance-text">
-                            {helper.documentCompliance?.requiredDocumentCount ||
-                              0}
-                            /2
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-xs font-medium text-gray-900">
+                              {helper.documentCompliance
+                                ?.requiredDocumentCount || 0}
+                              /2
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td>
-                        <div className="table-actions">
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewDetails(helper)}
-                            className="action-btn view-btn"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <TbEye size={18} />
                           </button>
                           <Link
                             to={`/admin/helpers/edit/${helper.id}`}
-                            className="action-btn edit-btn"
+                            className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Edit Helper"
                           >
                             <TbEdit size={18} />
@@ -719,17 +680,17 @@ const HelpersList = ({ currentUser }) => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="pagination">
+              <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
                 <button
                   onClick={() =>
                     setCurrentPage((prev) => Math.max(1, prev - 1))
                   }
                   disabled={currentPage === 1}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
                 >
                   ← Previous
                 </button>
-                <span className="pagination-info">
+                <span className="text-sm text-gray-600 font-medium">
                   Page {currentPage} of {totalPages} ({filteredHelpers.length}{" "}
                   helpers)
                 </span>
@@ -738,7 +699,7 @@ const HelpersList = ({ currentUser }) => {
                     setCurrentPage((prev) => Math.min(totalPages, prev + 1))
                   }
                   disabled={currentPage === totalPages}
-                  className="pagination-btn"
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium shadow-sm"
                 >
                   Next →
                 </button>
@@ -747,350 +708,378 @@ const HelpersList = ({ currentUser }) => {
           </div>
         ) : (
           // CARD VIEW
-          <div className="helper-cards-grid">
-            {filteredHelpers.map((helper) => {
-              const statusClass = getStatusBadgeClass(helper.status);
-
-              return (
-                <div key={helper.id} className="helper-card">
-                  {/* Card Header */}
-                  <div className="helper-card-header">
-                    <div className="helper-card-title">
-                      <div className="helper-card-icon">👤</div>
-                      <div className="helper-card-main">
-                        <h3 className="helper-name">{helper.name}</h3>
-                        <p className="helper-type">
-                          {helper.licenseType || "No License"}
-                        </p>
-                      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredHelpers.map((helper) => (
+              <div
+                key={helper.id}
+                className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow group"
+              >
+                {/* Card Header */}
+                <div className="p-5 border-b border-gray-50 flex justify-between items-start gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                      <TbUser size={20} />
                     </div>
-                    <div className="helper-card-status">
-                      <span
-                        className={`helper-status-primary ${statusClass.replace(
-                          "status-",
-                          "",
-                        )}`}
-                      >
-                        {helper.status || "Active"}
-                      </span>
+                    <div>
+                      <h3 className="font-bold text-gray-900">
+                        {helper.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded mt-1 inline-block capitalize">
+                        {helper.licenseType || "No License"}
+                      </p>
                     </div>
                   </div>
-
-                  {/* Card Content */}
-                  <div className="helper-card-content">
-                    <div className="helper-card-info">
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">Contact</span>
-                        <span className="helper-info-value">
-                          {helper.contactNumber || "N/A"}
-                        </span>
-                      </div>
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">Address</span>
-                        <span className="helper-info-value">
-                          {helper.address || "N/A"}
-                        </span>
-                      </div>
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">License #</span>
-                        <span className="helper-info-value">
-                          {helper.licenseNumber || "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="helper-card-info">
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">License Type</span>
-                        <span className="helper-info-value">
-                          {helper.licenseType || "N/A"}
-                        </span>
-                      </div>
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">Expiry</span>
-                        <span className="helper-info-value">
-                          {helper.licenseExpiryDate
-                            ? new Date(
-                              helper.licenseExpiryDate,
-                            ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                      <div className="helper-info-item">
-                        <span className="helper-info-label">Hired</span>
-                        <span className="helper-info-value">
-                          {helper.employmentDate
-                            ? new Date(
-                              helper.employmentDate,
-                            ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Document Compliance */}
-                  <div
-                    className={`helper-card-compliance ${getComplianceClass(
-                      helper,
-                    )}`}
-                  >
-                    <div className="compliance-info">
-                      <div className="compliance-icon-large">
-                        {getComplianceIcon(helper)}
-                      </div>
-                      <div className="compliance-text">
-                        <div className="compliance-status">
-                          {getComplianceStatus(helper)}
-                        </div>
-                        <div className="compliance-details">
-                          {getComplianceDetails(helper)}
-                        </div>
-                      </div>
-                    </div>
-                    {/* File Counter Badge */}
-                    <div className="file-counter-badge">
-                      <span className="file-count-icon">📁</span>
-                      <span className="file-count-text">
-                        {Object.keys(helper.documents || {}).length} files
-                      </span>
-                      <div className="file-count-breakdown">
-                        <span className="required-count">
-                          {helper.documentCompliance?.requiredDocumentCount ||
-                            0}
-                          /2 required
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Card Actions */}
-                  <div className="helper-card-actions">
-                    <div className="helper-card-actions-left">
-                      <Link
-                        to={`/admin/helpers/edit/${helper.id}`}
-                        className="card-action-btn primary"
-                      >
-                        ✎ Edit
-                      </Link>
-                    </div>
-                    <button
-                      className="view-details-btn"
-                      onClick={() => handleViewDetails(helper)}
-                    >
-                      📊 View Details →
-                    </button>
+                  <div className="flex flex-col items-end gap-1">
+                    <StatusBadge status={helper.status || "Active"} />
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Card Content */}
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="block text-xs text-gray-500 mb-1">
+                        Contact
+                      </span>
+                      <span
+                        className="font-medium text-gray-900 truncate block text-sm"
+                        title={helper.contactNumber}
+                      >
+                        {helper.contactNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-gray-500 mb-1">
+                        License #
+                      </span>
+                      <span className="font-mono text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block w-fit">
+                        {helper.licenseNumber || "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-gray-500 mb-1">
+                        Expiry
+                      </span>
+                      <span className="font-medium text-gray-900 text-sm">
+                        {helper.licenseExpiryDate
+                          ? new Date(
+                            helper.licenseExpiryDate,
+                          ).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-gray-500 mb-1">
+                        Hired
+                      </span>
+                      <span className="font-medium text-gray-900 text-sm">
+                        {helper.employmentDate
+                          ? new Date(
+                            helper.employmentDate,
+                          ).toLocaleDateString()
+                          : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Compliance Section */}
+                  <div
+                    className={`p-3 rounded-xl border ${getComplianceClass(helper)}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                        {getComplianceIcon(helper)}
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-sm font-bold opacity-90 mb-0.5">
+                          {getComplianceStatus(helper)}
+                        </div>
+                        <div className="text-xs opacity-75">
+                          {getComplianceDetails(helper)}
+                        </div>
+
+                        <div className="mt-2 text-xs flex items-center justify-between border-t border-black/5 pt-2">
+                          <span className="font-medium flex items-center gap-1 opacity-80">
+                            <TbFileText size={12} />
+                            {Object.keys(helper.documents || {}).length} files
+                          </span>
+                          <span className="font-medium opacity-80">
+                            {helper.documentCompliance
+                              ?.requiredDocumentCount || 0}
+                            /2 required
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="p-4 bg-gray-50 border-t border-gray-100 grid grid-cols-2 gap-3">
+                  {helper.id ? (
+                    <Link
+                      to={`/admin/helpers/edit/${helper.id}`}
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 transition-all text-sm font-medium shadow-sm"
+                    >
+                      <TbEdit size={16} />
+                      Edit
+                    </Link>
+                  ) : (
+                    <button
+                      className="flex items-center justify-center gap-2 px-3 py-2 bg-gray-100 border border-gray-200 text-gray-400 rounded-lg cursor-not-allowed text-sm font-medium shadow-sm"
+                      disabled
+                      title="Helper ID missing"
+                    >
+                      <TbEdit size={16} />
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    className="flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all text-sm font-medium shadow-sm shadow-blue-200"
+                    onClick={() => handleViewDetails(helper)}
+                  >
+                    <TbEye size={16} />
+                    Details
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* Helper Details Modal */}
         {showDetailsModal && selectedHelper && (
-          <div className="modal-overlay" onClick={closeDetailsModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Helper Details - {selectedHelper.name}</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>
-                  ✕
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={closeDetailsModal}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <TbUser size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900">
+                      {selectedHelper.name} Details
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                      View complete helper information and documents
+                    </p>
+                  </div>
+                </div>
+                <button
+                  className="p-2 hover:bg-gray-100 rounded-lg text-gray-500 transition-colors"
+                  onClick={closeDetailsModal}
+                >
+                  <TbX size={24} />
                 </button>
               </div>
 
-              <div className="modal-body">
-                <div className="details-grid">
-                  {/* Personal Information */}
-                  <div className="details-section">
-                    <h3>👤 Personal Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Full Name:</span>
-                        <span className="detail-value">
-                          {selectedHelper.name}
-                        </span>
+              <div className="flex-1 overflow-y-auto p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Personal & Employment Information */}
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        👤 Personal Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Full Name
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedHelper.name}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Contact Number
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedHelper.contactNumber || "N/A"}
+                          </span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Address
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedHelper.address || "N/A"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Current Status
+                          </span>
+                          <StatusBadge status={selectedHelper.status || "Active"} />
+                        </div>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Contact Number:</span>
-                        <span className="detail-value">
-                          {selectedHelper.contactNumber || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Address:</span>
-                        <span className="detail-value">
-                          {selectedHelper.address || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Status:</span>
-                        <span
-                          className={`detail-badge ${getStatusBadgeClass(
-                            selectedHelper.status,
-                          )}`}
-                        >
-                          {selectedHelper.status}
-                        </span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        💼 Employment Information
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                        <div>
+                          <span className="text-xs text-gray-500 block mb-1">
+                            Employment Date
+                          </span>
+                          <span className="text-sm font-medium text-gray-900">
+                            {selectedHelper.employmentDate
+                              ? new Date(
+                                selectedHelper.employmentDate,
+                              ).toLocaleDateString()
+                              : "N/A"}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Employment Information */}
-                  <div className="details-section">
-                    <h3>💼 Employment Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Employment Date:</span>
-                        <span className="detail-value">
-                          {selectedHelper.employmentDate
-                            ? new Date(
-                              selectedHelper.employmentDate,
-                            ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
+                  {/* License & Documents */}
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📜 License Information
+                      </h3>
+                      <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                          <div>
+                            <span className="text-xs text-gray-500 block mb-1">
+                              License Type
+                            </span>
+                            <span className="text-sm font-bold text-gray-900">
+                              {selectedHelper.licenseType || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-xs text-gray-500 block mb-1">
+                              License Number
+                            </span>
+                            <span className="text-sm font-mono font-bold text-gray-700 bg-white px-2 py-1 rounded border border-gray-200 inline-block">
+                              {selectedHelper.licenseNumber || "N/A"}
+                            </span>
+                          </div>
+                          <div className="sm:col-span-2">
+                            <span className="text-xs text-gray-500 block mb-1">
+                              Expiry Date
+                            </span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {selectedHelper.licenseExpiryDate
+                                ? new Date(
+                                  selectedHelper.licenseExpiryDate,
+                                ).toLocaleDateString()
+                                : "N/A"}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* License Information */}
-                  <div className="details-section">
-                    <h3>📜 License Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">License Type:</span>
-                        <span className="detail-value">
-                          {selectedHelper.licenseType || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">License Number:</span>
-                        <span className="detail-value">
-                          {selectedHelper.licenseNumber || "N/A"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">License Expiry:</span>
-                        <span className="detail-value">
-                          {selectedHelper.licenseExpiryDate
-                            ? new Date(
-                              selectedHelper.licenseExpiryDate,
-                            ).toLocaleDateString()
-                            : "N/A"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">
+                        📄 Compliance Status
+                      </h3>
 
-                  {/* Document Compliance */}
-                  <div className="details-section">
-                    <h3>📄 Document Compliance</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Overall Status:</span>
-                        <span
-                          className={`detail-badge compliance-${getComplianceClass(
-                            selectedHelper,
-                          ).replace("compliance-", "")}`}
-                        >
-                          {getComplianceStatus(selectedHelper)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Documents Completed:
-                        </span>
-                        <span className="detail-value">
-                          {getComplianceDetails(selectedHelper)}
-                        </span>
+                      <div
+                        className={`p-4 rounded-xl border mb-6 ${getComplianceClass(selectedHelper)}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="mt-0.5">
+                            {getComplianceIcon(selectedHelper)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-sm mb-1">
+                              {getComplianceStatus(selectedHelper)}
+                            </div>
+                            <div className="text-xs opacity-80">
+                              {getComplianceDetails(selectedHelper)}
+                            </div>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Document Status List */}
-                      <div className="documents-list">
-                        <div className="document-item">
-                          <span className="doc-name">Valid ID:</span>
-                          <span
-                            className={`doc-status ${selectedHelper.documents?.validId
-                                ? "complete"
-                                : "missing"
-                              }`}
-                          >
-                            {selectedHelper.documents?.validId
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            Valid ID
                           </span>
+                          {selectedHelper.documents?.validId ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                              <TbX size={12} /> Missing
+                            </span>
+                          )}
                         </div>
-                        <div className="document-item">
-                          <span className="doc-name">Barangay Clearance:</span>
-                          <span
-                            className={`doc-status ${selectedHelper.documents?.barangayClearance
-                                ? "complete"
-                                : "missing"
-                              }`}
-                          >
-                            {selectedHelper.documents?.barangayClearance
-                              ? "✓ Complete"
-                              : "✗ Missing"}
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            Barangay Clearance
                           </span>
+                          {selectedHelper.documents?.barangayClearance ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full border border-red-100">
+                              <TbX size={12} /> Missing
+                            </span>
+                          )}
                         </div>
-                        <div className="document-item">
-                          <span className="doc-name">Medical Certificate:</span>
-                          <span
-                            className={`doc-status ${selectedHelper.documents?.medicalCertificate
-                                ? "complete"
-                                : "optional"
-                              }`}
-                          >
-                            {selectedHelper.documents?.medicalCertificate
-                              ? "✓ Complete"
-                              : "○ Optional"}
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            Medical Certificate
                           </span>
+                          {selectedHelper.documents?.medicalCertificate ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+                              Optional
+                            </span>
+                          )}
                         </div>
-                        <div className="document-item">
-                          <span className="doc-name">Helper License:</span>
-                          <span
-                            className={`doc-status ${selectedHelper.documents?.helperLicense
-                                ? "complete"
-                                : "optional"
-                              }`}
-                          >
-                            {selectedHelper.documents?.helperLicense
-                              ? "✓ Complete"
-                              : "○ Optional"}
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                          <span className="text-sm text-gray-700">
+                            Helper License
                           </span>
+                          {selectedHelper.documents?.helperLicense ? (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                              <TbCheck size={12} /> Complete
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full border border-gray-200">
+                              Optional
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Document Viewer */}
-                <div className="details-section">
-                  <h3>📁 Uploaded Documents</h3>
-                  <div className="document-summary">
-                    <div className="document-count-badge">
-                      <span className="count-icon">📁</span>
-                      <span className="count-text">
-                        {selectedHelper.documentCompliance?.documentCount || 0}{" "}
-                        files uploaded
-                      </span>
-                    </div>
-                    <div className="document-breakdown">
-                      <span className="required-docs">
-                        Required:{" "}
-                        {selectedHelper.documentCompliance
-                          ?.requiredDocumentCount || 0}
-                        /2
-                      </span>
-                      <span className="optional-docs">
-                        Optional:{" "}
-                        {selectedHelper.documentCompliance
-                          ?.optionalDocumentCount || 0}
-                        /2
-                      </span>
-                    </div>
-                  </div>
+                {/* Documents Viewer Section */}
+                <div className="mt-8 pt-6 border-t border-gray-100">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center justify-between">
+                    <span>📁 Uploaded Documents</span>
+                    <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
+                      {selectedHelper.documentCompliance?.documentCount || 0}{" "}
+                      files uploaded
+                    </span>
+                  </h3>
+
                   {selectedHelper.documents &&
                     Object.keys(selectedHelper.documents).length > 0 ? (
-                    <div className="details-items">
+                    <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                       <FileViewer
                         documents={selectedHelper.documents}
                         entityType="helper"
@@ -1098,20 +1087,38 @@ const HelpersList = ({ currentUser }) => {
                       />
                     </div>
                   ) : (
-                    <div className="no-documents-message">
-                      <div className="no-docs-icon">📄</div>
-                      <p>
+                    <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-gray-400">
+                      <TbFileText
+                        size={32}
+                        className="mx-auto mb-2 opacity-50"
+                      />
+                      <p className="mb-4">
                         No documents have been uploaded for this helper yet.
                       </p>
                       <Link
                         to={`/admin/helpers/edit/${selectedHelper.id}`}
-                        className="btn btn-primary btn-sm"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
                       >
-                        Upload Documents
+                        <TbEdit size={16} /> Upload Documents
                       </Link>
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+                <Link
+                  to={`/admin/helpers/edit/${selectedHelper.id}`}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm shadow-blue-200 transition-colors text-sm font-medium flex items-center gap-2"
+                >
+                  <TbEdit size={16} /> Edit Helper
+                </Link>
+                <button
+                  className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors text-sm font-medium shadow-sm"
+                  onClick={closeDetailsModal}
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

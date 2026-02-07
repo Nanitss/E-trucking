@@ -31,6 +31,7 @@ import {
 import { useTimeframe } from "../../../contexts/TimeframeContext";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
+import StatusBadge from "../../../components/common/StatusBadge";
 import { API_BASE_URL } from "../../../config/api";
 
 const TruckList = ({ currentUser }) => {
@@ -1130,9 +1131,7 @@ const TruckList = ({ currentUser }) => {
                         {truck.ModelYear || "N/A"}
                       </td>
                       <td className="px-6 py-4">
-                        <span className={getDisplayStatusBadgeClass(truck)}>
-                          {getDisplayStatus(truck)}
-                        </span>
+                        <StatusBadge status={getDisplayStatus(truck)} />
                       </td>
                       <td className="px-6 py-4">
                         {/* Registration Status Column */}
@@ -1179,17 +1178,17 @@ const TruckList = ({ currentUser }) => {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => handleViewDetails(truck)}
-                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title="View Details"
                           >
                             <TbEye size={18} />
                           </button>
                           <Link
                             to={`/admin/trucks/edit/${truck.TruckID}`}
-                            className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                             title="Edit Truck"
                           >
                             <TbEdit size={18} />
@@ -1258,9 +1257,7 @@ const TruckList = ({ currentUser }) => {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <span className={getDisplayStatusBadgeClass(truck)}>
-                        {getDisplayStatus(truck)}
-                      </span>
+                      <StatusBadge status={getDisplayStatus(truck)} />
                     </div>
                   </div>
 

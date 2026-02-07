@@ -24,6 +24,7 @@ import {
 } from "react-icons/tb";
 import AdminHeader from "../../../components/common/AdminHeader";
 import PersonnelSubNav from "../../../components/common/PersonnelSubNav";
+import StatusBadge from "../../../components/common/StatusBadge";
 import { API_BASE_URL } from "../../../config/api";
 
 const StaffList = ({ currentUser }) => {
@@ -457,33 +458,20 @@ const StaffList = ({ currentUser }) => {
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${s.StaffStatus === "Active"
-                                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                  : "bg-gray-50 text-gray-600 border-gray-100"
-                                }`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${s.StaffStatus === "Active"
-                                    ? "bg-emerald-500"
-                                    : "bg-gray-400"
-                                  }`}
-                              ></span>
-                              {formatStatus(s.StaffStatus)}
-                            </span>
+                            <StatusBadge status={s.StaffStatus || "Active"} />
                           </td>
                           <td className="py-4 px-6 text-right">
-                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => handleViewDetails(s)}
-                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="View Details"
                               >
                                 <TbEye size={18} />
                               </button>
                               <Link
                                 to={`/admin/staffs/edit/${s.StaffID}`}
-                                className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                                 title="Edit Staff"
                               >
                                 <TbEdit size={18} />

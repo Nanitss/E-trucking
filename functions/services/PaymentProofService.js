@@ -251,6 +251,25 @@ class PaymentProofService {
 
       console.log("✅ All deliveries updated to pending_verification");
 
+      // Create notification for proof upload
+      try {
+        await NotificationService.createNotification({
+          userId: clientId,
+          type: 'payment',
+          title: 'Payment Proof Submitted 📄',
+          message: `Your payment proof for ${deliveryIds.length} delivery(s) totaling ₱${totalAmount.toLocaleString()} has been submitted. Awaiting admin verification.`,
+          metadata: {
+            proofId: proofId,
+            action: 'proof_uploaded',
+            deliveryIds: deliveryIds,
+            totalAmount: totalAmount,
+          },
+          priority: 'medium',
+        });
+      } catch (notifError) {
+        console.error('⚠️ Failed to create proof upload notification:', notifError);
+      }
+
       return {
         success: true,
         proofId: proofId,

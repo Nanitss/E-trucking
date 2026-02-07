@@ -7,6 +7,7 @@ const TruckService = require('../services/TruckService');
 const AllocationService = require('../services/AllocationService');
 const AuditService = require('../services/AuditService');
 const DeliveryService = require('../services/DeliveryService');
+const NotificationService = require('../services/NotificationService');
 const axios = require('axios');
 
 // Get all clients
@@ -1933,7 +1934,6 @@ exports.createTruckRental = async (req, res) => {
     if (createdDeliveries.length === 0) {
       console.log(`❌ NO TRUCKS COULD BE BOOKED - All ${trucksToBook.length} trucks failed`);
       
-      // Provide more detailed error information
       const detailedError = {
         success: false,
         message: 'No trucks could be booked. Please check truck availability and try again.',
@@ -1955,6 +1955,26 @@ exports.createTruckRental = async (req, res) => {
     }
     
     console.log(`🎉 Successfully created ${createdDeliveries.length} deliveries out of ${trucksToBook.length} requested trucks`);
+    
+    // Create notification for successful booking
+    try {
+      const clientDocId = req.user.clientId || req.user.id;
+      await NotificationService.createNotification({
+        userId: clientDocId,
+        type: 'delivery',
+        title: 'Booking Confirmed 🚛',
+        message: `${createdDeliveries.length} delivery${createdDeliveries.length !== 1 ? 'ies' : 'y'} booked successfully for ${deliveryDate}.`,
+        metadata: {
+          action: 'booking_created',
+          deliveryIds: createdDeliveries.map(d => d.deliveryId),
+          truckCount: createdDeliveries.length,
+          deliveryDate,
+        },
+        priority: 'medium',
+      });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create booking notification:', notifError);
+    }
     
     // Calculate total capacity for response
     const totalCapacity = createdDeliveries.reduce((sum, delivery) => {
@@ -2025,6 +2045,25 @@ exports.confirmDeliveryReceived = async (req, res) => {
     });
     
     console.log(`✅ Delivery ${id} confirmed as received by client ${clientId}`);
+    
+    // Create notification for delivery received confirmation
+    try {
+      const clientDocId = req.user.clientId || clientId;
+      await NotificationService.createNotification({
+        userId: clientDocId,
+        type: 'delivery',
+        title: 'Delivery Received ✅',
+        message: `You have confirmed receipt of delivery #${id.substring(0, 8)}. Thank you!`,
+        metadata: {
+          deliveryId: id,
+          action: 'delivery_received',
+          truckPlate: deliveryData.truckPlate || '',
+        },
+        priority: 'medium',
+      });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create delivery received notification:', notifError);
+    }
     
     // Update truck status back to allocated/available
     if (deliveryData.truckId) {
@@ -2194,6 +2233,25 @@ exports.cancelDelivery = async (req, res) => {
     
     console.log(`✅ Delivery ${id} cancelled by client ${clientId} - all resources restored`);
     
+    // Create notification for cancellation
+    try {
+      const clientDocId = req.user.clientId || clientId;
+      await NotificationService.createNotification({
+        userId: clientDocId,
+        type: 'delivery',
+        title: 'Delivery Cancelled ❌',
+        message: `Your delivery #${id.substring(0, 8)} has been cancelled. No payment is required.`,
+        metadata: {
+          deliveryId: id,
+          action: 'cancelled',
+          truckPlate: deliveryData.truckPlate || '',
+        },
+        priority: 'medium',
+      });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create cancellation notification:', notifError);
+    }
+    
     res.json({
       success: true,
       message: 'Delivery cancelled successfully',
@@ -2214,10 +2272,11 @@ exports.cancelDelivery = async (req, res) => {
 exports.changeDeliveryRoute = async (req, res) => {
   try {
     const { id } = req.params;
-    const clientId = req.user.id;
+    const authId = req.user.id;
+    const clientDocId = req.user.clientId;
     const { pickupLocation, dropoffLocation, pickupCoordinates, dropoffCoordinates } = req.body;
     
-    console.log(`🔍 Client ${clientId} requesting to change route for delivery ${id}`);
+    console.log(`🔍 Client ${authId} (clientId: ${clientDocId}) requesting to change route for delivery ${id}`);
     
     // Validate required fields
     if (!pickupLocation || !dropoffLocation) {
@@ -2237,15 +2296,17 @@ exports.changeDeliveryRoute = async (req, res) => {
     }
     
     const deliveryData = deliveryDoc.data();
-    if (deliveryData.clientId !== clientId) {
+    const isOwner = deliveryData.clientId === authId || deliveryData.clientId === clientDocId;
+    if (!isOwner) {
       return res.status(403).json({
         success: false,
         message: 'You can only change routes for your own deliveries'
       });
     }
     
-    // Check if delivery can be modified (not started)
-    if (deliveryData.status === 'in_progress' || deliveryData.status === 'completed') {
+    // Check if delivery can be modified (not started) - handle both field name conventions
+    const deliveryStatus = (deliveryData.status || deliveryData.DeliveryStatus || '').toLowerCase();
+    if (deliveryStatus === 'in_progress' || deliveryStatus === 'in-progress' || deliveryStatus === 'completed') {
       return res.status(400).json({
         success: false,
         message: 'Cannot change route for delivery that has already started'
@@ -2256,14 +2317,35 @@ exports.changeDeliveryRoute = async (req, res) => {
     await db.collection('deliveries').doc(id).update({
       pickupLocation,
       dropoffLocation,
+      PickupLocation: pickupLocation,
+      DropoffLocation: dropoffLocation,
       pickupCoordinates: pickupCoordinates || deliveryData.pickupCoordinates,
       dropoffCoordinates: dropoffCoordinates || deliveryData.dropoffCoordinates,
       routeChangedAt: new Date().toISOString(),
-      routeChangedBy: clientId,
+      routeChangedBy: authId,
       lastUpdated: new Date().toISOString()
     });
     
-    console.log(`✅ Route changed for delivery ${id} by client ${clientId}`);
+    console.log(`✅ Route changed for delivery ${id} by client ${authId}`);
+    
+    // Create notification for the client
+    try {
+      await NotificationService.createNotification({
+        userId: clientDocId || authId,
+        type: 'delivery',
+        title: 'Route Updated 🗺️',
+        message: `Route for delivery #${id.substring(0, 8)} has been updated. New route: ${pickupLocation.substring(0, 30)}... → ${dropoffLocation.substring(0, 30)}...`,
+        metadata: {
+          deliveryId: id,
+          action: 'reroute',
+          pickupLocation,
+          dropoffLocation,
+        },
+        priority: 'medium',
+      });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create reroute notification:', notifError);
+    }
     
     res.json({
       success: true,
@@ -2291,10 +2373,11 @@ exports.changeDeliveryRoute = async (req, res) => {
 exports.rebookDelivery = async (req, res) => {
   try {
     const { id } = req.params;
-    const clientId = req.user.id;
+    const authId = req.user.id;
+    const clientDocId = req.user.clientId;
     const { deliveryDate, deliveryTime } = req.body;
     
-    console.log(`🔍 Client ${clientId} requesting to rebook delivery ${id}`);
+    console.log(`🔍 Client ${authId} (clientId: ${clientDocId}) requesting to rebook delivery ${id}`);
     
     // Validate required fields
     if (!deliveryDate || !deliveryTime) {
@@ -2314,31 +2397,57 @@ exports.rebookDelivery = async (req, res) => {
     }
     
     const deliveryData = deliveryDoc.data();
-    if (deliveryData.clientId !== clientId) {
+    const isOwner = deliveryData.clientId === authId || deliveryData.clientId === clientDocId;
+    if (!isOwner) {
       return res.status(403).json({
         success: false,
         message: 'You can only rebook your own deliveries'
       });
     }
     
-    // Check if delivery can be modified (not started)
-    if (deliveryData.status === 'in_progress' || deliveryData.status === 'completed') {
+    // Check if delivery can be modified (not started) - handle both field name conventions
+    const deliveryStatus = (deliveryData.status || deliveryData.DeliveryStatus || '').toLowerCase();
+    if (deliveryStatus === 'in_progress' || deliveryStatus === 'in-progress' || deliveryStatus === 'completed') {
       return res.status(400).json({
         success: false,
         message: 'Cannot rebook delivery that has already started'
       });
     }
     
-    // Update delivery date and time
+    // Update delivery date and time - write both field name conventions for compatibility
+    const newDateObj = new Date(`${deliveryDate}T${deliveryTime}`);
     await db.collection('deliveries').doc(id).update({
-      deliveryDate,
+      deliveryDate: newDateObj,
+      DeliveryDate: newDateObj,
+      deliveryDateString: deliveryDate,
       deliveryTime,
+      DeliveryTime: deliveryTime,
       rebookedAt: new Date().toISOString(),
-      rebookedBy: clientId,
+      rebookedBy: authId,
       lastUpdated: new Date().toISOString()
     });
     
-    console.log(`✅ Delivery ${id} rebooked by client ${clientId} to ${deliveryDate} ${deliveryTime}`);
+    console.log(`✅ Delivery ${id} rebooked by client ${authId} to ${deliveryDate} ${deliveryTime}`);
+    
+    // Create notification for the client
+    const formattedDate = new Date(`${deliveryDate}T${deliveryTime}`).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    try {
+      await NotificationService.createNotification({
+        userId: clientDocId || authId,
+        type: 'delivery',
+        title: 'Delivery Rescheduled 📅',
+        message: `Your delivery #${id.substring(0, 8)} has been rescheduled to ${formattedDate} at ${deliveryTime}.`,
+        metadata: {
+          deliveryId: id,
+          action: 'rebook',
+          newDate: deliveryDate,
+          newTime: deliveryTime,
+        },
+        priority: 'medium',
+      });
+    } catch (notifError) {
+      console.error('⚠️ Failed to create rebook notification:', notifError);
+    }
     
     res.json({
       success: true,

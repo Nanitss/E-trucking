@@ -370,6 +370,10 @@ const BookTruck = () => {
       }
     };
 
+    // Get the other selected location to prevent duplicate selection
+    const otherAddress = type === "pickup" ? bookingData.dropoffLocation : bookingData.pickupLocation;
+    const otherCoordinates = type === "pickup" ? bookingData.dropoffCoordinates : bookingData.pickupCoordinates;
+
     enhancedIsolatedMapModal.open({
       onSelect: onSelectCallback,
       initialLocation:
@@ -381,6 +385,9 @@ const BookTruck = () => {
           ? "Select Pickup Location"
           : "Select Drop-off Location",
       locationType: type,
+      otherSelectedLocation: otherAddress
+        ? { address: otherAddress, coordinates: otherCoordinates }
+        : null,
     });
   };
 

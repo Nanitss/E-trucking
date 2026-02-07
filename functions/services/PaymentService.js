@@ -55,6 +55,13 @@ class PaymentService {
           return;
         }
 
+        // Only show billing for completed or delivered deliveries
+        const status = (delivery.deliveryStatus || delivery.DeliveryStatus || '').toLowerCase();
+        if (status !== 'completed' && status !== 'delivered') {
+          console.log(`ℹ️ Skipping non-completed delivery from billing: ${deliveryId} (status: ${status})`);
+          return;
+        }
+
         // Get delivery rate (amount)
         const amount = parseFloat(delivery.deliveryRate || delivery.DeliveryRate || 98);
 

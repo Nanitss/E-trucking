@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { TbUser, TbUsers, TbBriefcase } from "react-icons/tb";
+import { TbUser, TbUsers, TbBriefcase, TbHandGrab } from "react-icons/tb";
 
 const PersonnelSubNav = ({ activeTab }) => {
   const tabs = [
@@ -10,6 +10,13 @@ const PersonnelSubNav = ({ activeTab }) => {
       icon: TbUser,
       link: "/admin/drivers/driverslist",
       description: "Manage drivers & licenses",
+    },
+    {
+      id: "helpers",
+      label: "Helpers",
+      icon: TbHandGrab,
+      link: "/admin/helpers/helperslist",
+      description: "Manage helpers & assistants",
     },
     {
       id: "staff",

@@ -133,7 +133,7 @@ const AdminHeader = ({ currentUser }) => {
   }, [fetchSidebarCounts]);
 
   return (
-    <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 mb-8 transition-all duration-200">
+    <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 transition-all duration-200">
       <div className="px-8 py-4 flex items-center justify-between gap-6">
         {/* Left: Breadcrumbs or Page Title could go here, for now just a search bar */}
         <div className="flex-1 max-w-xl">

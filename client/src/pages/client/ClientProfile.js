@@ -68,6 +68,11 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
     type: "",
     message: "",
   });
+
+  // Billing filter states
+  const [billingStatusFilter, setBillingStatusFilter] = useState("all");
+  const [billingDateFilter, setBillingDateFilter] = useState("all");
+  const [showBillingFilters, setShowBillingFilters] = useState(false);
   // Utility to get clientId from multiple sources (mirrors PaymentManagement)
   const getClientId = () => {
     try {
@@ -119,6 +124,54 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
       month: "short",
       day: "numeric",
     });
+  };
+
+  // Filter billing payments based on status and date filters
+  const getFilteredPayments = () => {
+    let payments = billingData?.payments || [];
+
+    // Status filter
+    if (billingStatusFilter !== "all") {
+      payments = payments.filter((payment) => {
+        const currentDate = new Date();
+        const dueDate = new Date(payment.dueDate);
+        const isOverdueByDate = currentDate > dueDate && payment.status !== "paid";
+        const actualStatus = isOverdueByDate ? "overdue" : payment.status;
+        return actualStatus === billingStatusFilter;
+      });
+    }
+
+    // Date filter
+    if (billingDateFilter !== "all") {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      payments = payments.filter((payment) => {
+        const deliveryDate = new Date(payment.deliveryDate);
+        if (isNaN(deliveryDate.getTime())) return true;
+
+        switch (billingDateFilter) {
+          case "today":
+            return deliveryDate >= today && deliveryDate < new Date(today.getTime() + 86400000);
+          case "week": {
+            const weekAgo = new Date(today.getTime() - 7 * 86400000);
+            return deliveryDate >= weekAgo;
+          }
+          case "month": {
+            const monthAgo = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            return deliveryDate >= monthAgo;
+          }
+          case "year": {
+            const yearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate());
+            return deliveryDate >= yearAgo;
+          }
+          default:
+            return true;
+        }
+      });
+    }
+
+    return payments;
   };
 
   // Payment proof handlers
@@ -724,29 +777,90 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
           </div>
         )}
 
-        <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-gray-200 pb-4">
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-1">
-              Billing Records
-            </h3>
-            <p className="text-gray-500 text-sm m-0">
-              {selectedDeliveries.length > 0
-                ? `${selectedDeliveries.length} delivery(s) selected - Total: ${formatCurrency(getSelectedTotal())}`
-                : "Select deliveries to upload payment proof"}
-            </p>
+        <div className="mb-6 flex flex-col gap-4 border-b border-gray-200 pb-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-1">
+                Billing Records
+              </h3>
+              <p className="text-gray-500 text-sm m-0">
+                {selectedDeliveries.length > 0
+                  ? `${selectedDeliveries.length} delivery(s) selected - Total: ${formatCurrency(getSelectedTotal())}`
+                  : "Select deliveries to upload payment proof"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {selectedDeliveries.length > 0 && (
+                <button
+                  onClick={() => setProofUploadModalOpen(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all font-medium"
+                >
+                  <FaUpload />
+                  Upload Payment Proof
+                </button>
+              )}
+              <button
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-medium ${showBillingFilters ? "bg-blue-50 border-blue-200 text-blue-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}
+                onClick={() => setShowBillingFilters(!showBillingFilters)}
+              >
+                <FaFilter size={14} />
+                Filters
+                {(billingStatusFilter !== "all" || billingDateFilter !== "all") && (
+                  <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full ml-1">
+                    {[billingStatusFilter !== "all", billingDateFilter !== "all"].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
-          {selectedDeliveries.length > 0 && (
-            <button
-              onClick={() => setProofUploadModalOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-lg hover:shadow-lg transition-all font-medium"
-            >
-              <FaUpload />
-              Upload Payment Proof
-            </button>
+
+          {/* Billing Filter Panel */}
+          {showBillingFilters && (
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200 animate-in fade-in duration-200">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</label>
+                <select
+                  value={billingStatusFilter}
+                  onChange={(e) => setBillingStatusFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-[160px]"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="paid">Paid</option>
+                  <option value="pending">Pending</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="pending_verification">Pending Verification</option>
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Delivery Date</label>
+                <select
+                  value={billingDateFilter}
+                  onChange={(e) => setBillingDateFilter(e.target.value)}
+                  className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all min-w-[160px]"
+                >
+                  <option value="all">All Dates</option>
+                  <option value="today">Today</option>
+                  <option value="week">Last 7 Days</option>
+                  <option value="month">Last 30 Days</option>
+                  <option value="year">Last Year</option>
+                </select>
+              </div>
+              {(billingStatusFilter !== "all" || billingDateFilter !== "all") && (
+                <button
+                  onClick={() => { setBillingStatusFilter("all"); setBillingDateFilter("all"); }}
+                  className="self-end px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-medium"
+                >
+                  Clear Filters
+                </button>
+              )}
+              <div className="ml-auto self-end text-sm text-gray-500 font-medium">
+                Showing {getFilteredPayments().length} of {billingData?.payments?.length || 0} records
+              </div>
+            </div>
           )}
         </div>
 
-        {billingData?.payments?.length > 0 ? (
+        {getFilteredPayments().length > 0 ? (
           <div className="overflow-x-auto overflow-y-auto max-h-[300px] bg-white rounded-xl shadow-sm border border-gray-200">
             <table className="w-full border-collapse min-w-[800px]">
               <thead>
@@ -791,7 +905,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                 </tr>
               </thead>
               <tbody>
-                {billingData.payments.map((payment, index) => {
+                {getFilteredPayments().map((payment, index) => {
                   // Check if current date is past due date
                   const currentDate = new Date();
                   const dueDate = new Date(payment.dueDate);
@@ -1698,26 +1812,17 @@ const ClientProfile = () => {
         ? bookingData.pickupLocation
         : bookingData.dropoffLocation;
 
-    // If there's already a location selected for this type, we need to clear it from used
-    // so user can change their mind and select it again or select a different one
-    if (currentLocation) {
-      console.log(
-        `🔄 Re-opening ${type} picker - clearing used locations to allow reselection`,
-      );
-      enhancedIsolatedMapModal.clearUsedLocations();
-    }
+    // Always clear used location IDs before opening the map modal
+    // The otherSelectedLocation parameter handles preventing duplicate selection
+    enhancedIsolatedMapModal.clearUsedLocations();
 
     // Get the other selected location to prevent duplicate selection
-    const otherSelectedLocation =
-      type === "pickup"
-        ? {
-            address: bookingData.dropoffLocation,
-            coordinates: bookingData.dropoffCoordinates,
-          }
-        : {
-            address: bookingData.pickupLocation,
-            coordinates: bookingData.pickupCoordinates,
-          };
+    // Only pass it if the other location actually has a value
+    const otherAddress = type === "pickup" ? bookingData.dropoffLocation : bookingData.pickupLocation;
+    const otherCoordinates = type === "pickup" ? bookingData.dropoffCoordinates : bookingData.pickupCoordinates;
+    const otherSelectedLocation = otherAddress
+      ? { address: otherAddress, coordinates: otherCoordinates }
+      : null;
 
     enhancedIsolatedMapModal.init({
       locationType: type,
@@ -4255,8 +4360,8 @@ const ClientProfile = () => {
       const response = await axios.post(
         `/api/clients/deliveries/${selectedDelivery.DeliveryID}/rebook`,
         {
-          newDate: rebookData.newDate,
-          newTime: rebookData.newTime,
+          deliveryDate: rebookData.newDate,
+          deliveryTime: rebookData.newTime,
         },
       );
 
@@ -4300,24 +4405,17 @@ const ClientProfile = () => {
   };
 
   // Helper function to check if delivery can be rescheduled
+  // Requirement: delivery must be at least 24 hours before the booking date/time
   const canRescheduleDelivery = (delivery) => {
     if (!canModifyDelivery(delivery)) return false;
 
     const deliveryDate = new Date(delivery.DeliveryDate);
     const now = new Date();
-    const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const twentyFourHoursFromNow = new Date(
       now.getTime() + 24 * 60 * 60 * 1000,
     );
 
-    // Can reschedule if:
-    // 1. Delivery is more than 3 days away OR
-    // 2. Delivery is more than 24 hours away (not within 24 hours of same day)
-    return (
-      deliveryDate > threeDaysFromNow ||
-      (deliveryDate > twentyFourHoursFromNow &&
-        deliveryDate.getDate() !== now.getDate())
-    );
+    return deliveryDate > twentyFourHoursFromNow;
   };
 
   // Helper function to sort deliveries
@@ -4389,16 +4487,14 @@ const ClientProfile = () => {
         ? changeRouteData.pickupLocation
         : changeRouteData.dropoffLocation;
 
-    isolatedMapModal
-      .init({
-        onSelectCallback: (address, coordinates) => {
-          handleChangeRouteLocationSelected({ address, coordinates });
-        },
-        locationType: type,
-        initialAddress: initialAddress,
-        title: `Select ${type === "pickup" ? "Pickup" : "Dropoff"} Location`,
-      })
-      .show();
+    enhancedIsolatedMapModal.init({
+      onSelectCallback: (address, coordinates) => {
+        handleChangeRouteLocationSelected({ address, coordinates });
+      },
+      locationType: type,
+      initialAddress: initialAddress,
+      title: `Select ${type === "pickup" ? "Pickup" : "Dropoff"} Location`,
+    });
   };
 
   const handleChangeRouteLocationSelected = (locationData) => {
@@ -5139,7 +5235,7 @@ const ClientProfile = () => {
               </div>
             ) : (
               <div className="overflow-x-auto overflow-y-auto max-h-[calc(100vh-350px)] w-full">
-                <table className="w-full border-collapse min-w-[1000px]">
+                <table className="w-full border-collapse min-w-[700px]">
                   <thead>
                     <tr className="bg-gray-50/50">
                       <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
@@ -5161,16 +5257,6 @@ const ClientProfile = () => {
                       <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                         <div className="flex items-center gap-2">
                           <span>Capacity</span>
-                        </div>
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span>Deliveries</span>
-                        </div>
-                      </th>
-                      <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span>Total KM</span>
                         </div>
                       </th>
                       <th className="text-left py-4 px-6 text-xs font-bold text-gray-500 uppercase tracking-wider border-b border-gray-200">
@@ -5242,14 +5328,6 @@ const ClientProfile = () => {
                             <span className="font-semibold text-gray-700">
                               {truck.TruckCapacity} tons
                             </span>
-                          </td>
-                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
-                            <span className="font-bold text-blue-600">
-                              {truck.TotalCompletedDeliveries || 0}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
-                            {truck.TotalKilometers || 0} km
                           </td>
                           <td className="py-4 px-6 text-sm align-middle bg-white group-hover:bg-blue-50/30 transition-colors">
                             <span

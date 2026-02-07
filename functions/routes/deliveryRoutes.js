@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const DeliveryService = require('../services/DeliveryService');
 const AuditService = require('../services/AuditService');
+const NotificationService = require('../services/NotificationService');
 const { authenticateJWT } = require('../middleware/auth');
 const { db, admin } = require('../config/firebase');
 
@@ -221,6 +222,24 @@ router.put('/:id/status', authenticateJWT, async (req, res) => {
         }
       );
       
+      // Notify the client that their delivery is completed
+      try {
+        const deliveryDoc = await db.collection('deliveries').doc(id).get();
+        if (deliveryDoc.exists) {
+          const dData = deliveryDoc.data();
+          await NotificationService.createNotification({
+            userId: dData.clientId,
+            type: 'delivery',
+            title: 'Delivery Completed 🎉',
+            message: `Your delivery #${id.substring(0, 8)} has been completed. Please confirm receipt.`,
+            metadata: { deliveryId: id, action: 'completed', truckPlate: dData.truckPlate || '' },
+            priority: 'high',
+          });
+        }
+      } catch (notifErr) {
+        console.error('⚠️ Failed to create completion notification:', notifErr);
+      }
+      
       return res.json({
         message: 'Delivery marked as completed successfully',
         delivery
@@ -272,6 +291,31 @@ router.put('/:id/status', authenticateJWT, async (req, res) => {
         description: `Delivery status changed to ${status}`
       }
     );
+    
+    // Notify the client about the status change
+    try {
+      const deliveryDoc = await db.collection('deliveries').doc(id).get();
+      if (deliveryDoc.exists) {
+        const dData = deliveryDoc.data();
+        const statusLabels = {
+          'in-progress': 'In Progress 🚚',
+          'in_progress': 'In Progress 🚚',
+          'delivered': 'Delivered 📦',
+          'pending': 'Pending ⏳',
+        };
+        const label = statusLabels[status] || status;
+        await NotificationService.createNotification({
+          userId: dData.clientId,
+          type: 'delivery',
+          title: `Delivery ${label}`,
+          message: `Your delivery #${id.substring(0, 8)} status has been updated to ${status}.`,
+          metadata: { deliveryId: id, action: 'status_change', newStatus: status },
+          priority: status === 'in-progress' || status === 'in_progress' ? 'high' : 'medium',
+        });
+      }
+    } catch (notifErr) {
+      console.error('⚠️ Failed to create status change notification:', notifErr);
+    }
     
     res.json({
       message: `Delivery status updated to ${status}`,

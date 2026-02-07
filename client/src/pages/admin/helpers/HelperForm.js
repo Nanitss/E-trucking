@@ -2,9 +2,27 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useHistory } from "react-router-dom";
 import axios from "axios";
-
-// Sidebar import removed - using header navigation now
 import { API_BASE_URL } from "../../../config/api";
+import {
+  TbUser,
+  TbPhone,
+  TbMapPin,
+  TbBriefcase,
+  TbCalendar,
+  TbFileText,
+  TbId,
+  TbHeartRateMonitor,
+  TbShieldCheck,
+  TbAlertTriangle,
+  TbCheck,
+  TbUpload,
+  TbTrash,
+  TbEye,
+  TbArrowLeft,
+  TbDeviceFloppy,
+  TbX,
+  TbLock,
+} from "react-icons/tb";
 
 const HelperForm = () => {
   const { id } = useParams();
@@ -36,7 +54,11 @@ const HelperForm = () => {
     medicalCertificate: null,
     helperLicense: null,
   });
+  const [documentErrors, setDocumentErrors] = useState({});
   const [existingDocuments, setExistingDocuments] = useState({});
+  const [originalDocuments, setOriginalDocuments] = useState({});
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewDocument, setPreviewDocument] = useState(null);
 
   // Fetch helper data if in edit mode
   useEffect(() => {
@@ -78,6 +100,7 @@ const HelperForm = () => {
         // Set existing documents
         if (helper.documents) {
           setExistingDocuments(helper.documents);
+          setOriginalDocuments(helper.documents);
         }
       } catch (err) {
         console.error("Error fetching helper:", err);
@@ -101,1000 +124,444 @@ const HelperForm = () => {
     fetchHelper();
   }, [id, isEditMode, baseURL]);
 
-  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Handle file changes
-  const handleFileChange = (e, fieldName) => {
+  const handleFileChange = (e, documentType) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        [fieldName]: file,
-      }));
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [fieldName]: file.name,
-      }));
+      if (file.size > 25 * 1024 * 1024) {
+        setDocumentErrors((prev) => ({ ...prev, [documentType]: "File size must be less than 25MB" }));
+        return;
+      }
+      const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+      if (!allowedTypes.includes(file.type)) {
+        setDocumentErrors((prev) => ({ ...prev, [documentType]: "Only PDF, JPG, and PNG files are allowed" }));
+        return;
+      }
+      setDocumentErrors((prev) => ({ ...prev, [documentType]: null }));
+      setUploadedFiles((prev) => ({ ...prev, [documentType]: file }));
     }
   };
 
-  // Remove file
-  const removeFile = (fieldName) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldName]: null,
-    }));
-    setUploadedFiles((prev) => {
-      const newFiles = { ...prev };
-      delete newFiles[fieldName];
-      return newFiles;
-    });
+  const removeFile = (documentType) => {
+    setUploadedFiles((prev) => ({ ...prev, [documentType]: null }));
+    setDocumentErrors((prev) => ({ ...prev, [documentType]: null }));
   };
 
-  // Handle document replacement - show upload zone
   const handleReplaceDocument = (documentType) => {
-    console.log("🔄 Replace clicked for:", documentType);
-    // Clear any existing uploaded file for this type
-    setUploadedFiles((prev) => ({
-      ...prev,
-      [documentType]: null,
-    }));
-    // IMPORTANT: Temporarily hide existing document view so new file preview shows
-    setExistingDocuments((prev) => ({
-      ...prev,
-      [documentType]: null,
-    }));
-    // Trigger file input click
+    setUploadedFiles((prev) => ({ ...prev, [documentType]: null }));
+    setDocumentErrors((prev) => ({ ...prev, [documentType]: null }));
+    setExistingDocuments((prev) => ({ ...prev, [documentType]: null }));
     const fileInput = document.getElementById(documentType);
-    console.log("📄 File input element:", fileInput);
-    if (fileInput) {
-      console.log("✅ Clicking file input");
-      fileInput.click();
-    } else {
-      console.error("❌ File input not found for:", documentType);
-    }
+    if (fileInput) fileInput.click();
   };
 
-  // Handle viewing document - show in modal for images, open in new tab for PDFs
   const handleViewDocument = (documentType) => {
-    console.log("👁️ View clicked for:", documentType);
-    const document = existingDocuments[documentType];
-    if (!document) {
-      console.error("❌ No document found for:", documentType);
-      return;
-    }
+    const doc = existingDocuments[documentType];
+    if (!doc) return;
 
     try {
-      // Get filename from document
-      const filename = document.filename;
-      console.log("📄 Document:", document);
-
-      // Determine subfolder based on document type
+      const filename = doc.filename;
       let subfolder = "";
-      if (documentType === "validId") {
-        subfolder = "Valid-IDs";
-      } else if (documentType === "barangayClearance") {
-        subfolder = "Barangay-Clearances";
-      } else if (documentType === "medicalCertificate") {
-        subfolder = "Medical-Certificates";
-      } else if (documentType === "helperLicense") {
-        subfolder = "Helper-Licenses";
-      }
+      if (documentType === "validId") subfolder = "Valid-IDs";
+      else if (documentType === "barangayClearance") subfolder = "Barangay-Clearances";
+      else if (documentType === "medicalCertificate") subfolder = "Medical-Certificates";
+      else if (documentType === "helperLicense") subfolder = "Helper-Licenses";
 
-      // Construct the relative path
-      const relativePath = subfolder
-        ? `Helper-Documents/${subfolder}/${filename}`
-        : `Helper-Documents/${filename}`;
-
-      // Create the API URL - encode each part
-      const encodedPath = relativePath
-        .split("/")
-        .map((part) => encodeURIComponent(part))
-        .join("/");
+      const relativePath = subfolder ? `Helper-Documents/${subfolder}/${filename}` : `Helper-Documents/${filename}`;
+      const encodedPath = relativePath.split("/").map((part) => encodeURIComponent(part)).join("/");
       const apiUrl = `${baseURL}/api/documents/view/${encodedPath}`;
-      console.log("🔗 API URL:", apiUrl);
 
-      // Check if it's an image
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-      console.log("🖼️ Is image:", isImage);
-
-      // Always open in new tab (simpler approach)
-      window.open(apiUrl, "_blank");
+      if (isImage) {
+        setPreviewDocument({ url: apiUrl, filename: filename, type: documentType });
+        setShowPreviewModal(true);
+      } else {
+        window.open(apiUrl, "_blank");
+      }
     } catch (error) {
-      console.error("❌ Error viewing document:", error);
       setError("Failed to view document. Please try again.");
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
     try {
-      // Create FormData to handle file uploads
       const formDataToSend = new FormData();
 
-      // Append text fields
       formDataToSend.append("name", formData.name);
-      formDataToSend.append("helperName", formData.name); // For middleware to create unique filenames
+      formDataToSend.append("helperName", formData.name);
       formDataToSend.append("contactNumber", formData.contactNumber);
       formDataToSend.append("address", formData.address);
-      formDataToSend.append(
-        "emergencyContact",
-        formData.emergencyContact || "",
-      );
-      formDataToSend.append(
-        "emergencyContactNumber",
-        formData.emergencyContactNumber || "",
-      );
+      formDataToSend.append("emergencyContact", formData.emergencyContact || "");
+      formDataToSend.append("emergencyContactNumber", formData.emergencyContactNumber || "");
       formDataToSend.append("dateHired", formData.dateHired);
       formDataToSend.append("status", formData.status);
       formDataToSend.append("licenseType", formData.licenseType);
       formDataToSend.append("licenseNumber", formData.licenseNumber || "");
-      formDataToSend.append(
-        "licenseExpiryDate",
-        formData.licenseExpiryDate || "",
-      );
+      formDataToSend.append("licenseExpiryDate", formData.licenseExpiryDate || "");
       formDataToSend.append("HelperUserName", formData.HelperUserName);
       if (formData.HelperPassword) {
         formDataToSend.append("HelperPassword", formData.HelperPassword);
       }
 
-      // Append file uploads if they exist
-      if (formData.validId) {
-        formDataToSend.append("validId", formData.validId);
-      }
-      if (formData.barangayClearance) {
-        formDataToSend.append("barangayClearance", formData.barangayClearance);
-      }
-      if (formData.medicalCertificate) {
-        formDataToSend.append(
-          "medicalCertificate",
-          formData.medicalCertificate,
-        );
-      }
-      if (formData.helperLicense) {
-        formDataToSend.append("helperLicense", formData.helperLicense);
+      Object.entries(uploadedFiles).forEach(([key, file]) => {
+        if (file) formDataToSend.append(key, file);
+      });
+
+      if (isEditMode) {
+        Object.entries(originalDocuments).forEach(([docType, docData]) => {
+          if (!uploadedFiles[docType] && docData) {
+            formDataToSend.append(`existing_${docType}`, JSON.stringify(docData));
+          }
+        });
       }
 
-      // Don't set Content-Type manually - let axios set it with boundary
+      const url = isEditMode ? `${baseURL}/api/admin/helpers/${id}` : `${baseURL}/api/admin/helpers`;
+      const method = isEditMode ? "put" : "post";
+      const token = localStorage.getItem("token");
       const config = {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "multipart/form-data",
+          ...(token && { Authorization: `Bearer ${token}` }),
         },
       };
 
-      console.log("Sending helper data...");
-      console.log("Is edit mode:", isEditMode);
-      console.log("FormData keys:", Array.from(formDataToSend.keys()));
+      await axios[method](url, formDataToSend, config);
 
-      if (isEditMode) {
-        // Update existing helper
-        console.log(`Updating helper ${id}...`);
-        await axios.put(
-          `${baseURL}/api/admin/helpers/${id}`,
-          formDataToSend,
-          config,
-        );
-        setSuccessMessage("Helper updated successfully!");
-      } else {
-        // Create new helper
-        console.log("Creating new helper...");
-        const response = await axios.post(
-          `${baseURL}/api/admin/helpers`,
-          formDataToSend,
-          config,
-        );
-        setSuccessMessage("Helper created successfully!");
+      setSuccessMessage(isEditMode ? "Helper updated successfully!" : "Helper added successfully!");
+      setError(null);
+
+      if (!isEditMode) {
+        setFormData({
+          name: "", contactNumber: "", address: "", emergencyContact: "", emergencyContactNumber: "",
+          dateHired: "", status: "Active", licenseType: "Class C", licenseNumber: "",
+          licenseExpiryDate: "", HelperUserName: "", HelperPassword: "",
+        });
+        setUploadedFiles({ validId: null, barangayClearance: null, medicalCertificate: null, helperLicense: null });
+        setDocumentErrors({});
       }
 
-      // Header navigation will update counts automatically
-      setTimeout(() => {
-        history.push("/admin/helpers");
-      }, 1500);
-    } catch (error) {
-      console.error("Error saving helper:", error);
-      if (error.response) {
-        setError(
-          `Server error (${error.response.status}): ${error.response.data.message ||
-          error.response.data.error ||
-          "Unknown error"
-          }`,
-        );
-      } else if (error.request) {
-        setError(
-          "No response received from server. Please check your API connection.",
-        );
+      setTimeout(() => history.push("/admin/helpers"), 1500);
+    } catch (err) {
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        setError(err.response.data.errors.join(", "));
+      } else if (err.response) {
+        setError(`Server error (${err.response.status}): ${err.response.data.message || err.response.data.error || "Unknown error"}`);
       } else {
-        setError(`Request error: ${error.message}`);
+        setError(`Request error: ${err.message}`);
       }
-    } finally {
-      setLoading(false);
     }
   };
 
+  const renderSectionHeader = (icon, title, description) => (
+    <div className="flex items-start gap-3 mb-6 border-b border-gray-100 pb-4">
+      <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-600 flex items-center justify-center flex-shrink-0">
+        {icon}
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <p className="text-sm text-gray-500">{description}</p>
+      </div>
+    </div>
+  );
+
+  const renderFileInput = (inputId, label, docType, icon, required = false) => (
+    <div className="bg-white border border-gray-200 rounded-xl p-4 hover:border-primary-300 transition-all">
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input type="file" id={inputId} accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleFileChange(e, docType)} className="hidden" />
+
+      {!uploadedFiles[docType] && !existingDocuments[docType] && (
+        <div onClick={() => document.getElementById(inputId).click()} className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 hover:border-primary-400 transition-colors">
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 mb-3">
+            <TbUpload size={24} />
+          </div>
+          <span className="text-sm font-medium text-primary-600 mb-1">Click to upload</span>
+          <span className="text-xs text-gray-500">PDF, JPG, PNG up to 25MB</span>
+        </div>
+      )}
+
+      {documentErrors[docType] && (
+        <div className="mt-2 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+          <TbAlertTriangle size={16} />
+          {documentErrors[docType]}
+        </div>
+      )}
+
+      {uploadedFiles[docType] && (
+        <div className="mt-2 bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-gray-200 flex items-center justify-center text-gray-500">
+              {icon}
+            </div>
+            <div className="text-sm truncate max-w-[150px] font-medium text-gray-700">
+              {uploadedFiles[docType].name}
+            </div>
+          </div>
+          <button onClick={() => removeFile(docType)} className="text-red-500 hover:text-red-700 p-1">
+            <TbTrash size={18} />
+          </button>
+        </div>
+      )}
+
+      {existingDocuments[docType] && !uploadedFiles[docType] && (
+        <div className="mt-2 bg-green-50 border border-green-100 rounded-lg p-3">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-green-700">
+              <TbCheck size={16} />
+              <span className="text-sm font-medium">Uploaded</span>
+            </div>
+            <div className="flex gap-1">
+              <button onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
+                <TbEye size={18} />
+              </button>
+              <button onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
+                <TbUpload size={18} />
+              </button>
+            </div>
+          </div>
+          <div className="text-xs text-green-600 truncate">{existingDocuments[docType].originalName}</div>
+        </div>
+      )}
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="modern-form-container">
-        <div className="modern-loading">
-          <div className="loading-spinner"></div>
-          Loading helper data...
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="modern-form-container">
-      <div className="modern-form-header">
-        <h1>{isEditMode ? "Edit Helper" : "Add New Helper"}</h1>
-        <p>
-          {isEditMode
-            ? "Update helper information and documents"
-            : "Register a new helper with required documentation"}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+          <TbUser className="text-primary-600" size={32} />
+          {isEditMode ? "Edit Helper" : "Add New Helper"}
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          {isEditMode ? "Update helper information and documents" : "Register a new helper with required documentation"}
         </p>
       </div>
 
       {error && (
-        <div className="modern-alert modern-alert-error">
-          <div className="modern-alert-icon">⚠️</div>
-          <div className="modern-alert-content">
-            <div className="modern-alert-title">Error</div>
-            <div>{error}</div>
-            <div style={{ marginTop: "10px", display: "flex", gap: "8px" }}>
-              <button
-                className="modern-btn modern-btn-secondary"
-                style={{ padding: "4px 12px", fontSize: "12px" }}
-                onClick={() => setError(null)}
-              >
-                Dismiss
-              </button>
-              <button
-                className="modern-btn modern-btn-secondary"
-                style={{ padding: "4px 12px", fontSize: "12px" }}
-                onClick={() => window.location.reload()}
-              >
-                Refresh Page
-              </button>
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <TbAlertTriangle className="text-red-500 mt-0.5" size={20} />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-red-800">Error</h3>
+            <p className="text-sm text-red-700 mt-1">{error}</p>
+            <div className="mt-3 flex gap-3">
+              <button onClick={() => setError(null)} className="text-xs font-medium text-red-600 hover:text-red-800">Dismiss</button>
+              <button onClick={() => window.location.reload()} className="text-xs font-medium text-red-600 hover:text-red-800">Refresh Page</button>
             </div>
           </div>
         </div>
       )}
 
       {successMessage && (
-        <div className="modern-alert modern-alert-success">
-          <div className="modern-alert-icon">✅</div>
-          <div className="modern-alert-content">
-            <div className="modern-alert-title">Success</div>
-            <div>{successMessage}</div>
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
+          <TbCheck className="text-green-500" size={20} />
+          <div>
+            <h3 className="text-sm font-medium text-green-800">Success</h3>
+            <p className="text-sm text-green-700">{successMessage}</p>
           </div>
         </div>
       )}
 
-      <div className="modern-form-card">
-        <form onSubmit={handleSubmit} className="modern-form-content">
-          {/* Basic Information Section */}
-          <div className="form-section">
-            <div className="form-section-header">
-              <div className="form-section-icon">👤</div>
+      <div className="bg-white shadow-xl rounded-2xl overflow-hidden border border-gray-100">
+        <form onSubmit={handleSubmit} className="p-8">
+
+          {/* Basic Information */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbUser size={24} />, "Basic Information", "Enter the helper's personal and contact information")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
-                <h3 className="form-section-title">Basic Information</h3>
-                <p className="form-section-description">
-                  Enter the helper's personal and contact information
-                </p>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-2">
-              <div className="modern-form-group">
-                <label htmlFor="name" className="modern-form-label">
-                  Full Name <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  className="modern-form-input"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  maxLength="100"
-                  placeholder="e.g. Juan Dela Cruz"
-                />
-                <div className="form-help-text">
-                  Enter the helper's complete legal name
+                <label className="block text-sm font-medium text-gray-700 mb-2">Full Name <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="name" value={formData.name} onChange={handleChange} required maxLength="100" placeholder="e.g. Juan Dela Cruz"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                 </div>
               </div>
-
-              <div className="modern-form-group">
-                <label htmlFor="contactNumber" className="modern-form-label">
-                  Phone Number <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="contactNumber"
-                  name="contactNumber"
-                  className="modern-form-input"
-                  value={formData.contactNumber}
-                  onChange={handleChange}
-                  required
-                  maxLength="20"
-                  placeholder="e.g. +63 912 345 6789"
-                />
-                <div className="form-help-text">
-                  Primary contact number for the helper
-                </div>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-1">
-              <div className="modern-form-group">
-                <label htmlFor="address" className="modern-form-label">
-                  Address <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  name="address"
-                  className="modern-form-input"
-                  value={formData.address}
-                  onChange={handleChange}
-                  required
-                  maxLength="255"
-                  placeholder="e.g. 123 Main St, Barangay Sample, City, Province"
-                />
-                <div className="form-help-text">
-                  Complete residential address
-                </div>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-2">
-              <div className="modern-form-group">
-                <label htmlFor="emergencyContact" className="modern-form-label">
-                  Emergency Contact
-                </label>
-                <input
-                  type="text"
-                  id="emergencyContact"
-                  name="emergencyContact"
-                  className="modern-form-input"
-                  value={formData.emergencyContact}
-                  onChange={handleChange}
-                  maxLength="100"
-                  placeholder="Emergency contact name"
-                />
-                <div className="form-help-text">
-                  Name of emergency contact person
-                </div>
-              </div>
-
-              <div className="modern-form-group">
-                <label
-                  htmlFor="emergencyContactNumber"
-                  className="modern-form-label"
-                >
-                  Emergency Contact Number
-                </label>
-                <input
-                  type="text"
-                  id="emergencyContactNumber"
-                  name="emergencyContactNumber"
-                  className="modern-form-input"
-                  value={formData.emergencyContactNumber}
-                  onChange={handleChange}
-                  maxLength="20"
-                  placeholder="Emergency contact number"
-                />
-                <div className="form-help-text">
-                  Phone number of emergency contact
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Employment Information Section */}
-          <div className="form-section">
-            <div className="form-section-header">
-              <div className="form-section-icon">💼</div>
               <div>
-                <h3 className="form-section-title">Employment Information</h3>
-                <p className="form-section-description">
-                  Employment details and current status
-                </p>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-2">
-              <div className="modern-form-group">
-                <label htmlFor="dateHired" className="modern-form-label">
-                  Employment Date <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="date"
-                  id="dateHired"
-                  name="dateHired"
-                  className="modern-form-input"
-                  value={formData.dateHired}
-                  onChange={handleChange}
-                  required
-                />
-                <div className="form-help-text">
-                  Date when the helper was hired
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="contactNumber" value={formData.contactNumber} onChange={handleChange} required maxLength="20" placeholder="e.g. +63 912 345 6789"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                 </div>
               </div>
+            </div>
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Address <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <TbMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                <input type="text" name="address" value={formData.address} onChange={handleChange} required maxLength="255" placeholder="e.g. 123 Main St, Barangay Sample, City, Province"
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
+                <div className="relative">
+                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="emergencyContact" value={formData.emergencyContact} onChange={handleChange} maxLength="100" placeholder="Emergency contact name"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact Number</label>
+                <div className="relative">
+                  <TbPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleChange} maxLength="20" placeholder="Emergency contact number"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
+            </div>
+          </section>
 
-              <div className="modern-form-group">
-                <label htmlFor="status" className="modern-form-label">
-                  Employment Status{" "}
-                  <span className="required-indicator">*</span>
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  className="modern-form-select"
-                  value={formData.status}
-                  onChange={handleChange}
-                  required
-                >
+          {/* Employment Information */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbBriefcase size={24} />, "Employment Information", "Employment details and current status")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Date <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="date" name="dateHired" value={formData.dateHired} onChange={handleChange} required
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Employment Status <span className="text-red-500">*</span></label>
+                <select name="status" value={formData.status} onChange={handleChange} required
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none">
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                   <option value="On Leave">On Leave</option>
                   <option value="Terminated">Terminated</option>
                 </select>
-                <div className="form-help-text">Current employment status</div>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* License Information Section */}
-          <div className="form-section">
-            <div className="form-section-header">
-              <div className="form-section-icon">🚗</div>
+          {/* License Information */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbId size={24} />, "License Information", "Helper license details and qualifications")}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <h3 className="form-section-title">License Information</h3>
-                <p className="form-section-description">
-                  Helper license details and qualifications
-                </p>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-3">
-              {/* License Type */}
-              <div className="modern-form-group">
-                <label htmlFor="licenseType" className="modern-form-label">
-                  License Type <span className="required-indicator">*</span>
-                </label>
-                <select
-                  id="licenseType"
-                  name="licenseType"
-                  className="modern-form-select"
-                  value={formData.licenseType}
-                  onChange={handleChange}
-                  required
-                >
+                <label className="block text-sm font-medium text-gray-700 mb-2">License Type <span className="text-red-500">*</span></label>
+                <select name="licenseType" value={formData.licenseType} onChange={handleChange} required
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none">
                   <option value="Class C">Class C</option>
                   <option value="Class CE">Class CE</option>
                 </select>
-                <div className="form-help-text">
-                  {formData.licenseType === "Class C"
-                    ? "Can assist with mini trucks only"
-                    : "Can assist with all truck types"}
-                </div>
-              </div>
-
-              {/* License Number */}
-              <div className="modern-form-group">
-                <label htmlFor="licenseNumber" className="modern-form-label">
-                  License Number
-                </label>
-                <input
-                  type="text"
-                  id="licenseNumber"
-                  name="licenseNumber"
-                  className="modern-form-input"
-                  value={formData.licenseNumber}
-                  onChange={handleChange}
-                  placeholder="Enter license number"
-                />
-                <div className="form-help-text">
-                  Helper's license number (optional)
-                </div>
-              </div>
-
-              {/* License Expiry Date */}
-              <div className="modern-form-group">
-                <label
-                  htmlFor="licenseExpiryDate"
-                  className="modern-form-label"
-                >
-                  License Expiry Date
-                </label>
-                <input
-                  type="date"
-                  id="licenseExpiryDate"
-                  name="licenseExpiryDate"
-                  className="modern-form-input"
-                  value={formData.licenseExpiryDate}
-                  onChange={handleChange}
-                />
-                <div className="form-help-text">
-                  When the license expires (optional)
-                </div>
-              </div>
-            </div>
-
-            {/* License Type Information */}
-            <div
-              className="modern-alert modern-alert-info"
-              style={{ marginTop: "16px" }}
-            >
-              <div className="modern-alert-icon">ℹ️</div>
-              <div className="modern-alert-content">
-                <div className="modern-alert-title">License Type Details</div>
-                <div>
-                  <strong>Class C:</strong> Can assist with mini trucks and
-                  light vehicles only
-                  <br />
-                  <strong>Class CE:</strong> Can assist with all truck types
-                  including heavy vehicles
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Account Credentials Section */}
-          <div className="form-section">
-            <div className="form-section-header">
-              <div className="form-section-icon">🔐</div>
-              <div>
-                <h3 className="form-section-title">Account Credentials</h3>
-                <p className="form-section-description">
-                  Login credentials for the helper portal
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.licenseType === "Class C" ? "Can assist with mini trucks only" : "Can assist with all truck types"}
                 </p>
               </div>
-            </div>
-
-            <div className="form-grid form-grid-2">
-              <div className="modern-form-group">
-                <label htmlFor="HelperUserName" className="modern-form-label">
-                  Username <span className="required-indicator">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="HelperUserName"
-                  name="HelperUserName"
-                  className="modern-form-input"
-                  value={formData.HelperUserName}
-                  onChange={handleChange}
-                  required
-                  maxLength="50"
-                  placeholder="e.g. jdelacruz"
-                />
-                <div className="form-help-text">
-                  Unique username for system login
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+                <input type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleChange} placeholder="Enter license number"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry Date</label>
+                <div className="relative">
+                  <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="date" name="licenseExpiryDate" value={formData.licenseExpiryDate} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                 </div>
               </div>
+            </div>
+          </section>
 
+          {/* Account Credentials */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbLock size={24} />, "Account Credentials", "Login credentials for the helper portal")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="HelperUserName" value={formData.HelperUserName} onChange={handleChange} required maxLength="50" placeholder="e.g. jdelacruz"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
               {!isEditMode && (
-                <div className="modern-form-group">
-                  <label htmlFor="HelperPassword" className="modern-form-label">
-                    Password <span className="required-indicator">*</span>
-                  </label>
-                  <input
-                    type="password"
-                    id="HelperPassword"
-                    name="HelperPassword"
-                    className="modern-form-input"
-                    value={formData.HelperPassword || ""}
-                    onChange={handleChange}
-                    required
-                    maxLength="255"
-                    placeholder="Minimum 6 characters"
-                  />
-                  <div className="form-help-text">
-                    Secure password for helper login
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <TbLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input type="password" name="HelperPassword" value={formData.HelperPassword || ""} onChange={handleChange} required maxLength="255" placeholder="Minimum 6 characters"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                   </div>
                 </div>
               )}
-
               {isEditMode && (
-                <div className="modern-form-group">
-                  <label className="modern-form-label">Password</label>
-                  <div
-                    className="modern-alert modern-alert-info"
-                    style={{ margin: 0 }}
-                  >
-                    <div className="modern-alert-icon">🔒</div>
-                    <div className="modern-alert-content">
-                      <div>
-                        Password cannot be changed by admin. Helper must change
-                        their own password through their account settings.
-                      </div>
-                    </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-2 text-sm text-blue-700">
+                    <TbLock size={16} />
+                    Password cannot be changed by admin. Helper must change their own password through their account settings.
                   </div>
                 </div>
               )}
             </div>
-          </div>
+          </section>
 
-          {/* Document Upload Section */}
-          <div className="form-section">
-            <div className="form-section-header">
-              <div className="form-section-icon">📄</div>
-              <div>
-                <h3 className="form-section-title">Required Documents</h3>
-                <p className="form-section-description">
-                  All documents are required for new helpers. Please upload
-                  clear, readable copies.
-                </p>
-              </div>
+          {/* Documents */}
+          <section className="mb-8">
+            {renderSectionHeader(<TbFileText size={24} />, "Required Documents", "Upload legal documents")}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {renderFileInput("validId", "Valid ID", "validId", <TbId />, true)}
+              {renderFileInput("barangayClearance", "Barangay Clearance", "barangayClearance", <TbShieldCheck />, true)}
+              {renderFileInput("medicalCertificate", "Medical Certificate", "medicalCertificate", <TbHeartRateMonitor />)}
+              {renderFileInput("helperLicense", "Helper License", "helperLicense", <TbFileText />)}
             </div>
+          </section>
 
-            <div className="form-grid form-grid-2">
-              {/* Valid ID */}
-              <div className="modern-form-group">
-                <label htmlFor="validId" className="modern-form-label">
-                  Valid ID <span className="required-indicator">*</span>
-                </label>
-
-                {!uploadedFiles.validId && !existingDocuments.validId && (
-                  <div className="modern-file-upload">
-                    <input
-                      type="file"
-                      id="validId"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      onChange={(e) => handleFileChange(e, "validId")}
-                    />
-                    <div className="file-upload-icon">🪪</div>
-                    <div className="file-upload-text">
-                      <div className="file-upload-primary">
-                        Click to upload valid ID
-                      </div>
-                      <div className="file-upload-secondary">
-                        PDF, JPG, PNG up to 25MB
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {uploadedFiles.validId && (
-                  <div className="file-preview">
-                    <div className="file-preview-info">
-                      <div className="file-preview-icon">🪪</div>
-                      <div className="file-preview-name">
-                        {uploadedFiles.validId.name}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile("validId")}
-                      className="file-remove-btn"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                )}
-
-                {existingDocuments.validId && !uploadedFiles.validId && (
-                  <div className="existing-file">
-                    <div className="existing-file-info">
-                      <div className="existing-file-icon">🪪</div>
-                      <div className="existing-file-name">
-                        Current: {existingDocuments.validId.originalName}
-                      </div>
-                    </div>
-                    <div className="existing-file-actions">
-                      <button
-                        type="button"
-                        onClick={() => handleViewDocument("validId")}
-                        className="file-view-btn"
-                      >
-                        View
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleReplaceDocument("validId")}
-                        className="file-replace-btn"
-                      >
-                        Replace
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="form-help-text">
-                  Upload valid government-issued ID (PDF, JPG, PNG - max 25MB)
-                </div>
-              </div>
-
-              {/* Barangay Clearance */}
-              <div className="modern-form-group">
-                <label
-                  htmlFor="barangayClearance"
-                  className="modern-form-label"
-                >
-                  Barangay Clearance{" "}
-                  <span className="required-indicator">*</span>
-                </label>
-
-                {!uploadedFiles.barangayClearance &&
-                  !existingDocuments.barangayClearance && (
-                    <div className="modern-file-upload">
-                      <input
-                        type="file"
-                        id="barangayClearance"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) =>
-                          handleFileChange(e, "barangayClearance")
-                        }
-                      />
-                      <div className="file-upload-icon">📋</div>
-                      <div className="file-upload-text">
-                        <div className="file-upload-primary">
-                          Click to upload barangay clearance
-                        </div>
-                        <div className="file-upload-secondary">
-                          PDF, JPG, PNG up to 25MB
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                {uploadedFiles.barangayClearance && (
-                  <div className="file-preview">
-                    <div className="file-preview-info">
-                      <div className="file-preview-icon">📋</div>
-                      <div className="file-preview-name">
-                        {uploadedFiles.barangayClearance.name}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile("barangayClearance")}
-                      className="file-remove-btn"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                )}
-
-                {existingDocuments.barangayClearance &&
-                  !uploadedFiles.barangayClearance && (
-                    <div className="existing-file">
-                      <div className="existing-file-info">
-                        <div className="existing-file-icon">📄</div>
-                        <div className="existing-file-name">
-                          Current:{" "}
-                          {existingDocuments.barangayClearance.originalName}
-                        </div>
-                      </div>
-                      <div className="existing-file-actions">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleViewDocument("barangayClearance")
-                          }
-                          className="file-view-btn"
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleReplaceDocument("barangayClearance")
-                          }
-                          className="file-replace-btn"
-                        >
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                <div className="form-help-text">
-                  Upload barangay clearance certificate (PDF, JPG, PNG - max
-                  25MB)
-                </div>
-              </div>
-            </div>
-
-            <div className="form-grid form-grid-2">
-              {/* Medical Certificate */}
-              <div className="modern-form-group">
-                <label
-                  htmlFor="medicalCertificate"
-                  className="modern-form-label"
-                >
-                  Medical Certificate
-                </label>
-
-                {!uploadedFiles.medicalCertificate &&
-                  !existingDocuments.medicalCertificate && (
-                    <div className="modern-file-upload">
-                      <input
-                        type="file"
-                        id="medicalCertificate"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) =>
-                          handleFileChange(e, "medicalCertificate")
-                        }
-                      />
-                      <div className="file-upload-icon">🏥</div>
-                      <div className="file-upload-text">
-                        <div className="file-upload-primary">
-                          Click to upload medical certificate
-                        </div>
-                        <div className="file-upload-secondary">
-                          PDF, JPG, PNG up to 25MB
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                {uploadedFiles.medicalCertificate && (
-                  <div className="file-preview">
-                    <div className="file-preview-info">
-                      <div className="file-preview-icon">🏥</div>
-                      <div className="file-preview-name">
-                        {uploadedFiles.medicalCertificate.name}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile("medicalCertificate")}
-                      className="file-remove-btn"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                )}
-
-                {existingDocuments.medicalCertificate &&
-                  !uploadedFiles.medicalCertificate && (
-                    <div className="existing-file">
-                      <div className="existing-file-info">
-                        <div className="existing-file-icon">🏥</div>
-                        <div className="existing-file-name">
-                          Current:{" "}
-                          {existingDocuments.medicalCertificate.originalName}
-                        </div>
-                      </div>
-                      <div className="existing-file-actions">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleViewDocument("medicalCertificate")
-                          }
-                          className="file-view-btn"
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleReplaceDocument("medicalCertificate")
-                          }
-                          className="file-replace-btn"
-                        >
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                <div className="form-help-text">
-                  Optional: Upload medical fitness certificate (PDF, JPG, PNG -
-                  max 25MB)
-                </div>
-              </div>
-
-              {/* Helper License */}
-              <div className="modern-form-group">
-                <label htmlFor="helperLicense" className="modern-form-label">
-                  Helper License
-                </label>
-
-                {!uploadedFiles.helperLicense &&
-                  !existingDocuments.helperLicense && (
-                    <div className="modern-file-upload">
-                      <input
-                        type="file"
-                        id="helperLicense"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={(e) => handleFileChange(e, "helperLicense")}
-                      />
-                      <div className="file-upload-icon">📜</div>
-                      <div className="file-upload-text">
-                        <div className="file-upload-primary">
-                          Click to upload helper license
-                        </div>
-                        <div className="file-upload-secondary">
-                          PDF, JPG, PNG up to 25MB
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                {uploadedFiles.helperLicense && (
-                  <div className="file-preview">
-                    <div className="file-preview-info">
-                      <div className="file-preview-icon">📜</div>
-                      <div className="file-preview-name">
-                        {uploadedFiles.helperLicense.name}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeFile("helperLicense")}
-                      className="file-remove-btn"
-                    >
-                      ❌
-                    </button>
-                  </div>
-                )}
-
-                {existingDocuments.helperLicense &&
-                  !uploadedFiles.helperLicense && (
-                    <div className="existing-file">
-                      <div className="existing-file-info">
-                        <div className="existing-file-icon">📜</div>
-                        <div className="existing-file-name">
-                          Current:{" "}
-                          {existingDocuments.helperLicense.originalName}
-                        </div>
-                      </div>
-                      <div className="existing-file-actions">
-                        <button
-                          type="button"
-                          onClick={() => handleViewDocument("helperLicense")}
-                          className="file-view-btn"
-                        >
-                          View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReplaceDocument("helperLicense")}
-                          className="file-replace-btn"
-                        >
-                          Replace
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                <div className="form-help-text">
-                  Optional: Upload helper license if applicable (PDF, JPG, PNG -
-                  max 25MB)
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Form Actions */}
-          <div className="modern-btn-group">
-            <button
-              type="button"
-              className="modern-btn modern-btn-secondary"
-              onClick={() => history.push("/admin/helpers")}
-            >
-              ← Cancel
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+            <button type="button" onClick={() => history.push("/admin/helpers")}
+              className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2">
+              <TbArrowLeft size={18} /> Cancel
             </button>
-            <button type="submit" className="modern-btn modern-btn-primary">
-              {isEditMode ? "💾 Update Helper" : "✅ Add Helper"}
+            <button type="submit"
+              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2">
+              <TbDeviceFloppy size={18} /> {isEditMode ? "Update Helper" : "Save Helper"}
             </button>
           </div>
         </form>
       </div>
+
+      {/* Preview Modal */}
+      {showPreviewModal && previewDocument && (
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowPreviewModal(false)}>
+          <div className="bg-white rounded-2xl overflow-hidden max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+              <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                <TbEye size={20} className="text-primary-600" />
+                {previewDocument.filename}
+              </h3>
+              <button onClick={() => setShowPreviewModal(false)} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
+                <TbX size={18} />
+              </button>
+            </div>
+            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center">
+              <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

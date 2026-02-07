@@ -209,11 +209,37 @@ class DeliveryService extends FirebaseService {
           throw new Error(`Delivery with ID ${id} is not in-progress`);
         }
         
-        // Update delivery status
-        transaction.update(deliveryRef, { 
+        // Recalculate delivery rate using current rates at completion time
+        let updatedRate = null;
+        try {
+          const StaffService = require('./StaffService');
+          const truckType = delivery.truckType || delivery.TruckType || 'mini truck';
+          const distance = delivery.deliveryDistance || 0;
+          const cargoWeight = delivery.cargoWeight || 0;
+          
+          if (distance > 0) {
+            const costDetails = await StaffService.calculateDeliveryCost(truckType, distance, cargoWeight);
+            updatedRate = Math.round(costDetails.totalCost);
+            console.log(`💰 Recalculated rate at completion: ₱${updatedRate} (was ₱${delivery.deliveryRate || delivery.DeliveryRate || 'N/A'}) - Base: ₱${costDetails.baseRate}, ${distance}km × ₱${costDetails.ratePerKm}/km`);
+          }
+        } catch (rateError) {
+          console.warn('⚠️ Could not recalculate rate at completion, keeping original:', rateError.message);
+        }
+
+        // Update delivery status and rate
+        const updateData = {
           deliveryStatus: 'completed',
           updated_at: admin.firestore.FieldValue.serverTimestamp()
-        });
+        };
+        
+        if (updatedRate !== null) {
+          updateData.deliveryRate = updatedRate;
+          updateData.DeliveryRate = updatedRate;
+          updateData.rateRecalculatedAt = admin.firestore.FieldValue.serverTimestamp();
+          updateData.originalBookingRate = delivery.deliveryRate || delivery.DeliveryRate || null;
+        }
+        
+        transaction.update(deliveryRef, updateData);
         
         // Get truck reference for updates
         const truckRef = db.collection('trucks').doc(delivery.truckId);

@@ -35,18 +35,16 @@ class EnhancedIsolatedMapModal {
     this.initialAddress = options.initialAddress || '';
     this.title = options.title || `Select ${this.locationType} Location`;
 
-    // Set used locations to prevent duplicate selection
-    if (options.usedLocationIds) {
-      this.usedLocationIds = new Set(options.usedLocationIds);
-    } else {
-      // Use global used locations
-      this.usedLocationIds = new Set(EnhancedIsolatedMapModal.usedLocationIds);
-    }
+    // Always start with a clean usedLocationIds - the static set accumulation pattern
+    // caused all locations to show as "Used" after any selection.
+    // We rely solely on otherSelectedLocation to prevent picking the same location
+    // for both pickup and dropoff.
+    EnhancedIsolatedMapModal.usedLocationIds.clear();
+    this.usedLocationIds = new Set();
 
-    // Also check for other selected location to prevent duplicate selection
-    if (options.otherSelectedLocation) {
-      this.otherSelectedLocation = options.otherSelectedLocation;
-    }
+    // Set the other selected location to prevent duplicate selection
+    // (e.g., if pickup is already chosen, that location shows as "Used" in dropoff modal)
+    this.otherSelectedLocation = options.otherSelectedLocation || null;
 
     // Load saved locations and WAIT for them to load before creating modal
     await this.loadSavedLocations();
@@ -186,7 +184,8 @@ class EnhancedIsolatedMapModal {
     return this.savedLocations.map(location => {
       const isUsed = this.usedLocationIds.has(location.id);
       const isOtherSelected = this.otherSelectedLocation &&
-        (location.address === this.otherSelectedLocation ||
+        this.otherSelectedLocation.address &&
+        (location.address === this.otherSelectedLocation.address ||
           (location.coordinates && this.otherSelectedLocation.coordinates &&
             location.coordinates.lat === this.otherSelectedLocation.coordinates.lat &&
             location.coordinates.lng === this.otherSelectedLocation.coordinates.lng));
@@ -694,15 +693,11 @@ class EnhancedIsolatedMapModal {
     if (this.selectedAddress && this.onSelectCallback) {
       console.log('📍 Confirming location:', this.selectedAddress, this.selectedCoordinates);
 
-      // Mark this location as used only when confirming
+      // Find the selected location data for passing back to the callback
       const selectedLocation = this.selectedLocationData || this.savedLocations.find(loc =>
         loc.address === this.selectedAddress ||
         (loc.coordinates && loc.coordinates.lat === this.selectedCoordinates.lat && loc.coordinates.lng === this.selectedCoordinates.lng)
       );
-
-      if (selectedLocation) {
-        EnhancedIsolatedMapModal.usedLocationIds.add(selectedLocation.id);
-      }
 
       // Pass address, coordinates, and full location data (for contact info)
       this.onSelectCallback(this.selectedAddress, this.selectedCoordinates, selectedLocation);
