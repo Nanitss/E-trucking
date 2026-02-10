@@ -6,10 +6,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// Base path to project uploads folder - go up from services to server, then to client, then to project root
-// Current file: trucking-web-app/client/server/services/TruckService.js
-// Target: trucking-web-app/uploads/
-const DOCUMENTS_BASE_PATH = path.join(__dirname, '..', '..', '..', 'uploads');
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+
+// Base path to project uploads folder
+// In Cloud Functions, /tmp is the only writable directory
+const DOCUMENTS_BASE_PATH = isCloudFunctions
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 
 class TruckService extends FirebaseService {
   constructor() {
@@ -316,44 +320,34 @@ class TruckService extends FirebaseService {
       const snapshot = await this.collection.get();
       const trucks = this._formatDocs(snapshot);
       
-      // Enhance each truck with actual documents from file system
+      // Enhance each truck with actual documents from Firestore
       const enhancedTrucks = [];
       
       for (const truck of trucks) {
         try {
-          // Check and update registration expiry status
-          await this.checkAndUpdateRegistrationExpiry(truck.id);
+          // Use Firestore documents as source of truth (no filesystem scanning)
+          const actualDocuments = truck.documents || {};
           
-          // Scan for actual documents
-          const actualDocuments = await this.scanTruckDocuments(truck.truckPlate);
-          
-          // Calculate document compliance based on actual files
+          // Calculate document compliance
           const documentCount = this._getDocumentCount(actualDocuments);
           const requiredDocumentCount = this._getRequiredDocumentCount(actualDocuments);
           const optionalDocumentCount = this._getOptionalDocumentCount(actualDocuments);
           
-          // Re-fetch truck to get updated registration status
-          const updatedTruckDoc = await this.collection.doc(truck.id).get();
-          const updatedTruck = updatedTruckDoc.exists ? { id: truck.id, ...updatedTruckDoc.data() } : truck;
-          
           // Format registration dates for frontend
-          const registrationDate = this._formatFirestoreDate(updatedTruck.registrationDate);
-          const registrationExpiryDate = this._formatFirestoreDate(updatedTruck.registrationExpiryDate);
-          
-          console.log(`📊 Truck ${updatedTruck.truckPlate}: Status=${updatedTruck.operationalStatus}, Warning=${updatedTruck.registrationExpiryWarning}, Days=${updatedTruck.registrationExpiryDaysRemaining}`);
+          const registrationDate = this._formatFirestoreDate(truck.registrationDate);
+          const registrationExpiryDate = this._formatFirestoreDate(truck.registrationExpiryDate);
           
           const enhancedTruck = {
-            ...updatedTruck,
-            // Format registration dates properly
+            ...truck,
             registrationDate,
             registrationExpiryDate,
-            documents: actualDocuments, // Use actual documents from file system
-            isAvailable: updatedTruck.allocationStatus === 'available' && updatedTruck.operationalStatus === 'active',
-            isAllocated: updatedTruck.allocationStatus === 'allocated' || updatedTruck.truckStatus === 'allocated' || updatedTruck.truckStatus === 'active',
-            isReadyForDelivery: updatedTruck.truckStatus === 'active',
-            isInUse: updatedTruck.truckStatus === 'on-delivery' || updatedTruck.truckStatus === 'in-transit',
-            needsMaintenance: updatedTruck.operationalStatus === 'maintenance',
-            statusSummary: this._getStatusSummary(updatedTruck),
+            documents: actualDocuments,
+            isAvailable: truck.allocationStatus === 'available' && truck.operationalStatus === 'active',
+            isAllocated: truck.allocationStatus === 'allocated' || truck.truckStatus === 'allocated' || truck.truckStatus === 'active',
+            isReadyForDelivery: truck.truckStatus === 'active',
+            isInUse: truck.truckStatus === 'on-delivery' || truck.truckStatus === 'in-transit',
+            needsMaintenance: truck.operationalStatus === 'maintenance',
+            statusSummary: this._getStatusSummary(truck),
             documentCompliance: {
               orDocument: actualDocuments.orDocument ? 'complete' : 'missing',
               crDocument: actualDocuments.crDocument ? 'complete' : 'missing',
@@ -370,10 +364,9 @@ class TruckService extends FirebaseService {
           
         } catch (error) {
           console.error(`❌ Error enhancing truck ${truck.truckPlate}:`, error);
-          // Add truck with basic info if enhancement fails
           enhancedTrucks.push({
             ...truck,
-            documents: {},
+            documents: truck.documents || {},
             documentCompliance: {
               orDocument: 'missing',
               crDocument: 'missing',
@@ -928,23 +921,8 @@ class TruckService extends FirebaseService {
         return null;
       }
 
-      // Use database documents as source of truth, verify files exist
-      const actualDocuments = await this.verifyTruckDocuments(truck.documents || {});
-      
-      // Update database if some files are missing (clean up orphaned references)
-      const currentDocuments = truck.documents || {};
-      const documentsChanged = JSON.stringify(currentDocuments) !== JSON.stringify(actualDocuments);
-      
-      if (documentsChanged) {
-        console.log(`🔄 Cleaning up missing documents for truck ${truck.truckPlate}`);
-        try {
-          await this.update(truckId, { documents: actualDocuments });
-          console.log(`✅ Database updated for truck ${truck.truckPlate}`);
-        } catch (syncError) {
-          console.error('❌ Error updating database:', syncError);
-          // Continue with verified documents even if update fails
-        }
-      }
+      // Use Firestore documents as source of truth (no filesystem writes on read)
+      const actualDocuments = truck.documents || {};
       
       // Calculate document compliance based on actual files
       const documentCount = this._getDocumentCount(actualDocuments);
@@ -953,7 +931,7 @@ class TruckService extends FirebaseService {
       
       const enhancedTruck = {
         ...truck,
-        documents: actualDocuments, // Use actual documents from file system
+        documents: actualDocuments,
         isAvailable: truck.allocationStatus === 'available' && truck.operationalStatus === 'active',
         isAllocated: truck.allocationStatus === 'allocated' || truck.truckStatus === 'allocated' || truck.truckStatus === 'active',
         isReadyForDelivery: truck.truckStatus === 'active',

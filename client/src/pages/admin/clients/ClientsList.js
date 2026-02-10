@@ -18,6 +18,7 @@ import {
   TbCheck,
   TbActivity,
   TbPlus,
+  TbTruck,
 } from "react-icons/tb";
 import FileViewer from "../../../components/FileViewer";
 import AdminHeader from "../../../components/common/AdminHeader";
@@ -752,6 +753,13 @@ const ClientsList = ({ currentUser }) => {
                             >
                               <TbEdit size={18} />
                             </Link>
+                            <Link
+                              to={`/admin/clients/${client.id}/trucks`}
+                              className="action-btn edit-btn"
+                              title="Manage Truck Allocation"
+                            >
+                              <TbTruck size={18} />
+                            </Link>
                           </div>
                         </td>
                       </tr>
@@ -793,166 +801,135 @@ const ClientsList = ({ currentUser }) => {
 
         {/* Client Details Modal */}
         {showDetailsModal && selectedClient && (
-          <div className="modal-overlay" onClick={closeDetailsModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Client Details - {selectedClient.name}</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>
-                  ✕
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={closeDetailsModal}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center">
+                    <TbUser size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">{selectedClient.name}</h2>
+                    <p className="text-xs text-gray-500">Client Details</p>
+                  </div>
+                </div>
+                <button onClick={closeDetailsModal} className="w-8 h-8 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-600 transition-colors">
+                  <TbX size={18} />
                 </button>
               </div>
 
-              <div className="modal-body">
-                <div className="details-grid">
-                  {/* Personal Information */}
-                  <div className="details-section">
-                    <h3>👤 Client Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Full Name:</span>
-                        <span className="detail-value">
-                          {selectedClient.name}
-                        </span>
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-5 flex-1">
+                {/* Client Info + Business Info Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Client Information */}
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <TbUser size={14} /> Client Information
+                    </h3>
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Full Name</span>
+                        <span className="text-sm font-semibold text-gray-800">{selectedClient.name}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Contact Number:</span>
-                        <span className="detail-value">
-                          {selectedClient.contactNumber || "N/A"}
-                        </span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Phone</span>
+                        <span className="text-sm font-medium text-gray-700">{selectedClient.contactNumber || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">
-                          {selectedClient.email || "N/A"}
-                        </span>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Email</span>
+                        <span className="text-sm font-medium text-gray-700 truncate ml-4">{selectedClient.email || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Status:</span>
-                        <span
-                          className={`detail-badge ${getStatusBadgeClass(selectedClient.status)}`}
-                        >
-                          {selectedClient.status}
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Status</span>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold border ${
+                          selectedClient.status === "Active" || selectedClient.status === "active"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : selectedClient.status === "inactive"
+                            ? "bg-gray-100 text-gray-600 border-gray-200"
+                            : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                        }`}>
+                          {selectedClient.status || "Active"}
                         </span>
                       </div>
                     </div>
                   </div>
 
                   {/* Business Information */}
-                  <div className="details-section">
-                    <h3>💼 Business Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Business Type:</span>
-                        <span className="detail-value">
-                          {selectedClient.businessType || "N/A"}
-                        </span>
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <TbActivity size={14} /> Business Information
+                    </h3>
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">Business Type</span>
+                        <span className="text-sm font-medium text-gray-700">{selectedClient.businessType || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Address:</span>
-                        <span className="detail-value">
-                          {selectedClient.address || "N/A"}
-                        </span>
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs text-gray-500 mt-0.5">Address</span>
+                        <span className="text-sm font-medium text-gray-700 text-right ml-4 max-w-[180px]">{selectedClient.address || "N/A"}</span>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Document Compliance */}
-                  <div className="details-section">
-                    <h3>📄 Document Compliance</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Overall Status:</span>
-                        <span
-                          className={`detail-badge compliance-${getComplianceClass(selectedClient).replace("compliance-", "")}`}
-                        >
-                          {getComplianceStatus(selectedClient)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">
-                          Documents Completed:
-                        </span>
-                        <span className="detail-value">
-                          {getComplianceDetails(selectedClient)}
-                        </span>
-                      </div>
-
-                      {/* Document Status List */}
-                      <div className="documents-list">
-                        <div className="document-item">
-                          <span className="doc-name">Business Permit:</span>
-                          <span
-                            className={`doc-status ${selectedClient.documents?.businessPermit ? "complete" : "missing"}`}
-                          >
-                            {selectedClient.documents?.businessPermit
-                              ? "✓ Complete"
-                              : "✗ Missing"}
-                          </span>
-                        </div>
-                        <div className="document-item">
-                          <span className="doc-name">Valid ID:</span>
-                          <span
-                            className={`doc-status ${selectedClient.documents?.validId ? "complete" : "missing"}`}
-                          >
-                            {selectedClient.documents?.validId
-                              ? "✓ Complete"
-                              : "✗ Missing"}
-                          </span>
-                        </div>
-                        <div className="document-item">
-                          <span className="doc-name">Service Contract:</span>
-                          <span
-                            className={`doc-status ${selectedClient.documents?.serviceContract ? "complete" : "optional"}`}
-                          >
-                            {selectedClient.documents?.serviceContract
-                              ? "✓ Complete"
-                              : "○ Optional"}
-                          </span>
-                        </div>
-                        <div className="document-item">
-                          <span className="doc-name">Tax Certificate:</span>
-                          <span
-                            className={`doc-status ${selectedClient.documents?.taxCertificate ? "complete" : "optional"}`}
-                          >
-                            {selectedClient.documents?.taxCertificate
-                              ? "✓ Complete"
-                              : "○ Optional"}
-                          </span>
-                        </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs text-gray-500">User ID</span>
+                        <span className="text-xs font-mono text-gray-500">{selectedClient.userId ? "Linked" : "Not linked"}</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Document Viewer */}
-                <div className="details-section">
-                  <h3>📁 Uploaded Documents</h3>
-                  <div className="document-summary">
-                    <div className="document-count-badge">
-                      <span className="count-icon">📁</span>
-                      <span className="count-text">
-                        {selectedClient.documentCompliance?.documentCount || 0}{" "}
-                        files uploaded
+                {/* Document Compliance */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Document Compliance</h3>
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border ${
+                      getComplianceStatus(selectedClient) === "Compliant"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : getComplianceStatus(selectedClient) === "Partial"
+                        ? "bg-yellow-100 text-yellow-700 border-yellow-200"
+                        : "bg-red-100 text-red-700 border-red-200"
+                    }`}>
+                      {getComplianceStatus(selectedClient)}
+                    </span>
+                    <span className="text-xs text-gray-500">{getComplianceDetails(selectedClient)}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { name: "Business Permit", key: "businessPermit", required: true },
+                      { name: "Valid ID", key: "validId", required: true },
+                      { name: "Service Contract", key: "serviceContract", required: false },
+                      { name: "Tax Certificate", key: "taxCertificate", required: false },
+                    ].map((doc) => (
+                      <div key={doc.key} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-gray-200">
+                        <span className="text-xs font-medium text-gray-600">{doc.name}</span>
+                        {selectedClient.documents?.[doc.key] ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-green-600"><TbCheck size={14} /> Done</span>
+                        ) : doc.required ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-red-500"><TbX size={14} /> Missing</span>
+                        ) : (
+                          <span className="text-xs text-gray-400">Optional</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Uploaded Documents */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Uploaded Documents</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">
+                        {selectedClient.documentCompliance?.requiredDocumentCount || 0}/2 Required
                       </span>
-                    </div>
-                    <div className="document-breakdown">
-                      <span className="required-docs">
-                        Required:{" "}
-                        {selectedClient.documentCompliance
-                          ?.requiredDocumentCount || 0}
-                        /2
-                      </span>
-                      <span className="optional-docs">
-                        Optional:{" "}
-                        {selectedClient.documentCompliance
-                          ?.optionalDocumentCount || 0}
-                        /2
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full font-bold">
+                        {selectedClient.documentCompliance?.optionalDocumentCount || 0}/2 Optional
                       </span>
                     </div>
                   </div>
                   {selectedClient.documents &&
                     Object.keys(selectedClient.documents).length > 0 ? (
-                    <div className="details-items">
+                    <div>
                       <FileViewer
                         documents={selectedClient.documents}
                         entityType="client"
@@ -960,20 +937,39 @@ const ClientsList = ({ currentUser }) => {
                       />
                     </div>
                   ) : (
-                    <div className="no-documents-message">
-                      <div className="no-docs-icon">📄</div>
-                      <p>
-                        No documents have been uploaded for this client yet.
-                      </p>
+                    <div className="text-center py-6">
+                      <p className="text-sm text-gray-400 mb-3">No documents uploaded yet.</p>
                       <Link
                         to={`/admin/clients/edit/${selectedClient.id}`}
-                        className="btn btn-primary btn-sm"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
                       >
                         Upload Documents
                       </Link>
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-3 flex-shrink-0">
+                <Link
+                  to={`/admin/clients/edit/${selectedClient.id}`}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                >
+                  <TbEdit size={16} /> Edit Client
+                </Link>
+                <Link
+                  to={`/admin/clients/${selectedClient.id}/trucks`}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-1.5"
+                >
+                  <TbTruck size={16} /> Manage Trucks
+                </Link>
+                <button
+                  onClick={closeDetailsModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Close
+                </button>
               </div>
             </div>
           </div>

@@ -5,9 +5,16 @@ const bcrypt = require('bcryptjs');
 const AuditService = require('./AuditService');
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
+
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
 
 // Base path to project uploads folder
-const DOCUMENTS_BASE_PATH = path.join(__dirname, '..', '..', '..', 'uploads');
+// In Cloud Functions, /tmp is the only writable directory
+const DOCUMENTS_BASE_PATH = isCloudFunctions
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 
 class DriverService extends FirebaseService {
   constructor() {
@@ -452,7 +459,7 @@ class DriverService extends FirebaseService {
       const userId = existingDriver.userId;
       
       // 2. Check if username is being changed and is unique
-      if (driverData.DriverUserName !== existingDriver.DriverUserName) {
+      if (driverData.DriverUserName && driverData.DriverUserName !== existingDriver.DriverUserName) {
         const snapshot = await this.usersCollection
           .where('username', '==', driverData.DriverUserName)
           .get();
@@ -462,15 +469,12 @@ class DriverService extends FirebaseService {
         }
       }
       
-      // 3. Update user (username and status only - password cannot be updated by admin)
+      // 3. Update user (username and status only - password changes are NOT allowed via admin)
       const userUpdateData = {
-        username: driverData.DriverUserName,
+        username: driverData.DriverUserName || existingDriver.DriverUserName,
         status: driverData.DriverStatus,
         updated_at: admin.firestore.FieldValue.serverTimestamp()
       };
-      
-      // Password updates are not allowed through admin interface for security
-      // Users must change their own passwords through their account settings
       
       await this.usersCollection.doc(userId).update(userUpdateData);
       
@@ -480,10 +484,8 @@ class DriverService extends FirebaseService {
       
       if (employmentDate) {
         if (typeof employmentDate === 'string') {
-          // If it's a date string, convert to Date object
           const dateObj = new Date(employmentDate);
           console.log('Parsed date:', dateObj, 'isValid:', !isNaN(dateObj));
-          
           if (!isNaN(dateObj.getTime())) {
             employmentDate = dateObj;
           } else {
@@ -491,10 +493,8 @@ class DriverService extends FirebaseService {
             employmentDate = null;
           }
         } else if (employmentDate instanceof Date) {
-          // Keep it as is
           console.log('Date is already a Date object');
         } else if (employmentDate._seconds && employmentDate._nanoseconds) {
-          // Handle Firestore timestamp format
           employmentDate = new admin.firestore.Timestamp(
             employmentDate._seconds,
             employmentDate._nanoseconds
@@ -560,6 +560,22 @@ class DriverService extends FirebaseService {
         driverUpdateData.emergencyContactRelationship = driverData.emergencyContactRelationship;
       }
       
+      // Update documents if provided
+      if (driverData.documents) {
+        driverUpdateData.documents = driverData.documents;
+        driverUpdateData.documentCompliance = {
+          licenseDocument: driverData.documents.licenseDocument ? 'complete' : 'missing',
+          medicalCertificate: driverData.documents.medicalCertificate ? 'complete' : 'missing',
+          idPhoto: driverData.documents.idPhoto ? 'complete' : 'missing',
+          nbiClearance: driverData.documents.nbiClearance ? 'complete' : 'optional',
+          overallStatus: this._calculateDocumentCompliance(driverData.documents),
+          documentCount: ['licenseDocument', 'medicalCertificate', 'idPhoto', 'nbiClearance'].filter(d => driverData.documents[d]).length,
+          requiredDocumentCount: ['licenseDocument', 'medicalCertificate', 'idPhoto'].filter(d => driverData.documents[d]).length,
+          optionalDocumentCount: ['nbiClearance'].filter(d => driverData.documents[d]).length
+        };
+        console.log('📄 Documents included in update:', Object.keys(driverData.documents));
+      }
+
       console.log('Final update data for Firestore:', JSON.stringify(driverUpdateData, null, 2));
       console.log('Status in final update:', driverUpdateData.DriverStatus);
       await this.collection.doc(id).update(driverUpdateData);

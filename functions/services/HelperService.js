@@ -170,14 +170,30 @@ class HelperService extends FirebaseService {
   // Get all helpers
   async getAllHelpers() {
     try {
-      const snapshot = await this.collection.orderBy('created_at', 'desc').get();
+      const snapshot = await this.collection.get();
       return snapshot.docs.map(doc => {
         const helperData = doc.data();
+        const formattedData = { ...helperData };
+
+        // Convert Firestore timestamps to serializable values
+        if (formattedData.created_at && typeof formattedData.created_at.toDate === 'function') {
+          formattedData.created_at = formattedData.created_at.toDate().toISOString();
+        }
+        if (formattedData.updated_at && typeof formattedData.updated_at.toDate === 'function') {
+          formattedData.updated_at = formattedData.updated_at.toDate().toISOString();
+        }
+        if (formattedData.HelperEmploymentDate && typeof formattedData.HelperEmploymentDate.toDate === 'function') {
+          const date = formattedData.HelperEmploymentDate.toDate();
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          formattedData.HelperEmploymentDate = `${year}-${month}-${day}`;
+        }
+
         return {
           HelperID: doc.id,
-          ...helperData,
-          // Recalculate document counts on the fly for existing helpers
-          documentCompliance: this._calculateDocumentCounts(helperData)
+          ...formattedData,
+          documentCompliance: this._calculateDocumentCounts(formattedData)
         };
       });
     } catch (error) {
@@ -277,9 +293,10 @@ class HelperService extends FirebaseService {
       console.log('Mapped data:', mappedData);
       console.log('New documents:', helperData.newDocuments);
       
-      // Merge new documents with existing documents
+      // Merge: existing DB docs + preserved frontend docs + newly uploaded docs
       const updatedDocuments = {
         ...(existingHelper.documents || {}),
+        ...(helperData.preservedDocuments || {}),
         ...(helperData.newDocuments || {})
       };
       
@@ -476,4 +493,4 @@ class HelperService extends FirebaseService {
   }
 }
 
-module.exports = new HelperService(); 
+module.exports = new HelperService();

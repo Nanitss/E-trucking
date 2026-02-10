@@ -111,7 +111,7 @@ router.get("/all", authenticateJWT, async (req, res) => {
         dueDate = new Date(deliveryDate.getTime() + 30 * 24 * 60 * 60 * 1000);
       }
 
-      // Determine payment status - preserve pending_verification from database
+      // Determine payment status - preserve statuses from database
       let paymentStatus = "pending";
       const now = new Date();
 
@@ -120,6 +120,9 @@ router.get("/all", authenticateJWT, async (req, res) => {
       } else if (delivery.paymentStatus === "pending_verification") {
         // Preserve pending_verification status - proof uploaded, awaiting admin review
         paymentStatus = "pending_verification";
+      } else if (delivery.paymentStatus === "rejected") {
+        // Preserve rejected status - proof was rejected by admin
+        paymentStatus = "rejected";
       } else if (dueDate < now) {
         paymentStatus = "overdue";
       }
@@ -1338,13 +1341,23 @@ router.post("/upload-proof", authenticateJWT, async (req, res) => {
     console.log(`   - req.user.clientId: ${req.user.clientId}`);
     console.log(`   - Using clientId: ${clientId}`);
 
+    // Auto-generate reference number if not provided
+    const autoRefNumber = referenceNumber || (() => {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const r = Math.floor(Math.random() * 100000).toString().padStart(5, "0");
+      return `REF-${y}${m}${d}-${r}`;
+    })();
+
     // Upload the proof
     const result = await paymentProofService.uploadProof(
       fileObj,
       parsedDeliveryIds,
       clientId,
       clientName,
-      referenceNumber || "",
+      autoRefNumber,
       notes || "",
     );
 
@@ -1688,19 +1701,48 @@ router.get("/receipt/:proofId", authenticateJWT, async (req, res) => {
       });
     }
 
-    // Get the file path
-    const filePath = receiptService.getReceiptFilePath(receipt.filePath);
+    // Try to get the file path - if file doesn't exist, regenerate it
+    let filePath;
+    try {
+      filePath = receiptService.getReceiptFilePath(receipt.filePath);
+    } catch (fileError) {
+      // File doesn't exist (ephemeral Cloud Functions filesystem) - regenerate on-the-fly
+      console.log("⚠️ Receipt file not found on disk, regenerating from Firestore data...");
+      
+      const { db: firestoreDb } = require("../config/firebase");
+      
+      // Fetch the proof data
+      const proofDoc = await firestoreDb.collection("paymentProofs").doc(proofId).get();
+      if (!proofDoc.exists) {
+        return res.status(404).json({ success: false, message: "Payment proof not found" });
+      }
+      const proofData = { id: proofId, ...proofDoc.data() };
+      
+      // Fetch delivery details
+      const deliveries = [];
+      for (const deliveryId of (proofData.deliveryIds || [])) {
+        const deliveryDoc = await firestoreDb.collection("deliveries").doc(deliveryId).get();
+        if (deliveryDoc.exists) {
+          deliveries.push({ id: deliveryId, ...deliveryDoc.data() });
+        }
+      }
+      
+      // Regenerate the receipt
+      const regenerated = await receiptService.generateReceipt(
+        proofData,
+        deliveries,
+        { id: receipt.approvedBy || "system", username: receipt.approvedByName || "System" }
+      );
+      
+      filePath = receiptService.getReceiptFilePath(regenerated.filePath);
+      console.log("✅ Receipt regenerated successfully:", regenerated.receiptNumber);
+    }
 
-    // Determine content type from receipt record or file extension
-    const isPdf = receipt.fileType === "application/pdf" || receipt.filePath.endsWith(".pdf");
-    const contentType = isPdf ? "application/pdf" : "text/html";
-    const fileExt = isPdf ? "pdf" : "html";
-
-    // Set headers for inline viewing / download
-    res.setHeader("Content-Type", contentType);
+    // Set headers for inline PDF viewing
+    res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `inline; filename="receipt_${receipt.receiptNumber}.${fileExt}"`,
+      `inline; filename="receipt_${receipt.receiptNumber}.pdf"`,
     );
 
     // Stream the file

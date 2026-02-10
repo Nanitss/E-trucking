@@ -8,6 +8,7 @@ const path = require('path');
 const { db } = require('./config/firebase');
 const os = require('os');
 const fs = require('fs');
+const { Readable } = require('stream');
 
 // Import route modules
 const authRoutes = require('./routes/authRoutes');
@@ -137,19 +138,40 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Firebase Cloud Functions pre-reads the request body into req.rawBody,
+// consuming the readable stream. express-fileupload uses busboy which
+// calls req.pipe(busboy), but the stream is already empty.
+// This middleware reconstructs the stream from rawBody so busboy can parse it.
+app.use((req, res, next) => {
+  if (req.rawBody !== undefined && req.headers['content-type'] &&
+      req.headers['content-type'].includes('multipart/form-data')) {
+    const readable = new Readable();
+    readable.push(req.rawBody);
+    readable.push(null);
+    const originalPipe = req.pipe.bind(req);
+    req.pipe = function(dest, options) {
+      return readable.pipe(dest, options);
+    };
+    req.unpipe = function(dest) {
+      return readable.unpipe(dest);
+    };
+    req.readable = true;
+  }
+  next();
+});
+
 app.use(fileUpload({
   limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   abortOnLimit: true,
   responseOnLimit: "File size limit has been reached (max 25MB)",
   createParentPath: true,
   useTempFiles: true, // Use temp files for large uploads
-  tempFileDir: path.join(__dirname, 'tmp'),
+  tempFileDir: path.join(os.tmpdir(), 'file-uploads'),
   debug: true,
   preserveExtension: true,
   safeFileNames: true
 }));
-
-
 
 // Test file upload endpoint
 app.post('/api/test-upload', (req, res) => {

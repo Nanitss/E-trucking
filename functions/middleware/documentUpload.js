@@ -4,10 +4,35 @@ const fs = require('fs');
 const os = require('os');
 const FileUploadService = require('../services/FileUploadService');
 
-// Base path to project uploads folder - go up from middleware to server, then to client, then to project root
-// Current file: trucking-web-app/client/server/middleware/documentUpload.js
-// Target: trucking-web-app/uploads/
-const DOCUMENTS_BASE_PATH = path.join(__dirname, '..', '..', '..', 'uploads');
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+
+// Helper: upload a file buffer to Firebase Storage for cloud access
+const uploadToFirebaseStorage = async (filePath, storagePath, mimeType) => {
+  try {
+    const { storageBucket } = require('../config/firebase');
+    if (!storageBucket) {
+      console.log('⚠️ Firebase Storage not available, skipping cloud upload');
+      return null;
+    }
+    const file = storageBucket.file(storagePath);
+    await file.save(fs.readFileSync(filePath), {
+      metadata: { contentType: mimeType || 'application/octet-stream' },
+      resumable: false,
+    });
+    console.log(`☁️ Uploaded to Firebase Storage: ${storagePath}`);
+    return storagePath;
+  } catch (error) {
+    console.error(`⚠️ Firebase Storage upload failed for ${storagePath}:`, error.message);
+    return null;
+  }
+};
+
+// Base path to project uploads folder
+// In Cloud Functions, /tmp is the only writable directory
+const DOCUMENTS_BASE_PATH = isCloudFunctions
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 
 // Function to ensure base documents folder exists
 const ensureBaseFolderExists = () => {
@@ -156,11 +181,14 @@ const uploadTruckDocuments = async (req, res, next) => {
             console.error(`❌ ERROR: ${config.prefix} document NOT found on disk after save!`);
           }
           
+          const relPath = `Truck-Documents/${config.folder}/${fileName}`;
+          const cloudPath = await uploadToFirebaseStorage(filePath, relPath, file.mimetype);
           uploadedDocuments[docType] = {
             filename: fileName,
             originalName: file.name,
             fullPath: filePath,
             relativePath: path.join('Truck-Documents', config.folder, fileName),
+            storagePath: cloudPath || relPath,
             uploadDate: new Date().toISOString(),
             fileSize: file.size,
             mimeType: file.mimetype,
@@ -296,11 +324,14 @@ const uploadDriverDocuments = async (req, res, next) => {
             console.log(`✅ Verified: ${config.prefix} document exists on disk`);
           }
           
+          const relPath = `Driver-Documents/${config.folder}/${fileName}`;
+          const cloudPath = await uploadToFirebaseStorage(filePath, relPath, file.mimetype);
           uploadedDocuments[docType] = {
             filename: fileName,
             originalName: file.name,
             fullPath: filePath,
             relativePath: path.join('Driver-Documents', config.folder, fileName),
+            storagePath: cloudPath || relPath,
             uploadDate: new Date().toISOString(),
             fileSize: file.size,
             mimeType: file.mimetype,
@@ -434,11 +465,14 @@ const uploadHelperDocuments = async (req, res, next) => {
             console.log(`✅ Verified: ${config.prefix} document exists on disk`);
           }
           
+          const relPath = `Helper-Documents/${config.folder}/${fileName}`;
+          const cloudPath = await uploadToFirebaseStorage(filePath, relPath, file.mimetype);
           uploadedDocuments[docType] = {
             filename: fileName,
             originalName: file.name,
             fullPath: filePath,
             relativePath: path.join('Helper-Documents', config.folder, fileName),
+            storagePath: cloudPath || relPath,
             uploadDate: new Date().toISOString(),
             fileSize: file.size,
             mimeType: file.mimetype,
@@ -573,11 +607,14 @@ const uploadStaffDocuments = async (req, res, next) => {
             console.log(`✅ Verified: ${config.prefix} document exists on disk`);
           }
           
+          const relPath = `Staff-Documents/${config.folder}/${fileName}`;
+          const cloudPath = await uploadToFirebaseStorage(filePath, relPath, file.mimetype);
           uploadedDocuments[docType] = {
             filename: fileName,
             originalName: file.name,
             fullPath: filePath,
             relativePath: path.join('Staff-Documents', config.folder, fileName),
+            storagePath: cloudPath || relPath,
             uploadDate: new Date().toISOString(),
             fileSize: file.size,
             mimeType: file.mimetype,
@@ -712,11 +749,14 @@ const uploadClientDocuments = async (req, res, next) => {
             console.log(`✅ Verified: ${config.prefix} document exists on disk`);
           }
           
+          const relPath = `Client-Documents/${config.folder}/${fileName}`;
+          const cloudPath = await uploadToFirebaseStorage(filePath, relPath, file.mimetype);
           uploadedDocuments[docType] = {
             filename: fileName,
             originalName: file.name,
             fullPath: filePath,
             relativePath: path.join('Client-Documents', config.folder, fileName),
+            storagePath: cloudPath || relPath,
             uploadDate: new Date().toISOString(),
             fileSize: file.size,
             mimeType: file.mimetype,

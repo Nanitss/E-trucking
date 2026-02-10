@@ -1,5 +1,12 @@
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+const UPLOAD_BASE = isCloudFunctions
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', 'uploads');
 
 const uploadDocument = (req, res, next) => {
   try {
@@ -9,7 +16,7 @@ const uploadDocument = (req, res, next) => {
 
     const file = req.files.document;
     const userType = req.body.userType || 'general';
-    const uploadPath = path.join(__dirname, '..', 'uploads', `${userType}-documents`);
+    const uploadPath = path.join(UPLOAD_BASE, `${userType}-documents`);
 
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadPath)) {
@@ -45,7 +52,7 @@ const uploadHelperDocuments = async (req, res, next) => {
       return next();
     }
 
-    const uploadPath = path.join(__dirname, '..', 'uploads', 'helper-documents');
+    const uploadPath = path.join(UPLOAD_BASE, 'helper-documents');
     console.log('Upload path:', uploadPath);
 
     // Create directory if it doesn't exist

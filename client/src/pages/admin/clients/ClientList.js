@@ -759,100 +759,94 @@ const ClientList = ({ currentUser }) => {
 
         {/* Client Details Modal */}
         {showDetailsModal && selectedClient && (
-          <div className="modal-overlay" onClick={closeDetailsModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>🏢 {selectedClient.ClientName} Details</h2>
-                <button className="modal-close-btn" onClick={closeDetailsModal}>
-                  ✕
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={closeDetailsModal}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[85vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-primary-50 to-blue-50 flex-shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-xl bg-primary-100 text-primary-600 flex items-center justify-center shadow-sm">
+                    <TbBuilding size={22} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900">{selectedClient.ClientName}</h2>
+                    <p className="text-xs text-gray-500">Client Details</p>
+                  </div>
+                </div>
+                <button onClick={closeDetailsModal} className="w-8 h-8 rounded-full bg-white/80 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition-colors shadow-sm">
+                  <TbX size={18} />
                 </button>
               </div>
 
-              <div className="modal-body">
-                <div className="details-grid">
-                  {/* Basic Information */}
-                  <div className="details-section">
-                    <h3>📋 Basic Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Client ID:</span>
-                        <span className="detail-value">
-                          {selectedClient.ClientID}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Client Name:</span>
-                        <span className="detail-value">
-                          {selectedClient.ClientName}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Email:</span>
-                        <span className="detail-value">
-                          {selectedClient.ClientEmail || "Not provided"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Phone Number:</span>
-                        <span className="detail-value">
-                          {selectedClient.ClientNumber || "Not provided"}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">User ID:</span>
-                        <span className="detail-value">
-                          {selectedClient.UserID || "Not linked"}
-                        </span>
-                      </div>
+              {/* Body */}
+              <div className="p-6 overflow-y-auto space-y-4 flex-1">
+                {/* Basic Information */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <TbUser size={14} /> Basic Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                      <span className="text-xs font-medium text-gray-500">Client ID</span>
+                      <span className="text-xs font-mono text-gray-700 bg-gray-100 px-2 py-0.5 rounded">{selectedClient.ClientID?.substring(0, 12)}...</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                      <span className="text-xs font-medium text-gray-500">Name</span>
+                      <span className="text-sm font-semibold text-gray-900">{selectedClient.ClientName}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                      <span className="text-xs font-medium text-gray-500">Email</span>
+                      <span className="text-sm text-gray-700">{selectedClient.ClientEmail || "Not provided"}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
+                      <span className="text-xs font-medium text-gray-500">Phone</span>
+                      <span className="text-sm font-medium text-gray-700">{selectedClient.ClientNumber || "Not provided"}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-xs font-medium text-gray-500">User ID</span>
+                      <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${selectedClient.UserID ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        {selectedClient.UserID ? "Linked" : "Not linked"}
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  {/* Status Information */}
-                  <div className="details-section">
-                    <h3>🚦 Status Information</h3>
-                    <div className="details-items">
-                      <div className="detail-item">
-                        <span className="detail-label">Current Status:</span>
-                        <span
-                          className={`detail-badge status-${selectedClient.ClientStatus?.toLowerCase() || "unknown"}`}
-                        >
-                          {formatStatus(selectedClient.ClientStatus)}
-                        </span>
-                      </div>
-                      <div className="detail-item">
-                        <span className="detail-label">Account Created:</span>
-                        <span className="detail-value">
-                          {selectedClient.ClientCreationDate
-                            ? new Date(
-                              selectedClient.ClientCreationDate,
-                            ).toLocaleDateString()
-                            : "Unknown"}
-                        </span>
-                      </div>
+                {/* Status Information */}
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <TbActivity size={14} /> Status Information
+                  </h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between py-1.5 border-b border-gray-100">
+                      <span className="text-xs font-medium text-gray-500">Current Status</span>
+                      <StatusBadge status={selectedClient.ClientStatus || "Active"} />
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-xs font-medium text-gray-500">Account Created</span>
+                      <span className="text-sm text-gray-700 flex items-center gap-1.5">
+                        <TbCalendar size={14} className="text-gray-400" />
+                        {selectedClient.ClientCreationDate
+                          ? new Date(selectedClient.ClientCreationDate).toLocaleDateString()
+                          : "Unknown"}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="modal-footer">
-                <Link
-                  to={`/admin/clients/edit/${selectedClient.ClientID}`}
-                  className="modern-btn modern-btn-primary"
-                >
-                  ✎ Edit Client
-                </Link>
-                <Link
-                  to={`/admin/clients/${selectedClient.ClientID}/trucks`}
-                  className="modern-btn modern-btn-secondary"
-                >
-                  🚛 Manage Trucks
-                </Link>
-                <button
-                  className="modern-btn modern-btn-secondary"
-                  onClick={closeDetailsModal}
-                >
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-end gap-2 flex-shrink-0">
+                <button onClick={closeDetailsModal}
+                  className="px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                   Close
                 </button>
+                <Link to={`/admin/clients/edit/${selectedClient.ClientID}`}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 shadow-sm">
+                  <TbEdit size={16} /> Edit Client
+                </Link>
+                <Link to={`/admin/clients/${selectedClient.ClientID}/trucks`}
+                  className="px-4 py-2 text-sm font-semibold text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors flex items-center gap-1.5 shadow-sm">
+                  <TbTruck size={16} /> Manage Trucks
+                </Link>
               </div>
             </div>
           </div>

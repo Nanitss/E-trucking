@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const admin = require("firebase-admin");
 const NotificationService = require("./NotificationService");
 const ReceiptService = require("./ReceiptService");
@@ -7,6 +8,9 @@ const { storageBucket } = require("../config/firebase");
 
 // Get Firestore database instance
 const db = admin.firestore();
+
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
 
 /**
  * PaymentProofService
@@ -25,9 +29,10 @@ const db = admin.firestore();
  */
 class PaymentProofService {
   constructor() {
-    // Use persistent folder within the project (persists across restarts)
-    // Path is relative to the functions directory: ../uploads/payment-proofs
-    this.basePath = path.join(__dirname, "..", "uploads", "payment-proofs");
+    // In Cloud Functions, /tmp is the only writable directory
+    this.basePath = isCloudFunctions
+      ? path.join(os.tmpdir(), "uploads", "payment-proofs")
+      : path.join(__dirname, "..", "uploads", "payment-proofs");
     this.useFirebaseStorage = false; // Force local storage for simplicity and persistence without config
 
     this.ensureBaseDirectory();
@@ -190,24 +195,60 @@ class PaymentProofService {
       const randomSuffix = Math.round(Math.random() * 1e9);
       const fileExt = path.extname(file.originalname).toLowerCase();
       const fileName = `proof_${clientId}_${timestamp}_${randomSuffix}${fileExt}`;
-      // Get persistent upload path
-      const uploadPath = this.getUploadPath(year, month);
-      const filePath = path.join(uploadPath, fileName);
-      const relativePath = path.relative(this.basePath, filePath);
 
-      // Save file to persistent storage
-      if (file.buffer) {
-        await fs.promises.writeFile(filePath, file.buffer);
-      } else if (file.path) {
-        await fs.promises.copyFile(file.path, filePath);
-        if (fs.existsSync(file.path)) {
-          await fs.promises.unlink(file.path);
+      let proofUrl = null;
+      let storageType = "local";
+      let relativePath = "";
+
+      // Try Firebase Storage first (persistent across deploys)
+      if (storageBucket) {
+        try {
+          const storagePath = `payment-proofs/${year}/${String(month).padStart(2, "0")}/${fileName}`;
+          const fileRef = storageBucket.file(storagePath);
+
+          const fileBuffer = file.buffer || (file.path ? await fs.promises.readFile(file.path) : null);
+          if (!fileBuffer) {
+            throw new Error("Invalid file object: missing buffer or path");
+          }
+
+          await fileRef.save(fileBuffer, {
+            metadata: {
+              contentType: file.mimetype,
+              metadata: { clientId, uploadedAt: now.toISOString() },
+            },
+          });
+
+          // Make the file publicly accessible and get URL
+          await fileRef.makePublic();
+          proofUrl = `https://storage.googleapis.com/${storageBucket.name}/${storagePath}`;
+          storageType = "firebase";
+          relativePath = storagePath;
+
+          console.log("✅ Proof file uploaded to Firebase Storage:", proofUrl);
+        } catch (storageError) {
+          console.error("⚠️ Firebase Storage upload failed, falling back to local:", storageError.message);
+          // Fall through to local storage
         }
-      } else {
-        throw new Error("Invalid file object: missing buffer or path");
       }
 
-      console.log("✅ Proof file saved to persistent storage:", fileName);
+      // Fallback to local storage if Firebase Storage failed
+      if (storageType === "local") {
+        const uploadPath = this.getUploadPath(year, month);
+        const filePath = path.join(uploadPath, fileName);
+        relativePath = path.relative(this.basePath, filePath);
+
+        if (file.buffer) {
+          await fs.promises.writeFile(filePath, file.buffer);
+        } else if (file.path) {
+          await fs.promises.copyFile(file.path, filePath);
+          if (fs.existsSync(file.path)) {
+            await fs.promises.unlink(file.path);
+          }
+        } else {
+          throw new Error("Invalid file object: missing buffer or path");
+        }
+        console.log("✅ Proof file saved to local storage:", fileName);
+      }
 
       // Create PaymentProof document
       const proofData = {
@@ -217,8 +258,8 @@ class PaymentProofService {
         proofFileName: fileName,
         proofFileType: file.mimetype,
         proofFileSize: file.size,
-        proofUrl: null, // Local storage only
-        storageType: "local",
+        proofUrl: proofUrl,
+        storageType: storageType,
         referenceNumber: referenceNumber || "",
         notes: notes || "",
         totalAmount: totalAmount,
@@ -470,7 +511,7 @@ class PaymentProofService {
 
   /**
    * Reject payment proof (Admin only)
-   * Resets deliveries to allow client to resubmit
+   * Sets deliveries to rejected - only admin can mark as paid after rejection
    */
   async rejectProof(proofId, adminId, adminUsername, rejectionReason) {
     try {
@@ -504,14 +545,12 @@ class PaymentProofService {
         rejectionReason: rejectionReason.trim(),
       });
 
-      // Reset deliveries to pending (allows client to resubmit)
+      // Set deliveries to rejected (client cannot re-pay; only admin can mark as paid)
       const batch = db.batch();
       for (const deliveryId of proof.deliveryIds) {
         const deliveryRef = db.collection("deliveries").doc(deliveryId);
         batch.update(deliveryRef, {
-          paymentStatus: "pending",
-          proofId: null,
-          proofUploadedAt: null,
+          paymentStatus: "rejected",
           proofRejectedAt: now,
           proofRejectionReason: rejectionReason.trim(),
           updated_at: now,
@@ -519,13 +558,43 @@ class PaymentProofService {
       }
       await batch.commit();
 
+      // Generate rejection notice PDF for the client
+      let rejectionNotice = null;
+      try {
+        const deliveries = [];
+        for (const deliveryId of proof.deliveryIds) {
+          const deliveryDoc = await db.collection("deliveries").doc(deliveryId).get();
+          if (deliveryDoc.exists) {
+            deliveries.push({ id: deliveryId, ...deliveryDoc.data() });
+          }
+        }
+
+        rejectionNotice = await ReceiptService.generateRejectionNotice(
+          { ...proof, id: proofId },
+          deliveries,
+          { id: adminId, username: adminUsername },
+          rejectionReason.trim()
+        );
+
+        // Update proof with rejection notice reference
+        await proofRef.update({
+          rejectionNoticeNumber: rejectionNotice.noticeNumber,
+          rejectionNoticeId: rejectionNotice.noticeId,
+        });
+
+        console.log("📄 Rejection notice generated:", rejectionNotice.noticeNumber);
+      } catch (pdfError) {
+        console.error("⚠️ Failed to generate rejection notice PDF:", pdfError);
+        // Don't throw - main operation succeeded
+      }
+
       // Send notification to client
       try {
         await NotificationService.createNotification({
           userId: proof.clientId,
           type: "payment",
           title: "Payment Proof Rejected ❌",
-          message: `Your payment proof was rejected. Reason: ${rejectionReason.trim()}. Please upload a new proof.`,
+          message: `Your payment proof was rejected. Reason: ${rejectionReason.trim()}. Please contact the administrator to resolve this issue. A rejection notice has been generated.`,
           entityType: "payment_proof",
           entityId: proofId,
           metadata: {
@@ -533,6 +602,7 @@ class PaymentProofService {
             deliveryIds: proof.deliveryIds,
             rejectionReason: rejectionReason.trim(),
             rejectedBy: adminUsername,
+            rejectionNoticeNumber: rejectionNotice?.noticeNumber || null,
           },
           priority: "high",
           actionRequired: true,
@@ -544,14 +614,15 @@ class PaymentProofService {
       }
 
       console.log(
-        `❌ Proof rejected. ${proof.deliveryIds.length} deliveries reset to pending.`,
+        `❌ Proof rejected. ${proof.deliveryIds.length} deliveries marked as rejected.`,
       );
 
       return {
         success: true,
         proofId: proofId,
         deliveriesUpdated: proof.deliveryIds.length,
-        message: `Payment proof rejected. Client can now submit a new proof.`,
+        rejectionNoticeNumber: rejectionNotice?.noticeNumber || null,
+        message: `Payment proof rejected. ${proof.deliveryIds.length} delivery(s) marked as rejected. Only admin can mark as paid.`,
       };
     } catch (error) {
       console.error("❌ Error rejecting proof:", error);

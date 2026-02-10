@@ -242,28 +242,26 @@ exports.deleteClient = async (req, res) => {
 // Helper Management
 exports.getAllHelpers = async (req, res) => {
   try {
-    const helpers = await db.collection('helpers').get();
-    const helpersData = helpers.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    res.json(helpersData);
+    const HelperService = require('../services/HelperService');
+    const helpers = await HelperService.getAllHelpers();
+    res.json(helpers);
   } catch (error) {
     console.error('Error getting all helpers:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 exports.getHelperById = async (req, res) => {
   try {
-    const helper = await db.collection('helpers').doc(req.params.id).get();
-    if (!helper.exists) {
-      return res.status(404).json({ message: 'Helper not found' });
-    }
-    res.json({ id: helper.id, ...helper.data() });
+    const HelperService = require('../services/HelperService');
+    const helper = await HelperService.getHelperById(req.params.id);
+    res.json(helper);
   } catch (error) {
     console.error('Error getting helper by ID:', error);
-    res.status(500).json({ message: 'Server error' });
+    if (error.message === 'Helper not found') {
+      return res.status(404).json({ message: 'Helper not found' });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

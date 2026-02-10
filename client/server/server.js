@@ -123,7 +123,7 @@ app.use(fileUpload({
   responseOnLimit: "File size limit has been reached (max 25MB)",
   createParentPath: true,
   useTempFiles: true, // Use temp files for large uploads
-  tempFileDir: path.join(__dirname, 'tmp'),
+  tempFileDir: path.join(os.tmpdir(), 'file-uploads'),
   debug: true,
   preserveExtension: true,
   safeFileNames: true

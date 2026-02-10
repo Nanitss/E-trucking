@@ -228,6 +228,38 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
+  // Periodic session validation - detect login from another browser
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+
+    const validateSession = async () => {
+      try {
+        const token = getFromStorage('token');
+        if (!token) return;
+
+        const response = await axios.get(getApiPath('/auth/validate-session'), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.data.valid) {
+          console.log('Session invalidated - logging out');
+          alert(response.data.message || 'Your session has been ended because you logged in from another device.');
+          logout();
+        }
+      } catch (err) {
+        if (err.response?.status === 401 && err.response?.data?.reason === 'SESSION_REPLACED') {
+          console.log('Session replaced by another login - forcing logout');
+          alert(err.response.data.message || 'Your account has been logged in from another device. You have been logged out.');
+          logout();
+        }
+      }
+    };
+
+    // Check every 30 seconds
+    const interval = setInterval(validateSession, 30000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated, currentUser]);
+
   const hasRole = role => {
     console.log('AuthContext: Checking role:', role, 'Current user role:', currentUser?.role);
     return currentUser?.role?.toLowerCase() === role.toLowerCase();

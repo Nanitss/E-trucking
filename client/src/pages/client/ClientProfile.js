@@ -187,7 +187,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
     if (checked) {
       // Select only pending/overdue payments (not paid or pending_verification)
       const selectablePayments = (billingData?.payments || []).filter(
-        (p) => p.status !== "paid" && p.status !== "pending_verification",
+        (p) => p.status !== "paid" && p.status !== "pending_verification" && p.status !== "rejected",
       );
       setSelectedDeliveries(
         selectablePayments.map((p) => p.id || p.deliveryId),
@@ -431,30 +431,14 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
         onBillingDataUpdate(billingDataToSet);
       }
 
-      // Fetch delivery data for active services count
-      try {
-        const deliveriesResponse = await axios.get(`/api/clients/deliveries`);
-        const deliveries = deliveriesResponse.data || [];
+      // Calculate rejected payments count from billing data
+      const rejectedCount = payments.filter(p => p.status === 'rejected').length;
+      const paidCount = payments.filter(p => p.status === 'paid').length;
 
-        const activeDeliveries = deliveries.filter(
-          (d) =>
-            d.DeliveryStatus === "pending" ||
-            d.DeliveryStatus === "in-progress",
-        ).length;
-
-        const completedDeliveries = deliveries.filter(
-          (d) => d.DeliveryStatus === "completed",
-        ).length;
-
-        setDeliveryData({
-          active: activeDeliveries,
-          completed: completedDeliveries,
-        });
-      } catch (deliveryErr) {
-        console.error("Error fetching delivery data:", deliveryErr);
-        // Use fallback data if delivery fetch fails
-        setDeliveryData({ active: 0, completed: 0 });
-      }
+      setDeliveryData({
+        active: rejectedCount,
+        completed: paidCount,
+      });
     } catch (err) {
       console.error("❌ Error fetching billing data:", err);
 
@@ -721,18 +705,18 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
           </div>
         </div>
 
-        {/* Active Services Card */}
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-md hover:border-blue-200">
+        {/* Rejected Payments Card */}
+        <div className={`bg-white p-6 rounded-xl border relative overflow-hidden group transition-all hover:-translate-y-1 hover:shadow-md ${deliveryData.active > 0 ? "border-red-200 shadow-red-100" : "border-gray-100 shadow-sm"}`}>
           <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center text-xl">
-              <FaTruck />
+            <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-xl ${deliveryData.active > 0 ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-400"}`}>
+              <FaExclamationTriangle />
             </div>
             <div>
               <h3 className="m-0 text-gray-500 text-sm font-semibold uppercase tracking-wider">
-                Active Services
+                Rejected Payments
               </h3>
-              <span className="text-xs text-blue-400 font-medium">
-                Current deliveries
+              <span className="text-xs text-red-400 font-medium">
+                Contact administrator
               </span>
             </div>
           </div>
@@ -741,7 +725,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
               {deliveryData.active}
             </span>
             <span className="text-xs text-green-600 font-medium">
-              {deliveryData.completed} completed
+              {deliveryData.completed} paid
             </span>
           </div>
         </div>
@@ -829,6 +813,7 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                   <option value="pending">Pending</option>
                   <option value="overdue">Overdue</option>
                   <option value="pending_verification">Pending Verification</option>
+                  <option value="rejected">Rejected</option>
                 </select>
               </div>
               <div className="flex flex-col gap-1">
@@ -875,7 +860,8 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                           (billingData?.payments || []).filter(
                             (p) =>
                               p.status !== "paid" &&
-                              p.status !== "pending_verification",
+                              p.status !== "pending_verification" &&
+                              p.status !== "rejected",
                           ).length
                       }
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
@@ -913,7 +899,11 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                     currentDate > dueDate && payment.status !== "paid";
 
                   // Determine actual status (override backend status if overdue by date)
-                  const actualStatus = isOverdueByDate
+                  // Don't override rejected status with overdue
+                  const isRejected = payment.status === "rejected";
+                  const actualStatus = isRejected
+                    ? "rejected"
+                    : isOverdueByDate
                     ? "overdue"
                     : payment.status;
                   const isOverdue = actualStatus === "overdue";
@@ -925,12 +915,14 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                   let rowClass =
                     "hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-none";
                   if (isOverdue) rowClass += " bg-red-50/30";
+                  if (isRejected) rowClass += " bg-red-50/20";
 
                   return (
                     <tr key={payment.id || index} className={rowClass}>
                       <td className="px-6 py-4 w-12 align-middle">
                         {payment.status !== "paid" &&
-                        payment.status !== "pending_verification" ? (
+                        payment.status !== "pending_verification" &&
+                        payment.status !== "rejected" ? (
                           <input
                             type="checkbox"
                             checked={selectedDeliveries.includes(
@@ -949,6 +941,13 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                             title="Awaiting admin verification - cannot be selected"
                           >
                             <FaClock className="text-blue-500 text-[10px]" />
+                          </div>
+                        ) : isRejected ? (
+                          <div
+                            className="w-4 h-4 rounded bg-red-100 border border-red-300 flex items-center justify-center cursor-not-allowed"
+                            title="Rejected - contact administrator"
+                          >
+                            <FaExclamationTriangle className="text-red-500 text-[10px]" />
                           </div>
                         ) : null}
                       </td>
@@ -1009,22 +1008,31 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                             className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider
                             ${isPaid ? "bg-emerald-100 text-emerald-700" : ""}
                             ${isOverdue ? "bg-red-100 text-red-700" : ""}
-                            ${isPending && !isPendingVerification ? "bg-amber-100 text-amber-700" : ""}
+                            ${isPending && !isPendingVerification && !isRejected ? "bg-amber-100 text-amber-700" : ""}
                             ${isPendingVerification ? "bg-blue-100 text-blue-700 border border-blue-200" : ""}
+                            ${isRejected ? "bg-red-100 text-red-700 border border-red-200" : ""}
                           `}
                           >
                             {isPaid && <FaCheckCircle />}
                             {isOverdue && <FaExclamationTriangle />}
-                            {isPending && !isPendingVerification && <FaClock />}
+                            {isPending && !isPendingVerification && !isRejected && <FaClock />}
                             {isPendingVerification && <FaClock />}
+                            {isRejected && <FaExclamationTriangle />}
                             {isPendingVerification
                               ? "Pending Approval"
+                              : isRejected
+                              ? "Rejected"
                               : actualStatus.charAt(0).toUpperCase() +
                                 actualStatus.slice(1)}
                           </span>
                           {isPendingVerification && (
                             <span className="text-[10px] text-blue-600 font-medium text-center">
                               Awaiting admin verification
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="text-[10px] text-red-600 font-medium text-center">
+                              Contact administrator
                             </span>
                           )}
                         </div>
@@ -1040,6 +1048,14 @@ const ModernBillingSection = ({ onBillingDataUpdate }) => {
                           >
                             <FaFileInvoiceDollar size={16} />
                           </button>
+                        )}
+                        {isRejected && (
+                          <span
+                            className="text-red-400 p-2 rounded-full cursor-default"
+                            title="Payment was rejected - no receipt available. Please contact administrator."
+                          >
+                            <FaExclamationTriangle size={14} />
+                          </span>
                         )}
                       </td>
                     </tr>
@@ -2030,6 +2046,18 @@ const ClientProfile = () => {
   // Handle date change with availability checking
   const handleDateChange = (e) => {
     const newDate = e.target.value;
+
+    // Enforce 24-hour minimum lead time
+    const now = new Date();
+    const minDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const selectedDate = new Date(newDate + "T00:00:00");
+    if (selectedDate < new Date(minDate.toISOString().split("T")[0] + "T00:00:00")) {
+      showWarning(
+        "Invalid Date",
+        "Bookings must be made at least 24 hours in advance. Please select a later date.",
+      );
+      return;
+    }
 
     // Check if selected date is booked for any selected truck
     if (
@@ -3371,7 +3399,7 @@ const ClientProfile = () => {
               onChange={handleDateChange}
               className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
               required
-              min={new Date().toISOString().split("T")[0]}
+              min={(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; })()}
               disabled={isCheckingAvailability}
             />
             {isCheckingAvailability && (
@@ -4734,7 +4762,7 @@ const ClientProfile = () => {
         )}
 
         {activeTab === "transactions" && (
-          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8 overflow-hidden">
+          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8">
             <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center">
               <h3 className="text-2xl font-bold text-blue-900 m-0">
                 Booking History
@@ -5069,7 +5097,7 @@ const ClientProfile = () => {
         )}
 
         {activeTab === "trucks" && (
-          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8 overflow-hidden">
+          <div className="bg-white rounded-2xl p-0 shadow-sm border border-amber-400/20 box-border w-full flex flex-col mb-8">
             <div className="bg-gradient-to-br from-white to-gray-50 border-b border-gray-100 p-8 flex justify-between items-center bg-white">
               <h3 className="text-2xl font-bold text-blue-900 m-0">
                 My Allocated Trucks ({allocatedTrucks.length})
@@ -5282,27 +5310,21 @@ const ClientProfile = () => {
                         truck.operationalStatus?.toLowerCase() ||
                         truck.OperationalStatus?.toLowerCase();
 
-                      // Check if truck is in an active delivery
-                      const isInActiveDelivery = deliveries.some(
-                        (delivery) =>
-                          delivery.TruckID === truck.TruckID &&
-                          (delivery.DeliveryStatus === "pending" ||
-                            delivery.DeliveryStatus === "in-progress"),
-                      );
-
                       // ALLOW BOOKING EVEN IF TRUCK HAS ACTIVE DELIVERY - date checking happens at booking time
                       // Only disable book button if truck is under maintenance or out of service
-                      const isAvailable =
-                        truckStatus !== "maintenance" &&
-                        truckStatus !== "out-of-service" &&
-                        operationalStatus !== "maintenance" &&
-                        operationalStatus !== "out-of-service";
+                      const isUnderMaintenance =
+                        truckStatus === "maintenance" ||
+                        truckStatus === "out-of-service" ||
+                        operationalStatus === "maintenance" ||
+                        operationalStatus === "out-of-service";
+                      const isAvailable = !isUnderMaintenance;
 
-                      // Determine status for display - show "In Use" if has active delivery
-                      const displayStatus = isInActiveDelivery
-                        ? "In Use"
+                      // Always show "Available" since trucks use date-based booking
+                      // Only show "Maintenance" if truck is actually under maintenance
+                      const displayStatus = isUnderMaintenance
+                        ? "Maintenance"
                         : "Available";
-                      const statusClass = isInActiveDelivery
+                      const statusClass = isUnderMaintenance
                         ? "busy"
                         : "available";
 
@@ -5344,11 +5366,7 @@ const ClientProfile = () => {
                                   onClick={() =>
                                     history.push("/client/book-truck")
                                   }
-                                  title={
-                                    isInActiveDelivery
-                                      ? "Book this truck (has active delivery but can be booked on different dates)"
-                                      : "Book this truck"
-                                  }
+                                  title="Book this truck"
                                 >
                                   <FaCalendarPlus />
                                 </button>

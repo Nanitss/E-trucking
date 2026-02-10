@@ -4,6 +4,7 @@ const {
   login,
   getCurrentUser,
   logout,
+  validateSession,
 } = require("../controllers/authController");
 const { authenticateJWT } = require("../middleware/auth");
 
@@ -21,6 +22,11 @@ router.get("/me", authenticateJWT, getCurrentUser);
 // @desc    Get current user (alias for /me)
 // @access  Private
 router.get("/current-user", authenticateJWT, getCurrentUser);
+
+// @route   GET /api/auth/validate-session
+// @desc    Check if current session is still valid (single-session enforcement)
+// @access  Private
+router.get("/validate-session", authenticateJWT, validateSession);
 
 // @route   POST /api/auth/logout
 // @desc    Log the user out and record the logout action

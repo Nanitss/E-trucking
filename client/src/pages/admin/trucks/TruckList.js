@@ -221,7 +221,22 @@ const TruckList = ({ currentUser }) => {
             IsInUse: hasActiveDelivery, // ✅ Based on actual deliveries
             NeedsMaintenance: truck.needsMaintenance === true,
             documents: truck.documents || {},
-            documentCompliance: truck.documentCompliance || null,
+            documentCompliance: (() => {
+              const docs = truck.documents || {};
+              const requiredDocs = ["orDocument", "crDocument", "insuranceDocument"];
+              const optionalDocs = ["licenseRequirement"];
+              const requiredCount = requiredDocs.filter((d) => docs[d]).length;
+              const optionalCount = optionalDocs.filter((d) => docs[d]).length;
+              let overallStatus = "incomplete";
+              if (requiredCount === 3) overallStatus = "complete";
+              else if (requiredCount > 0) overallStatus = "partial";
+              return {
+                documentCount: requiredCount + optionalCount,
+                requiredDocumentCount: requiredCount,
+                optionalDocumentCount: optionalCount,
+                overallStatus,
+              };
+            })(),
             licenseRequirements: truck.licenseRequirements || null,
           };
         });
@@ -420,7 +435,22 @@ const TruckList = ({ currentUser }) => {
               IsInUse: hasActiveDelivery, // ✅ Based on ACTUAL deliveries, not just status field
               NeedsMaintenance: truck.needsMaintenance === true,
               documents: truck.documents || {},
-              documentCompliance: truck.documentCompliance || null,
+              documentCompliance: (() => {
+                const docs = truck.documents || {};
+                const reqDocs = ["orDocument", "crDocument", "insuranceDocument"];
+                const optDocs = ["licenseRequirement"];
+                const reqCount = reqDocs.filter((d) => docs[d]).length;
+                const optCount = optDocs.filter((d) => docs[d]).length;
+                let status = "incomplete";
+                if (reqCount === 3) status = "complete";
+                else if (reqCount > 0) status = "partial";
+                return {
+                  documentCount: reqCount + optCount,
+                  requiredDocumentCount: reqCount,
+                  optionalDocumentCount: optCount,
+                  overallStatus: status,
+                };
+              })(),
               licenseRequirements: truck.licenseRequirements || null,
             };
           });

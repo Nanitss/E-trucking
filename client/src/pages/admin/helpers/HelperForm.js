@@ -34,18 +34,22 @@ const HelperForm = () => {
     name: "",
     contactNumber: "",
     address: "",
-    emergencyContact: "",
-    emergencyContactNumber: "",
     dateHired: "",
     status: "Active",
-    licenseType: "Class C",
-    licenseNumber: "",
-    licenseExpiryDate: "",
+    HelperDocuments: "",
     HelperUserName: "",
     HelperPassword: "",
+    licenseType: "Class C",
+    licenseNumber: "",
+    licenseRegistrationDate: "",
+    licenseExpiryDate: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    emergencyContactRelationship: "",
   });
 
   const [loading, setLoading] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState({
@@ -75,26 +79,36 @@ const HelperForm = () => {
 
         const helper = response.data;
 
+        const formatDateSafely = (dateValue) => {
+          if (!dateValue) return "";
+          try {
+            if (dateValue._seconds !== undefined) {
+              return new Date(dateValue._seconds * 1000).toISOString().split("T")[0];
+            }
+            const date = new Date(dateValue);
+            if (isNaN(date.getTime())) return "";
+            return date.toISOString().split("T")[0];
+          } catch (error) {
+            return "";
+          }
+        };
+
         setFormData({
           name: helper.name || helper.HelperName || "",
           contactNumber: helper.contactNumber || helper.HelperNumber || "",
           address: helper.address || helper.HelperAddress || "",
-          emergencyContact: helper.emergencyContact || "",
-          emergencyContactNumber: helper.emergencyContactNumber || "",
-          dateHired:
-            helper.dateHired || helper.HelperEmploymentDate
-              ? new Date(helper.dateHired || helper.HelperEmploymentDate)
-                .toISOString()
-                .split("T")[0]
-              : "",
+          dateHired: formatDateSafely(helper.dateHired || helper.HelperEmploymentDate),
           status: helper.status || helper.HelperStatus || "Active",
+          HelperDocuments: helper.HelperDocuments || "",
+          HelperUserName: helper.HelperUserName || "",
+          HelperPassword: "",
           licenseType: helper.licenseType || "Class C",
           licenseNumber: helper.licenseNumber || "",
-          licenseExpiryDate: helper.licenseExpiryDate
-            ? new Date(helper.licenseExpiryDate).toISOString().split("T")[0]
-            : "",
-          HelperUserName: helper.HelperUserName || "",
-          HelperPassword: "", // Always start with empty password for security
+          licenseRegistrationDate: formatDateSafely(helper.licenseRegistrationDate),
+          licenseExpiryDate: formatDateSafely(helper.licenseExpiryDate),
+          emergencyContactName: helper.emergencyContactName || helper.emergencyContact || "",
+          emergencyContactPhone: helper.emergencyContactPhone || helper.emergencyContactNumber || "",
+          emergencyContactRelationship: helper.emergencyContactRelationship || "",
         });
 
         // Set existing documents
@@ -176,12 +190,8 @@ const HelperForm = () => {
       const apiUrl = `${baseURL}/api/documents/view/${encodedPath}`;
 
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-      if (isImage) {
-        setPreviewDocument({ url: apiUrl, filename: filename, type: documentType });
-        setShowPreviewModal(true);
-      } else {
-        window.open(apiUrl, "_blank");
-      }
+      setPreviewDocument({ url: apiUrl, filename: filename, type: documentType, isImage });
+      setShowPreviewModal(true);
     } catch (error) {
       setError("Failed to view document. Please try again.");
     }
@@ -190,23 +200,27 @@ const HelperForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true);
       const formDataToSend = new FormData();
 
       formDataToSend.append("name", formData.name);
       formDataToSend.append("helperName", formData.name);
       formDataToSend.append("contactNumber", formData.contactNumber);
       formDataToSend.append("address", formData.address);
-      formDataToSend.append("emergencyContact", formData.emergencyContact || "");
-      formDataToSend.append("emergencyContactNumber", formData.emergencyContactNumber || "");
       formDataToSend.append("dateHired", formData.dateHired);
       formDataToSend.append("status", formData.status);
-      formDataToSend.append("licenseType", formData.licenseType);
-      formDataToSend.append("licenseNumber", formData.licenseNumber || "");
-      formDataToSend.append("licenseExpiryDate", formData.licenseExpiryDate || "");
+      formDataToSend.append("HelperDocuments", formData.HelperDocuments || "");
       formDataToSend.append("HelperUserName", formData.HelperUserName);
       if (formData.HelperPassword) {
         formDataToSend.append("HelperPassword", formData.HelperPassword);
       }
+      formDataToSend.append("licenseType", formData.licenseType);
+      formDataToSend.append("licenseNumber", formData.licenseNumber || "");
+      formDataToSend.append("licenseRegistrationDate", formData.licenseRegistrationDate || "");
+      formDataToSend.append("licenseExpiryDate", formData.licenseExpiryDate || "");
+      formDataToSend.append("emergencyContactName", formData.emergencyContactName || "");
+      formDataToSend.append("emergencyContactPhone", formData.emergencyContactPhone || "");
+      formDataToSend.append("emergencyContactRelationship", formData.emergencyContactRelationship || "");
 
       Object.entries(uploadedFiles).forEach(([key, file]) => {
         if (file) formDataToSend.append(key, file);
@@ -237,9 +251,10 @@ const HelperForm = () => {
 
       if (!isEditMode) {
         setFormData({
-          name: "", contactNumber: "", address: "", emergencyContact: "", emergencyContactNumber: "",
-          dateHired: "", status: "Active", licenseType: "Class C", licenseNumber: "",
-          licenseExpiryDate: "", HelperUserName: "", HelperPassword: "",
+          name: "", contactNumber: "", address: "", dateHired: "", status: "Active",
+          HelperDocuments: "", HelperUserName: "", HelperPassword: "",
+          licenseType: "Class C", licenseNumber: "", licenseRegistrationDate: "", licenseExpiryDate: "",
+          emergencyContactName: "", emergencyContactPhone: "", emergencyContactRelationship: "",
         });
         setUploadedFiles({ validId: null, barangayClearance: null, medicalCertificate: null, helperLicense: null });
         setDocumentErrors({});
@@ -254,6 +269,8 @@ const HelperForm = () => {
       } else {
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -317,10 +334,10 @@ const HelperForm = () => {
               <span className="text-sm font-medium">Uploaded</span>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
+              <button type="button" onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
                 <TbEye size={18} />
               </button>
-              <button onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
+              <button type="button" onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
                 <TbUpload size={18} />
               </button>
             </div>
@@ -400,7 +417,7 @@ const HelperForm = () => {
                 </div>
               </div>
             </div>
-            <div className="mb-6">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Address <span className="text-red-500">*</span></label>
               <div className="relative">
                 <TbMapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -408,30 +425,12 @@ const HelperForm = () => {
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact</label>
-                <div className="relative">
-                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input type="text" name="emergencyContact" value={formData.emergencyContact} onChange={handleChange} maxLength="100" placeholder="Emergency contact name"
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Emergency Contact Number</label>
-                <div className="relative">
-                  <TbPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input type="text" name="emergencyContactNumber" value={formData.emergencyContactNumber} onChange={handleChange} maxLength="20" placeholder="Emergency contact number"
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-                </div>
-              </div>
-            </div>
           </section>
 
           {/* Employment Information */}
           <section className="mb-10">
             {renderSectionHeader(<TbBriefcase size={24} />, "Employment Information", "Employment details and current status")}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Employment Date <span className="text-red-500">*</span></label>
                 <div className="relative">
@@ -450,13 +449,54 @@ const HelperForm = () => {
                   <option value="Terminated">Terminated</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Documents Notes (Optional)</label>
+                <div className="relative">
+                  <TbFileText className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="HelperDocuments" value={formData.HelperDocuments} onChange={handleChange} maxLength="255" placeholder="Additional notes"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Account Credentials */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbLock size={24} />, "Account Credentials", isEditMode ? "View and update helper username" : "Set up helper login credentials for the mobile app")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="HelperUserName" value={formData.HelperUserName} onChange={handleChange} required={!isEditMode} maxLength="50" placeholder="e.g. helper.juandelacruz"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+                {isEditMode && formData.HelperUserName && (
+                  <p className="mt-1 text-xs text-gray-500">Current username: <span className="font-medium">{formData.HelperUserName}</span></p>
+                )}
+              </div>
+              {!isEditMode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Password <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <TbLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input type="password" name="HelperPassword" value={formData.HelperPassword || ""} onChange={handleChange} required minLength={6} placeholder="Minimum 6 characters"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                  </div>
+                </div>
+              )}
+              {isEditMode && (
+                <div className="flex items-center">
+                  <p className="text-sm text-gray-500 italic">Password cannot be changed by admin. Helpers must update their own password through the mobile app.</p>
+                </div>
+              )}
             </div>
           </section>
 
           {/* License Information */}
           <section className="mb-10">
             {renderSectionHeader(<TbId size={24} />, "License Information", "Helper license details and qualifications")}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">License Type <span className="text-red-500">*</span></label>
                 <select name="licenseType" value={formData.licenseType} onChange={handleChange} required
@@ -465,7 +505,7 @@ const HelperForm = () => {
                   <option value="Class CE">Class CE</option>
                 </select>
                 <p className="mt-1 text-xs text-gray-500">
-                  {formData.licenseType === "Class C" ? "Can assist with mini trucks only" : "Can assist with all truck types"}
+                  {formData.licenseType === "Class C" ? "Can assist with mini trucks and 4 wheelers only" : "Can assist with all truck types"}
                 </p>
               </div>
               <div>
@@ -473,8 +513,18 @@ const HelperForm = () => {
                 <input type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleChange} placeholder="Enter license number"
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
               </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">License Expiry Date</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+                <div className="relative">
+                  <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="date" name="licenseRegistrationDate" value={formData.licenseRegistrationDate} onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
                 <div className="relative">
                   <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input type="date" name="licenseExpiryDate" value={formData.licenseExpiryDate} onChange={handleChange}
@@ -484,37 +534,31 @@ const HelperForm = () => {
             </div>
           </section>
 
-          {/* Account Credentials */}
+          {/* Emergency Contact */}
           <section className="mb-10">
-            {renderSectionHeader(<TbLock size={24} />, "Account Credentials", "Login credentials for the helper portal")}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {renderSectionHeader(<TbShieldCheck size={24} />, "Emergency Contact", "Contact person in case of emergency")}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
                 <div className="relative">
                   <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input type="text" name="HelperUserName" value={formData.HelperUserName} onChange={handleChange} required maxLength="50" placeholder="e.g. jdelacruz"
+                  <input type="text" name="emergencyContactName" value={formData.emergencyContactName} onChange={handleChange} placeholder="e.g. Maria Dela Cruz"
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                 </div>
               </div>
-              {!isEditMode && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Password <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <TbLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                    <input type="password" name="HelperPassword" value={formData.HelperPassword || ""} onChange={handleChange} required maxLength="255" placeholder="Minimum 6 characters"
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                <div className="relative">
+                  <TbPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="emergencyContactPhone" value={formData.emergencyContactPhone} onChange={handleChange} placeholder="e.g. +63 900 000 0000"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
                 </div>
-              )}
-              {isEditMode && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-2 text-sm text-blue-700">
-                    <TbLock size={16} />
-                    Password cannot be changed by admin. Helper must change their own password through their account settings.
-                  </div>
-                </div>
-              )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Relationship</label>
+                <input type="text" name="emergencyContactRelationship" value={formData.emergencyContactRelationship} onChange={handleChange} placeholder="e.g. Spouse, Parent"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+              </div>
             </div>
           </section>
 
@@ -535,9 +579,13 @@ const HelperForm = () => {
               className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2">
               <TbArrowLeft size={18} /> Cancel
             </button>
-            <button type="submit"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2">
-              <TbDeviceFloppy size={18} /> {isEditMode ? "Update Helper" : "Save Helper"}
+            <button type="submit" disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              {isSubmitting ? (
+                <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</>
+              ) : (
+                <><TbDeviceFloppy size={18} /> {isEditMode ? "Update Helper" : "Save Helper"}</>
+              )}
             </button>
           </div>
         </form>
@@ -556,8 +604,12 @@ const HelperForm = () => {
                 <TbX size={18} />
               </button>
             </div>
-            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center">
-              <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center" style={{ minHeight: "60vh" }}>
+              {previewDocument.isImage ? (
+                <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+              ) : (
+                <iframe src={previewDocument.url} title="Document Preview" className="w-full h-full rounded-lg shadow-lg bg-white" style={{ minHeight: "60vh" }} />
+              )}
             </div>
           </div>
         </div>

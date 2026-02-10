@@ -259,6 +259,7 @@ router.put('/:locationId', authenticateJWT, async (req, res) => {
     }
 
     // Update the location
+    // Note: serverTimestamp() cannot be used inside arrays in Firestore, use ISO string instead
     currentLocations[locationIndex] = {
       ...currentLocations[locationIndex],
       name: name.trim(),
@@ -271,7 +272,7 @@ router.put('/:locationId', authenticateJWT, async (req, res) => {
       operatingHours: operatingHours.trim(),
       accessInstructions: accessInstructions.trim(),
       isDefault,
-      updated_at: admin.firestore.FieldValue.serverTimestamp()
+      updated_at: new Date().toISOString()
     };
 
     // Save to database

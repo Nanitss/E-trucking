@@ -6,7 +6,7 @@ const { DOCUMENT_ROOT, getAbsolutePath } = require('../config/documentConfig');
 const FileUploadService = require('../services/FileUploadService');
 
 // Route to serve document files
-router.get('/view/:filePath(*)', (req, res) => {
+router.get('/view/:filePath(*)', async (req, res) => {
     try {
         // Get the relative file path from the URL parameter and decode it
         const relativePath = decodeURIComponent(req.params.filePath)
@@ -49,17 +49,16 @@ router.get('/view/:filePath(*)', (req, res) => {
         }
         
         // Log directory contents to help debug
-        console.log('Contents of document root:', fs.readdirSync(DOCUMENT_ROOT));
+        try {
+            console.log('Contents of document root:', fs.readdirSync(DOCUMENT_ROOT));
+        } catch (err) {
+            console.log('Could not read document root:', err.message);
+        }
 
         // Security check - make sure the resolved path is within DOCUMENT_ROOT
         if (!absolutePath.startsWith(DOCUMENT_ROOT)) {
             console.error('Security check failed - path is outside DOCUMENT_ROOT');
             return res.status(403).send('Access denied');
-        }
-
-        // Check if file exists
-        if (!fs.existsSync(absolutePath)) {
-            return res.status(404).send('File not found');
         }
 
         // Get file extension
@@ -77,14 +76,38 @@ router.get('/view/:filePath(*)', (req, res) => {
 
         // Set appropriate content type or default to octet-stream
         const contentType = contentTypes[ext] || 'application/octet-stream';
-        
-        // Set headers
-        res.setHeader('Content-Type', contentType);
-        res.setHeader('Content-Disposition', 'inline');
 
-        // Stream the file
-        const fileStream = fs.createReadStream(absolutePath);
-        fileStream.pipe(res);
+        // Check if file exists locally
+        if (fs.existsSync(absolutePath)) {
+            // Serve from local filesystem
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Content-Disposition', 'inline');
+            const fileStream = fs.createReadStream(absolutePath);
+            fileStream.pipe(res);
+        } else {
+            // Fall back to Firebase Storage
+            console.log(' Local file not found, trying Firebase Storage...');
+            try {
+                const { storageBucket } = require('../config/firebase');
+                if (!storageBucket) {
+                    return res.status(404).send('File not found');
+                }
+                // Use forward slashes for Storage path
+                const storagePath = relativePath.split(path.sep).join('/');
+                const storageFile = storageBucket.file(storagePath);
+                const [exists] = await storageFile.exists();
+                if (!exists) {
+                    console.log(' File not found in Firebase Storage either:', storagePath);
+                    return res.status(404).send('File not found');
+                }
+                res.setHeader('Content-Type', contentType);
+                res.setHeader('Content-Disposition', 'inline');
+                storageFile.createReadStream().pipe(res);
+            } catch (storageError) {
+                console.error(' Firebase Storage error:', storageError);
+                return res.status(404).send('File not found');
+            }
+        }
 
     } catch (error) {
         console.error('Error serving document:', error);

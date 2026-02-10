@@ -1386,20 +1386,24 @@ exports.createTruckRental = async (req, res) => {
     let availableHelpers = [];
     
     try {
-      // Get active drivers from the drivers collection
-      const driversSnapshot = await db.collection('drivers')
-        .where('DriverStatus', '==', 'active')
-        .get();
+      // Get active drivers from the drivers collection (case-insensitive check)
+      const allDriversSnapshot = await db.collection('drivers').get();
+      const activeDriverDocs = allDriversSnapshot.docs.filter(doc => {
+        const driverData = doc.data();
+        const status = (driverData.DriverStatus || driverData.driverStatus || driverData.status || '').toLowerCase();
+        return status === 'active' || status === 'available';
+      });
       
-      if (!driversSnapshot.empty) {
-        availableDrivers = driversSnapshot.docs.map(doc => ({
+      if (activeDriverDocs.length > 0) {
+        availableDrivers = activeDriverDocs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
         console.log(`✅ Found ${availableDrivers.length} active drivers for assignment`);
-        console.log('Available drivers:', availableDrivers.map(d => `${d.DriverName || d.driverName} (ID: ${d.id})`));
+        console.log('Available drivers:', availableDrivers.map(d => `${d.DriverName || d.driverName} (Status: ${d.DriverStatus || d.driverStatus}, ID: ${d.id})`));
       } else {
         console.log('⚠️ No active drivers found in drivers collection');
+        console.log('All driver statuses:', allDriversSnapshot.docs.map(d => `${d.data().DriverName || d.data().driverName}: "${d.data().DriverStatus || d.data().driverStatus || d.data().status}"`));
       }
       
       // Get active/available helpers from the helpers collection (case-insensitive status check)
@@ -1433,12 +1437,33 @@ exports.createTruckRental = async (req, res) => {
     console.log('Initial remaining drivers:', remainingDrivers.map(d => `${d.DriverName || d.driverName} (ID: ${d.id})`));
     console.log('Initial remaining helpers:', remainingHelpers.map(h => `${h.HelperName || h.helperName} (ID: ${h.id})`));
     
-    // Validate if we have enough drivers and helpers for all trucks - BUT ALLOW BOOKINGS TO PROCEED EVEN WITH SHORTAGES
+    // Validate if we have enough drivers for all trucks - BLOCK booking if no drivers available
     const trucksToBookCount = trucksToBook.length;
     
+    if (remainingDrivers.length === 0) {
+      console.log(`❌ No drivers available: Need ${trucksToBookCount}, but 0 drivers are active`);
+      return clearTimeoutAndError(400, {
+        success: false,
+        message: 'No drivers are available at the moment. Please try booking at a different time or contact your account manager.',
+        errorType: 'NO_DRIVERS_AVAILABLE',
+        details: {
+          driversNeeded: trucksToBookCount,
+          driversAvailable: 0
+        }
+      });
+    }
+    
     if (remainingDrivers.length < trucksToBookCount) {
-      console.log(`⚠️ Driver shortage: Need ${trucksToBookCount}, but only ${remainingDrivers.length} available - ALLOWING BOOKING TO PROCEED`);
-      console.log(`   - Some trucks will be marked as "awaiting_driver"`);
+      console.log(`❌ Driver shortage: Need ${trucksToBookCount}, but only ${remainingDrivers.length} available - BLOCKING BOOKING`);
+      return clearTimeoutAndError(400, {
+        success: false,
+        message: `Not enough drivers available. You need ${trucksToBookCount} driver(s) but only ${remainingDrivers.length} driver(s) are available. Please reduce the number of trucks or try booking at a different time.`,
+        errorType: 'INSUFFICIENT_DRIVERS',
+        details: {
+          driversNeeded: trucksToBookCount,
+          driversAvailable: remainingDrivers.length
+        }
+      });
     }
     
     if (remainingHelpers.length < trucksToBookCount) {
@@ -1451,6 +1476,17 @@ exports.createTruckRental = async (req, res) => {
     // Create combined date-time
     const deliveryDateTime = new Date(`${deliveryDate}T${deliveryTime}`);
     console.log('🕒 Delivery scheduled for:', deliveryDateTime);
+    
+    // Enforce 24-hour minimum lead time
+    const now = new Date();
+    const hoursUntilDelivery = (deliveryDateTime - now) / (1000 * 60 * 60);
+    if (hoursUntilDelivery < 24) {
+      console.log(`❌ Booking rejected: only ${hoursUntilDelivery.toFixed(1)} hours until delivery (minimum 24h required)`);
+      return clearTimeoutAndError(400, {
+        success: false,
+        message: 'Bookings must be made at least 24 hours before the delivery date and time. Please select a later date or time.'
+      });
+    }
     
     // Convert to Firestore timestamp for proper storage
     const deliveryDateTimestamp = admin.firestore.Timestamp.fromDate(deliveryDateTime);
@@ -1500,14 +1536,19 @@ exports.createTruckRental = async (req, res) => {
       const costDetails = await StaffService.calculateDeliveryCost(vehicleType, deliveryDistance, cargoWeight);
       
       deliveryRate = Math.round(costDetails.totalCost);
-      console.log(`💰 Calculated rate using vehicle rates: $${deliveryRate} per truck (Base: $${costDetails.baseRate}, Distance: ${deliveryDistance}km × $${costDetails.ratePerKm}/km = $${costDetails.kmCost})`);
+      // Store base rate and rate per km for separate display
+      var deliveryBaseRate = costDetails.baseRate || 0;
+      var deliveryRatePerKm = costDetails.ratePerKm || 0;
+      console.log(`💰 Calculated rate using vehicle rates: ₱${deliveryRate} per truck (Base: ₱${costDetails.baseRate}, Distance: ${deliveryDistance}km × ₱${costDetails.ratePerKm}/km = ₱${costDetails.kmCost})`);
       
     } catch (error) {
       console.warn('⚠️ Vehicle rate system failed, using fallback calculation:', error.message);
       
       // Fallback to old calculation method
       deliveryRate = Math.round(deliveryDistance * 2 + cargoWeight * 10);
-      console.log(`💰 Fallback rate: $${deliveryRate} per truck`);
+      var deliveryBaseRate = 0;
+      var deliveryRatePerKm = 0;
+      console.log(`💰 Fallback rate: ₱${deliveryRate} per truck`);
     }
     
     // Process each truck booking separately
@@ -1628,280 +1669,154 @@ exports.createTruckRental = async (req, res) => {
           continue;
         }
 
-        console.log(`✅ Truck ${truckId} is active - checking date availability...`);
+        console.log(`✅ Truck ${truckId} is active - checking time-window availability...`);
         
-        // DATE-BASED BOOKING CONFLICT CHECK
-        // Check if truck is already booked on the requested delivery date
-        const requestedDate = deliveryDate; // Format: YYYY-MM-DD
-        console.log(`📅 Checking if truck ${truckId} is available on ${requestedDate}...`);
-        console.log(`🔍 Query parameters:`);
-        console.log(`   - truckId: ${truckId}`);
-        console.log(`   - deliveryDateString: ${requestedDate}`);
+        // 12-HOUR COOLDOWN BOOKING CONFLICT CHECK
+        const requestedDate = deliveryDate;
+        const requestedDateTime = new Date(`${deliveryDate}T${deliveryTime}`);
+        const cooldownHours = 12;
+        const prevDate = new Date(requestedDateTime); prevDate.setDate(prevDate.getDate() - 1);
+        const nextDate = new Date(requestedDateTime); nextDate.setDate(nextDate.getDate() + 1);
+        const datesToCheck = [prevDate.toISOString().split('T')[0], requestedDate, nextDate.toISOString().split('T')[0]];
         
-        // Query with lowercase deliveryStatus
-        let existingBookingsSnapshot = await db.collection('deliveries')
-          .where('truckId', '==', truckId)
-          .where('deliveryDateString', '==', requestedDate)
-          .where('deliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up'])
-          .get();
-        
-        console.log(`📊 Query result (lowercase status): Found ${existingBookingsSnapshot.size} existing booking(s)`);
-        
-        // If no results with lowercase, try TitleCase DeliveryStatus
-        if (existingBookingsSnapshot.empty) {
-          existingBookingsSnapshot = await db.collection('deliveries')
-            .where('truckId', '==', truckId)
-            .where('deliveryDateString', '==', requestedDate)
-            .where('DeliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up'])
-            .get();
-          console.log(`📊 Query result (TitleCase status): Found ${existingBookingsSnapshot.size} existing booking(s)`);
+        let conflictFound = null;
+        for (const checkDate of datesToCheck) {
+          let snap = await db.collection('deliveries')
+            .where('truckId', '==', truckId).where('deliveryDateString', '==', checkDate)
+            .where('deliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up']).get();
+          if (snap.empty) {
+            snap = await db.collection('deliveries')
+              .where('truckId', '==', truckId).where('deliveryDateString', '==', checkDate)
+              .where('DeliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up']).get();
+          }
+          if (!snap.empty) {
+            for (const ds of snap.docs) {
+              const ex = ds.data();
+              let et;
+              if (ex.deliveryDate && ex.deliveryDate._seconds) { et = new Date(ex.deliveryDate._seconds * 1000); }
+              else if (ex.deliveryDate && typeof ex.deliveryDate.toDate === 'function') { et = ex.deliveryDate.toDate(); }
+              else if (ex.deliveryDateString) { et = new Date(ex.deliveryDateString + 'T12:00:00'); }
+              else { et = new Date(ex.deliveryDate); }
+              const hd = Math.abs(requestedDateTime - et) / (1000 * 60 * 60);
+              if (hd < cooldownHours) { conflictFound = { deliveryId: ds.id, clientId: ex.clientId, existingTime: et, hoursDiff: hd }; break; }
+            }
+          }
+          if (conflictFound) break;
         }
         
-        if (!existingBookingsSnapshot.empty) {
-          const existingBooking = existingBookingsSnapshot.docs[0].data();
-          const existingClientId = existingBooking.clientId;
-          const existingDeliveryId = existingBookingsSnapshot.docs[0].id;
-          
-          console.log(`❌ Truck ${truckId} (${truckData.truckPlate}) is already booked on ${requestedDate}`);
-          console.log(`   - Existing delivery ID: ${existingDeliveryId}`);
-          console.log(`   - Booked by client: ${existingClientId}`);
-          console.log(`   - Your client ID: ${clientId}`);
-          console.log(`   - Existing booking data:`, JSON.stringify(existingBooking, null, 2));
-          
-          // Check if it's the same client trying to book again
-          const isSameClient = existingClientId === clientId;
-          
+        if (conflictFound) {
+          const isSame = conflictFound.clientId === clientId;
+          const ets = conflictFound.existingTime.toLocaleString('en-PH');
           failedBookings.push({
-            truckId,
-            truckPlate: truckData.truckPlate,
-            reason: isSameClient 
-              ? `You already have this truck booked on ${requestedDate}`
-              : `This truck is already booked by another client on ${requestedDate}. Please select a different date or truck.`,
-            conflictDate: requestedDate,
-            existingDeliveryId: existingDeliveryId
+            truckId, truckPlate: truckData.truckPlate,
+            reason: isSame ? `You already have this truck booked near this time (${ets}). Trucks need a 12-hour gap.`
+              : `This truck is already booked near this time (${ets}). Trucks require a 12-hour cooldown. Please select a different time or truck.`,
+            conflictDate: requestedDate, existingDeliveryId: conflictFound.deliveryId
           });
           continue;
         }
         
-        console.log(`✅ Truck ${truckId} is AVAILABLE on ${requestedDate} - proceeding with booking`);
-        
-        // Use Smart Allocation Service for license-based assignment
-        let driverName = "Not Assigned";
-        let helperName = "Not Assigned";
-        let assignedDriverId = null;
-        let assignedHelperId = null;
-        let allocationDetails = null;
-        
-        console.log(`🎯 Starting simplified allocation for truck type: ${truckData.truckType || truckData.TruckType || 'mini truck'}`);
-        
-        // Use simplified allocation - just assign any available driver and helper
+        // Allocate driver and helper with license-truck matching
+        let driverName = "Not Assigned", helperName = "Not Assigned";
+        let assignedDriverId = null, assignedHelperId = null;
+        let allocationDetails = { allocationScore: 0, method: 'none' };
         try {
-          // Get any available driver
-          const availableDrivers = await db.collection('drivers')
-            .where('DriverStatus', '==', 'active')
-            .limit(1)
-            .get();
+          const truckType = (truckData.truckType || truckData.TruckType || '').toLowerCase();
+          const isSmallTruck = truckType === 'mini truck' || truckType === '4 wheeler';
           
-          if (!availableDrivers.empty) {
-            const driver = availableDrivers.docs[0].data();
-            driverName = driver.DriverName || driver.driverName || 'Available Driver';
-            assignedDriverId = availableDrivers.docs[0].id;
-            console.log(`✅ Driver assigned: ${driverName}`);
-          }
-          
-          // Get any available helper - check for active status (case-insensitive)
-          const helpersSnapshot = await db.collection('helpers').get();
-          const activeHelpers = helpersSnapshot.docs.filter(doc => {
-            const helperData = doc.data();
-            // Check both HelperStatus and status fields (database has inconsistent naming)
-            const status = (helperData.HelperStatus || helperData.status || '').toLowerCase();
-            return status === 'active' || status === 'available';
+          // Fetch all active drivers
+          const ds = await db.collection('drivers').get();
+          const activeDs = ds.docs.filter(d => {
+            const st = (d.data().DriverStatus || d.data().driverStatus || d.data().status || '').toLowerCase();
+            return st === 'active' || st === 'available';
           });
           
-          if (activeHelpers.length > 0) {
-            const helper = activeHelpers[0].data();
-            helperName = helper.HelperName || helper.helperName || 'Available Helper';
-            assignedHelperId = activeHelpers[0].id;
-            console.log(`✅ Helper assigned: ${helperName} (Status: ${helper.HelperStatus || helper.status})`);
-          } else {
-            console.log(`⚠️ No active/available helpers found`);
+          // Match drivers based on license type:
+          // - Class C: can only drive mini truck or 4 wheeler
+          // - Class CE: can drive any truck
+          let matchedDriver = null;
+          for (const dDoc of activeDs) {
+            const dData = dDoc.data();
+            const licenseType = (dData.licenseType || '').toLowerCase();
+            if (isSmallTruck) {
+              // Small trucks accept Class C or Class CE
+              matchedDriver = dDoc;
+              break;
+            } else {
+              // Larger trucks require Class CE only
+              if (licenseType === 'class ce') {
+                matchedDriver = dDoc;
+                break;
+              }
+            }
           }
           
-          allocationDetails = {
-            allocationScore: 100,
-            method: 'simplified',
-            notes: 'Basic assignment without complex license validation'
-          };
+          if (matchedDriver) {
+            driverName = matchedDriver.data().DriverName || matchedDriver.data().driverName || 'Driver';
+            assignedDriverId = matchedDriver.id;
+            console.log(`✅ Matched driver: ${driverName} (license: ${matchedDriver.data().licenseType}) for truck type: ${truckType}`);
+          } else if (activeDs.length > 0) {
+            console.log(`⚠️ No license-matched driver found for ${truckType}. Active drivers available but none with correct license.`);
+          }
           
-          console.log(`✅ Simplified allocation successful for truck ${truckId}`);
-        } catch (allocationError) {
-          console.log(`⚠️ Simplified allocation failed, proceeding without driver/helper assignment: ${allocationError.message}`);
-          // Continue without driver/helper assignment
-        }
+          // Helpers are NOT restricted by license - assign any available helper
+          const hs = await db.collection('helpers').get();
+          const ah = hs.docs.filter(d => { const s = (d.data().HelperStatus || d.data().status || '').toLowerCase(); return s === 'active' || s === 'available'; });
+          if (ah.length > 0) { helperName = ah[0].data().HelperName || ah[0].data().helperName || 'Helper'; assignedHelperId = ah[0].id; }
+          allocationDetails = { allocationScore: matchedDriver ? 100 : 50, method: 'license_matched' };
+        } catch (ae) { console.log('⚠️ Allocation failed:', ae.message); }
         
-        // Use Firestore transaction to ensure data consistency for this truck
         const result = await db.runTransaction(async (transaction) => {
-          // Check if truck is already in use for another delivery - BUT ALLOW DUPLICATES FOR NOW
-          const activeDeliveriesSnapshot = await db.collection('deliveries')
-            .where('truckId', '==', truckId)
-            .where('deliveryStatus', 'in', ['pending', 'in-progress'])
-            .get();
-          
-          if (!activeDeliveriesSnapshot.empty) {
-            console.log(`⚠️ Truck ${truckId} has ${activeDeliveriesSnapshot.size} active deliveries - ALLOWING BOOKING TO PROCEED ANYWAY`);
-            // Don't throw error - allow booking to proceed
-          }
-          
-          // SIMPLIFIED LOGIC: Skip allocation checks - if truck is operationally active and free, allow booking
-          console.log(`✅ Truck ${truckId} passed availability check - proceeding with booking (allocation checks skipped)`);
-          
-          // Current timestamp that will be used for both created_at and booking date reference
-          const currentTimestamp = admin.firestore.Timestamp.fromDate(new Date());
-          
-          // Create delivery document reference first to get the ID
-          const deliveryRef = db.collection('deliveries').doc();
-          
-          // Prepare delivery data for this specific truck
-          const deliveryData = {
-            DeliveryID: deliveryRef.id, // Add DeliveryID field that matches document ID
-            clientId,
-            truckId: truckId,
-            pickupLocation,
-            pickupCoordinates: pickupCoordinates || null,
-            deliveryAddress: dropoffLocation,
-            dropoffLocation: dropoffLocation, // Add both for compatibility
-            dropoffCoordinates: dropoffCoordinates || null,
-            cargoWeight: actualCargoWeight, // Use the calculated cargo weight for this specific truck
-            totalCargoWeight: cargoWeight, // Store total cargo weight for reference
-            cargoDistribution: cargoDistribution, // Store the full distribution for reference
-            deliveryDate: deliveryDateTimestamp, // This is the date/time selected by client
-            deliveryDateString: deliveryDate, // Store date as string (YYYY-MM-DD) for conflict checking
-            deliveryStatus: 'pending', // Always start as pending
-            DeliveryStatus: 'pending', // Also set TitleCase for compatibility
-            driverStatus: assignedDriverId ? 'awaiting_approval' : 'awaiting_driver', // Driver needs approval first
-            helperStatus: assignedHelperId ? 'awaiting_approval' : 'awaiting_helper', // Helper needs approval first
-            // Add approval workflow statuses
-            driverApprovalStatus: assignedDriverId ? 'pending_driver_approval' : 'not_applicable', // Driver approval workflow
-            helperApprovalStatus: assignedHelperId ? 'pending_helper_approval' : 'not_applicable', // Helper approval workflow
-            created_at: currentTimestamp,
-            updated_at: admin.firestore.FieldValue.serverTimestamp(),
-            clientName: clientData.clientName,
-            truckPlate: truckData.truckPlate,
-            truckType: truckData.truckType,
-            truckBrand: truckData.truckBrand || 'Unknown',
-            modelYear: truckData.modelYear || null,
-            truckCapacity: truckData.truckCapacity || 0,
+          const ts = admin.firestore.Timestamp.fromDate(new Date());
+          const ref = db.collection('deliveries').doc();
+          const dd = {
+            DeliveryID: ref.id, clientId, truckId, pickupLocation,
+            pickupCoordinates: pickupCoordinates || null, deliveryAddress: dropoffLocation,
+            dropoffLocation, dropoffCoordinates: dropoffCoordinates || null,
+            cargoWeight: actualCargoWeight, totalCargoWeight: cargoWeight,
+            cargoDistribution, deliveryDate: deliveryDateTimestamp,
+            deliveryDateString: deliveryDate, deliveryStatus: 'pending', DeliveryStatus: 'pending',
+            driverStatus: assignedDriverId ? 'awaiting_approval' : 'awaiting_driver',
+            helperStatus: assignedHelperId ? 'awaiting_approval' : 'awaiting_helper',
+            driverApprovalStatus: assignedDriverId ? 'pending_driver_approval' : 'not_applicable',
+            helperApprovalStatus: assignedHelperId ? 'pending_helper_approval' : 'not_applicable',
+            created_at: ts, updated_at: admin.firestore.FieldValue.serverTimestamp(),
+            clientName: clientData.clientName, truckPlate: truckData.truckPlate,
+            truckType: truckData.truckType, truckBrand: truckData.truckBrand || 'Unknown',
+            modelYear: truckData.modelYear || null, truckCapacity: truckData.truckCapacity || 0,
             totalKilometers: truckData.totalKilometers || 0,
             totalCompletedDeliveries: truckData.totalCompletedDeliveries || 0,
             averageKmPerDelivery: truckData.averageKmPerDelivery || 0,
-            deliveryDistance: deliveryDistance, // Use the actual distance from frontend
-            estimatedDuration: estimatedDuration, // Use the actual duration from frontend
-            deliveryRate: deliveryRate,
-            driverName: driverName,
-            driverId: assignedDriverId,
-            helperName: helperName,
-            helperId: assignedHelperId,
-            // License validation and allocation information
-            allocationData: allocationDetails,
-            licenseValidated: true,
+            deliveryDistance, estimatedDuration, deliveryRate,
+            deliveryBaseRate: deliveryBaseRate || 0, deliveryRatePerKm: deliveryRatePerKm || 0,
+            driverName, driverId: assignedDriverId, helperName, helperId: assignedHelperId,
+            allocationData: allocationDetails, licenseValidated: true,
             driverLicenseType: assignedDriverId ? 'assigned' : 'not_assigned',
             helperLevels: assignedHelperId ? ['assigned'] : ['not_assigned'],
-            allocationScore: allocationDetails?.allocationScore || 0,
-            // Store comprehensive route information for map viewing
-            routeInfo: {
-              pickupLocation: pickupLocation,
-              dropoffLocation: dropoffLocation,
-              pickupCoordinates: pickupCoordinates,
-              dropoffCoordinates: dropoffCoordinates,
-              distance: deliveryDistance,
-              duration: estimatedDuration
-            },
-            // Store route data for easy access
-            RouteInfo: {
-              pickupLocation: pickupLocation,
-              dropoffLocation: dropoffLocation,
-              pickupCoordinates: pickupCoordinates,
-              dropoffCoordinates: dropoffCoordinates,
-              distance: deliveryDistance,
-              duration: estimatedDuration
-            },
-            // Contact information for pickup and dropoff
-            pickupContactPerson: pickupContactPerson || '',
-            pickupContactNumber: pickupContactNumber,
-            dropoffContactPerson: dropoffContactPerson || '',
-            dropoffContactNumber: dropoffContactNumber
+            allocationScore: allocationDetails.allocationScore || 0,
+            routeInfo: { pickupLocation, dropoffLocation, pickupCoordinates, dropoffCoordinates, distance: deliveryDistance, duration: estimatedDuration },
+            RouteInfo: { pickupLocation, dropoffLocation, pickupCoordinates, dropoffCoordinates, distance: deliveryDistance, duration: estimatedDuration },
+            pickupContactPerson: pickupContactPerson || '', pickupContactNumber,
+            dropoffContactPerson: dropoffContactPerson || '', dropoffContactNumber
           };
-          
-          // Create delivery record in Firestore
-          transaction.set(deliveryRef, deliveryData);
-          
-          console.log(`✅ Created delivery with conflict check fields:`);
-          console.log(`   - truckId: ${truckId}`);
-          console.log(`   - deliveryDateString: ${deliveryDate}`);
-          console.log(`   - deliveryStatus: pending`);
-          console.log(`   - clientId: ${clientId}`);
-          
-          // Update truck status to 'on-delivery' when booked - truck goes into delivery mode immediately
-          transaction.update(db.collection('trucks').doc(truckId), {
-            truckStatus: 'on-delivery', // Set to on-delivery when booked for delivery
-            activeDelivery: true, // Track that it's actively being used for delivery
-            currentDeliveryId: deliveryRef.id, // Track which delivery it's being used for
-            updated_at: admin.firestore.FieldValue.serverTimestamp()
-          });
-          
-          console.log(`✅ Truck ${truckId} set to 'on-delivery' when booked for delivery`);
-          
-          // Keep the allocation active so truck remains assigned to client
-          // The allocation will be maintained throughout the delivery process
-          
-          // Update driver status to 'on-delivery' if assigned
-          if (assignedDriverId) {
-            transaction.update(db.collection('drivers').doc(assignedDriverId), {
-              DriverStatus: 'on-delivery',
-              updated_at: admin.firestore.FieldValue.serverTimestamp()
-            });
-            console.log(`✅ Updated driver ${driverName} status to 'on-delivery'`);
-          }
-          
-          // Update helper status to 'on-delivery' if assigned
-          if (assignedHelperId) {
-            transaction.update(db.collection('helpers').doc(assignedHelperId), {
-              HelperStatus: 'on-delivery',
-              updated_at: admin.firestore.FieldValue.serverTimestamp()
-            });
-            console.log(`✅ Updated helper ${helperName} status to 'on-delivery'`);
-          }
-          
-          // Return delivery ID
-          return { deliveryId: deliveryRef.id };
+          transaction.set(ref, dd);
+          transaction.update(db.collection('trucks').doc(truckId), { currentDeliveryId: ref.id, updated_at: admin.firestore.FieldValue.serverTimestamp() });
+          if (assignedDriverId) { transaction.update(db.collection('drivers').doc(assignedDriverId), { DriverStatus: 'on-delivery', updated_at: admin.firestore.FieldValue.serverTimestamp() }); }
+          if (assignedHelperId) { transaction.update(db.collection('helpers').doc(assignedHelperId), { HelperStatus: 'on-delivery', updated_at: admin.firestore.FieldValue.serverTimestamp() }); }
+          return { deliveryId: ref.id };
         });
         
-        console.log(`✅ Delivery created successfully for truck ${truckId}:`, result.deliveryId);
-        
-        // Allocation tracking completed
-        console.log(`📝 Allocation tracking completed for delivery ${result.deliveryId}`);
-        
-        // Get the created delivery to add to response
-        const deliveryDoc = await db.collection('deliveries').doc(result.deliveryId).get();
-        const deliveryData = deliveryDoc.data();
-        
+        console.log(`✅ Delivery created for truck ${truckId}: ${result.deliveryId}`);
+        const cDoc = await db.collection('deliveries').doc(result.deliveryId).get();
         createdDeliveries.push({
-          deliveryId: result.deliveryId,
-          truckId: truckId,
-          truckPlate: truckData.truckPlate,
-          driverName: driverName,
-          helperName: helperName,
-          deliveryData: deliveryData,
-          allocationScore: allocationDetails.allocationScore,
-          licenseValidated: true
+          deliveryId: result.deliveryId, truckId, truckPlate: truckData.truckPlate,
+          driverName, helperName, deliveryData: cDoc.data(),
+          allocationScore: allocationDetails.allocationScore, licenseValidated: true
         });
         
       } catch (error) {
         console.error(`❌ Error creating delivery for truck ${truckId}:`, error);
-        failedBookings.push({
-          truckId,
-          reason: error.message || 'Server error processing truck rental request'
-        });
+        failedBookings.push({ truckId, reason: error.message || 'Server error' });
       }
     }
     
@@ -2406,16 +2321,69 @@ exports.rebookDelivery = async (req, res) => {
     }
     
     // Check if delivery can be modified (not started) - handle both field name conventions
-    const deliveryStatus = (deliveryData.status || deliveryData.DeliveryStatus || '').toLowerCase();
-    if (deliveryStatus === 'in_progress' || deliveryStatus === 'in-progress' || deliveryStatus === 'completed') {
+    const deliveryStatus = (deliveryData.status || deliveryData.DeliveryStatus || deliveryData.deliveryStatus || '').toLowerCase();
+    if (deliveryStatus === 'in_progress' || deliveryStatus === 'in-progress' || deliveryStatus === 'completed' || deliveryStatus === 'delivered') {
       return res.status(400).json({
         success: false,
-        message: 'Cannot rebook delivery that has already started'
+        message: 'Cannot rebook delivery that has already started or been completed'
       });
     }
     
-    // Update delivery date and time - write both field name conventions for compatibility
+    // Enforce 24-hour minimum lead time
     const newDateObj = new Date(`${deliveryDate}T${deliveryTime}`);
+    const now = new Date();
+    const hoursUntilDelivery = (newDateObj - now) / (1000 * 60 * 60);
+    if (hoursUntilDelivery < 24) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rescheduled deliveries must be at least 24 hours from now. Please select a later date or time.'
+      });
+    }
+    
+    // 12-HOUR COOLDOWN CHECK for the truck
+    const truckId = deliveryData.truckId;
+    if (truckId) {
+      const cooldownHours = 12;
+      const prevDate = new Date(newDateObj); prevDate.setDate(prevDate.getDate() - 1);
+      const nextDate = new Date(newDateObj); nextDate.setDate(nextDate.getDate() + 1);
+      const datesToCheck = [prevDate.toISOString().split('T')[0], deliveryDate, nextDate.toISOString().split('T')[0]];
+      
+      let conflictFound = null;
+      for (const checkDate of datesToCheck) {
+        let snap = await db.collection('deliveries')
+          .where('truckId', '==', truckId).where('deliveryDateString', '==', checkDate)
+          .where('deliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up']).get();
+        if (snap.empty) {
+          snap = await db.collection('deliveries')
+            .where('truckId', '==', truckId).where('deliveryDateString', '==', checkDate)
+            .where('DeliveryStatus', 'in', ['pending', 'in-progress', 'started', 'picked-up']).get();
+        }
+        if (!snap.empty) {
+          for (const ds of snap.docs) {
+            if (ds.id === id) continue; // Skip the current delivery being rescheduled
+            const ex = ds.data();
+            let et;
+            if (ex.deliveryDate && ex.deliveryDate._seconds) { et = new Date(ex.deliveryDate._seconds * 1000); }
+            else if (ex.deliveryDate && typeof ex.deliveryDate.toDate === 'function') { et = ex.deliveryDate.toDate(); }
+            else if (ex.deliveryDateString) { et = new Date(ex.deliveryDateString + 'T12:00:00'); }
+            else { et = new Date(ex.deliveryDate); }
+            const hd = Math.abs(newDateObj - et) / (1000 * 60 * 60);
+            if (hd < cooldownHours) { conflictFound = { deliveryId: ds.id, existingTime: et, hoursDiff: hd }; break; }
+          }
+        }
+        if (conflictFound) break;
+      }
+      
+      if (conflictFound) {
+        const ets = conflictFound.existingTime.toLocaleString('en-PH');
+        return res.status(400).json({
+          success: false,
+          message: `This truck is already booked near that time (${ets}). Trucks require a 12-hour cooldown between bookings. Please select a different time.`
+        });
+      }
+    }
+    
+    // Update delivery date and time - write both field name conventions for compatibility
     await db.collection('deliveries').doc(id).update({
       deliveryDate: newDateObj,
       DeliveryDate: newDateObj,

@@ -1,9 +1,22 @@
-// src/pages/admin/clients/ClientTruckAllocation.js - Enhanced with improved design
+// src/pages/admin/clients/ClientTruckAllocation.js - Modern Tailwind UI
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useHistory, Link } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../config/api";
+import {
+  TbTruck,
+  TbArrowLeft,
+  TbCheck,
+  TbX,
+  TbFilter,
+  TbFilterOff,
+  TbAlertTriangle,
+  TbCircleCheck,
+  TbTrash,
+  TbPlus,
+  TbLoader2,
+} from "react-icons/tb";
 
 const ClientTruckAllocation = () => {
   const { id } = useParams();
@@ -15,9 +28,11 @@ const ClientTruckAllocation = () => {
   const [availableTrucks, setAvailableTrucks] = useState([]);
   const [selectedTrucks, setSelectedTrucks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [allocating, setAllocating] = useState(false);
+  const [deallocating, setDeallocating] = useState(null);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
-  const [allocationType, setAllocationType] = useState("individual"); // 'individual' or 'byType'
+  const [allocationType, setAllocationType] = useState("individual");
   const [truckTypes, setTruckTypes] = useState([]);
   const [selectedType, setSelectedType] = useState("");
   const [quantity, setQuantity] = useState(1);
@@ -138,17 +153,17 @@ const ClientTruckAllocation = () => {
   // Allocate trucks to client
   const handleAllocateTrucks = async () => {
     if (allocationType === "individual" && selectedTrucks.length === 0) {
-      alert("Please select at least one truck to allocate");
+      setError("Please select at least one truck to allocate");
       return;
     }
 
     if (allocationType === "byType" && (!selectedType || quantity <= 0)) {
-      alert("Please select a truck type and specify a valid quantity");
+      setError("Please select a truck type and specify a valid quantity");
       return;
     }
 
     try {
-      setLoading(true);
+      setAllocating(true);
       setError(null);
 
       let truckIds;
@@ -179,7 +194,7 @@ const ClientTruckAllocation = () => {
         );
 
         if (availableQuantity < quantity) {
-          alert(
+          setError(
             `Only ${availableQuantity} trucks of type "${selectedType}" are available. Allocating all available.`,
           );
         }
@@ -190,7 +205,7 @@ const ClientTruckAllocation = () => {
           setError(
             `No trucks of type "${selectedType}" are available for allocation.`,
           );
-          setLoading(false);
+          setAllocating(false);
           return;
         }
       }
@@ -236,20 +251,16 @@ const ClientTruckAllocation = () => {
           : "Trucks allocated successfully!";
 
       setSuccessMessage(successMsg);
+      setTimeout(() => setSuccessMessage(""), 3000);
 
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      setLoading(false);
+      setAllocating(false);
     } catch (err) {
       console.error("❌ Error allocating trucks:", err);
       setError(
         "Failed to allocate trucks. Please try again. " +
         (err.response?.data?.message || err.message),
       );
-      setLoading(false);
+      setAllocating(false);
     }
   };
 
@@ -260,24 +271,20 @@ const ClientTruckAllocation = () => {
     }
 
     try {
-      setLoading(true);
+      setDeallocating(truckId);
 
       await axios.delete(`${baseURL}/api/clients/${id}/trucks/${truckId}`);
 
-      // Refresh data
       await refreshData();
 
       setSuccessMessage("Truck deallocated successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
 
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      setLoading(false);
+      setDeallocating(null);
     } catch (err) {
       console.error("Error deallocating truck:", err);
       setError("Failed to deallocate truck. Please try again.");
-      setLoading(false);
+      setDeallocating(null);
     }
   };
 
@@ -301,9 +308,8 @@ const ClientTruckAllocation = () => {
     }
 
     try {
-      setLoading(true);
+      setDeallocating(`type-${type}`);
 
-      // Deallocate each truck
       const promises = trucksToRemove.map((truck) =>
         axios.delete(
           `${baseURL}/api/clients/${id}/trucks/${truck.id || truck.TruckID}`,
@@ -312,22 +318,18 @@ const ClientTruckAllocation = () => {
 
       await Promise.all(promises);
 
-      // Refresh data
       await refreshData();
 
       setSuccessMessage(
         `${trucksToRemove.length} truck(s) of type "${type}" deallocated successfully!`,
       );
+      setTimeout(() => setSuccessMessage(""), 3000);
 
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-
-      setLoading(false);
+      setDeallocating(null);
     } catch (err) {
       console.error("Error deallocating trucks:", err);
       setError("Failed to deallocate trucks. Please try again.");
-      setLoading(false);
+      setDeallocating(null);
     }
   };
 
@@ -404,329 +406,347 @@ const ClientTruckAllocation = () => {
 
   const summaryData = getSummaryData();
 
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case "available": return "bg-green-100 text-green-700 border-green-200";
+      case "allocated": return "bg-blue-100 text-blue-700 border-blue-200";
+      case "on-delivery": return "bg-orange-100 text-orange-700 border-orange-200";
+      case "maintenance": return "bg-yellow-100 text-yellow-700 border-yellow-200";
+      case "active": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      default: return "bg-gray-100 text-gray-700 border-gray-200";
+    }
+  };
+
   if (loading && !client) {
-    return <div className="loading">Loading data...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <TbLoader2 className="animate-spin text-primary-600" size={40} />
+          <p className="text-gray-500 font-medium">Loading truck allocation data...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error && !client) {
     return (
-      <div className="error-container">
-        <div className="error-message">
-          {error}
-          <div style={{ marginTop: "10px" }}>
-            <button onClick={() => window.location.reload()}>Retry</button>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md text-center">
+          <TbAlertTriangle className="text-red-500 mx-auto mb-4" size={48} />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Failed to Load</h2>
+          <p className="text-gray-500 mb-6">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-6 py-2.5 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors font-medium">
+            Retry
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-container">
-      <div className="page-header">
-        <div>
-          <h1>Truck Allocation - Shared Fleet Model</h1>
-          <p className="client-info">
-            Client: <strong>{client?.clientName || "Loading..."}</strong>
-          </p>
-          <p
-            className="client-info"
-            style={{ fontSize: "13px", color: "#6c757d", marginTop: "5px" }}
-          >
-            ℹ️ Trucks can be shared across multiple clients. Booking
-            restrictions apply by date - trucks cannot be booked by multiple
-            clients on the same day.
-          </p>
-        </div>
-        <Link to="/admin/clients" className="btn btn-secondary">
-          ← Back to Clients
-        </Link>
-      </div>
-
-      {error && (
-        <div className="error-message">
-          {error}
-          <button onClick={() => setError(null)} className="close-btn">
-            ×
-          </button>
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="success-message">
-          {successMessage}
-          <button onClick={() => setSuccessMessage("")} className="close-btn">
-            ×
-          </button>
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div className="status-summary">
-        <div className="status-card allocated">
-          <h3>{summaryData.totalAllocated}</h3>
-          <p>Allocated Trucks</p>
-        </div>
-        <div className="status-card available">
-          <h3>{summaryData.totalAvailable}</h3>
-          <p>Available Trucks</p>
-        </div>
-        <div className="status-card">
-          <h3>{truckTypes.length}</h3>
-          <p>Truck Types</p>
-        </div>
-      </div>
-
-      {/* Allocated Trucks Section */}
-      <div className="allocation-section">
-        <h2>Allocated Trucks</h2>
-
-        {allocatedTrucks.length === 0 ? (
-          <div className="no-data">No trucks allocated to this client yet.</div>
-        ) : (
-          <>
-            {/* Allocation Summary by Type */}
-            <div className="allocation-summary">
-              <h3>Allocation Summary by Type</h3>
-              <div className="summary-grid">
-                {summaryData.allocatedByType.map(([type, count]) => (
-                  <div className="summary-item" key={type}>
-                    <div className="summary-type">{type}</div>
-                    <div className="summary-count">{count} truck(s)</div>
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleDeallocateByType(type)}
-                      disabled={loading}
-                    >
-                      Deallocate All
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Allocated Trucks Table */}
-            <div className="table-responsive">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Truck ID</th>
-                    <th>Plate Number</th>
-                    <th>Type</th>
-                    <th>Capacity</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {allocatedTrucks.map((truck) => (
-                    <tr key={truck.id || truck.TruckID}>
-                      <td>{truck.id || truck.TruckID}</td>
-                      <td>{truck.truckPlate || truck.TruckPlate}</td>
-                      <td>{truck.truckType || truck.TruckType}</td>
-                      <td>{truck.truckCapacity || truck.TruckCapacity} tons</td>
-                      <td>
-                        <span
-                          className={`status-badge ${getStatusBadgeClass(truck.truckStatus || truck.TruckStatus)}`}
-                        >
-                          {formatStatus(truck.truckStatus || truck.TruckStatus)}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="action-btn delete-btn"
-                          onClick={() =>
-                            handleDeallocate(truck.id || truck.TruckID)
-                          }
-                          disabled={loading}
-                          title="Deallocate Truck"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Available Trucks Section */}
-      <div className="allocation-section">
-        <h2>Allocate New Trucks</h2>
-
-        {/* Allocation Type Selector */}
-        <div className="allocation-controls">
-          <div className="allocation-type-selector">
-            <label>
-              <input
-                type="radio"
-                value="individual"
-                checked={allocationType === "individual"}
-                onChange={(e) => setAllocationType(e.target.value)}
-              />
-              Select Individual Trucks
-            </label>
-            <label>
-              <input
-                type="radio"
-                value="byType"
-                checked={allocationType === "byType"}
-                onChange={(e) => setAllocationType(e.target.value)}
-              />
-              Allocate by Type
-            </label>
-          </div>
-        </div>
-
-        {allocationType === "byType" && (
-          <div className="type-allocation-controls">
-            <div className="form-group">
-              <label htmlFor="truckType">Truck Type:</label>
-              <select
-                id="truckType"
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-              >
-                {truckTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type} ({getAvailableTruckCountByType(type)} available)
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label htmlFor="quantity">Quantity:</label>
-              <input
-                type="number"
-                id="quantity"
-                min="1"
-                max={getAvailableTruckCountByType(selectedType)}
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value))}
-              />
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <TbTruck className="text-primary-600" size={24} />
+                Truck Allocation
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Client: <span className="font-semibold text-gray-800">{client?.clientName || client?.name || "—"}</span>
+              </p>
             </div>
             <button
-              className="btn btn-primary"
-              onClick={handleAllocateTrucks}
-              disabled={loading || !selectedType || quantity <= 0}
+              onClick={() => history.push("/admin/clients/clientlist")}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all flex items-center gap-2"
             >
-              Allocate {quantity} {selectedType} Truck(s)
+              <TbArrowLeft size={16} /> Back to Clients
             </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2 flex items-center gap-1">
+            ℹ️ Trucks can be shared across multiple clients. Booking restrictions apply by date.
+          </p>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+        {/* Alerts */}
+        {error && (
+          <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
+            <TbAlertTriangle size={20} />
+            <span className="text-sm font-medium flex-1">{error}</span>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-600"><TbX size={18} /></button>
+          </div>
+        )}
+        {successMessage && (
+          <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
+            <TbCircleCheck size={20} />
+            <span className="text-sm font-medium flex-1">{successMessage}</span>
+            <button onClick={() => setSuccessMessage("")} className="text-green-400 hover:text-green-600"><TbX size={18} /></button>
           </div>
         )}
 
-        {allocationType === "individual" && (
-          <>
-            {/* Filters */}
-            <div className="filters-container">
-              <div className="filter-group">
-                <label htmlFor="statusFilter">Status:</label>
-                <select
-                  id="statusFilter"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="available">Available (Not Allocated)</option>
-                  <option value="active">Active (Shared with Others)</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">
+                <TbTruck size={22} />
               </div>
-
-              <div className="filter-group">
-                <label htmlFor="typeFilter">Type:</label>
-                <select
-                  id="typeFilter"
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                >
-                  <option value="all">All Types</option>
-                  {truckTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{summaryData.totalAllocated}</p>
+                <p className="text-xs text-gray-500 font-medium">Allocated Trucks</p>
               </div>
-
-              <button
-                className="btn btn-secondary"
-                onClick={() => {
-                  setStatusFilter("all");
-                  setTypeFilter("all");
-                }}
-              >
-                Clear Filters
-              </button>
-
-              <button
-                className="btn btn-primary"
-                onClick={handleAllocateTrucks}
-                disabled={loading || selectedTrucks.length === 0}
-              >
-                Allocate Selected ({selectedTrucks.length})
-              </button>
             </div>
-
-            {/* Available Trucks Table */}
-            {filteredAvailableTrucks.length === 0 ? (
-              <div className="no-data">
-                No available trucks found matching the current filters.
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-100 text-green-600 flex items-center justify-center">
+                <TbCheck size={22} />
               </div>
-            ) : (
-              <div className="table-responsive">
-                <table className="data-table">
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{summaryData.totalAvailable}</p>
+                <p className="text-xs text-gray-500 font-medium">Available Trucks</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+                <TbFilter size={22} />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{truckTypes.length}</p>
+                <p className="text-xs text-gray-500 font-medium">Truck Types</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Allocated Trucks Section */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-base font-semibold text-gray-900">Allocated Trucks</h2>
+          </div>
+
+          {allocatedTrucks.length === 0 ? (
+            <div className="p-12 text-center">
+              <TbTruck className="mx-auto text-gray-300 mb-3" size={48} />
+              <p className="text-gray-500 font-medium">No trucks allocated to this client yet.</p>
+              <p className="text-xs text-gray-400 mt-1">Use the section below to allocate trucks.</p>
+            </div>
+          ) : (
+            <>
+              {/* Allocation Summary by Type */}
+              <div className="px-6 py-3 bg-gray-50 border-b border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Summary by Type</p>
+                <div className="flex flex-wrap gap-2">
+                  {summaryData.allocatedByType.map(([type, count]) => (
+                    <div key={type} className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 px-3 py-1.5">
+                      <span className="text-sm font-medium text-gray-700">{type}</span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold">{count}</span>
+                      <button
+                        onClick={() => handleDeallocateByType(type)}
+                        disabled={deallocating === `type-${type}`}
+                        className="text-red-400 hover:text-red-600 hover:bg-red-50 rounded p-0.5 transition-colors disabled:opacity-50"
+                        title={`Deallocate all ${type}`}
+                      >
+                        {deallocating === `type-${type}` ? <TbLoader2 className="animate-spin" size={14} /> : <TbTrash size={14} />}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Allocated Trucks Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full">
                   <thead>
-                    <tr>
-                      <th>Select</th>
-                      <th>Truck ID</th>
-                      <th>Plate Number</th>
-                      <th>Type</th>
-                      <th>Capacity</th>
-                      <th>Status</th>
+                    <tr className="bg-gray-50 text-left">
+                      <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Plate</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Capacity</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {filteredAvailableTrucks.map((truck) => (
-                      <tr key={truck.id || truck.TruckID}>
-                        <td className="checkbox-cell">
-                          <input
-                            type="checkbox"
-                            checked={selectedTrucks.includes(
-                              truck.id || truck.TruckID,
-                            )}
-                            onChange={() =>
-                              handleTruckSelection(truck.id || truck.TruckID)
-                            }
-                            disabled={loading}
-                          />
-                        </td>
-                        <td>{truck.id || truck.TruckID}</td>
-                        <td>{truck.truckPlate || truck.TruckPlate}</td>
-                        <td>{truck.truckType || truck.TruckType}</td>
-                        <td>
-                          {truck.truckCapacity || truck.TruckCapacity} tons
-                        </td>
-                        <td>
-                          <span
-                            className={`status-badge ${getStatusBadgeClass(truck.truckStatus || truck.TruckStatus)}`}
-                          >
-                            {formatStatus(
-                              truck.truckStatus || truck.TruckStatus,
-                            )}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody className="divide-y divide-gray-100">
+                    {allocatedTrucks.map((truck) => {
+                      const truckId = truck.id || truck.TruckID;
+                      return (
+                        <tr key={truckId} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-3">
+                            <span className="font-mono text-sm font-semibold text-gray-800">{truck.truckPlate || truck.TruckPlate}</span>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-600">{truck.truckType || truck.TruckType}</td>
+                          <td className="px-6 py-3 text-sm text-gray-600">{truck.truckCapacity || truck.TruckCapacity} tons</td>
+                          <td className="px-6 py-3">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(truck.truckStatus || truck.TruckStatus)}`}>
+                              {formatStatus(truck.truckStatus || truck.TruckStatus)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-right">
+                            <button
+                              onClick={() => handleDeallocate(truckId)}
+                              disabled={deallocating === truckId}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+                            >
+                              {deallocating === truckId ? <TbLoader2 className="animate-spin" size={14} /> : <TbTrash size={14} />}
+                              {deallocating === truckId ? "Removing..." : "Remove"}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+            </>
+          )}
+        </div>
+
+        {/* Allocate New Trucks Section */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <TbPlus size={18} className="text-primary-600" /> Allocate New Trucks
+            </h2>
+          </div>
+
+          <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+            {/* Allocation Type Toggle */}
+            <div className="flex items-center gap-4 mb-4">
+              <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border text-sm font-medium transition-all ${allocationType === "individual" ? "bg-primary-50 border-primary-300 text-primary-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                <input type="radio" value="individual" checked={allocationType === "individual"} onChange={(e) => setAllocationType(e.target.value)} className="sr-only" />
+                <TbCheck size={16} /> Select Individual Trucks
+              </label>
+              <label className={`flex items-center gap-2 cursor-pointer px-4 py-2 rounded-lg border text-sm font-medium transition-all ${allocationType === "byType" ? "bg-primary-50 border-primary-300 text-primary-700" : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+                <input type="radio" value="byType" checked={allocationType === "byType"} onChange={(e) => setAllocationType(e.target.value)} className="sr-only" />
+                <TbFilter size={16} /> Allocate by Type
+              </label>
+            </div>
+
+            {allocationType === "byType" && (
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Truck Type</label>
+                  <select value={selectedType} onChange={(e) => setSelectedType(e.target.value)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 min-w-[200px]">
+                    {truckTypes.map((type) => (
+                      <option key={type} value={type}>{type} ({getAvailableTruckCountByType(type)} available)</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Quantity</label>
+                  <input type="number" min="1" max={getAvailableTruckCountByType(selectedType)} value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 w-24" />
+                </div>
+                <button onClick={handleAllocateTrucks} disabled={allocating || !selectedType || quantity <= 0}
+                  className="px-5 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm">
+                  {allocating ? <><TbLoader2 className="animate-spin" size={16} /> Allocating...</> : <><TbPlus size={16} /> Allocate {quantity} Truck(s)</>}
+                </button>
+              </div>
             )}
-          </>
-        )}
+
+            {allocationType === "individual" && (
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</label>
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 min-w-[180px]">
+                    <option value="all">All Status</option>
+                    <option value="available">Available</option>
+                    <option value="active">Active</option>
+                    <option value="maintenance">Maintenance</option>
+                  </select>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</label>
+                  <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
+                    className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 min-w-[160px]">
+                    <option value="all">All Types</option>
+                    {truckTypes.map((type) => (<option key={type} value={type}>{type}</option>))}
+                  </select>
+                </div>
+                {(statusFilter !== "all" || typeFilter !== "all") && (
+                  <button onClick={() => { setStatusFilter("all"); setTypeFilter("all"); }}
+                    className="px-3 py-2 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+                    <TbFilterOff size={16} /> Clear
+                  </button>
+                )}
+                <button onClick={handleAllocateTrucks} disabled={allocating || selectedTrucks.length === 0}
+                  className="px-5 py-2 bg-primary-600 text-white rounded-lg text-sm font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm ml-auto">
+                  {allocating ? <><TbLoader2 className="animate-spin" size={16} /> Allocating...</> : <><TbPlus size={16} /> Allocate Selected ({selectedTrucks.length})</>}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {allocationType === "individual" && (
+            <>
+              {filteredAvailableTrucks.length === 0 ? (
+                <div className="p-12 text-center">
+                  <TbTruck className="mx-auto text-gray-300 mb-3" size={40} />
+                  <p className="text-gray-500 font-medium">No available trucks matching filters.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50 text-left">
+                        <th className="px-6 py-3 w-12">
+                          <input type="checkbox"
+                            checked={selectedTrucks.length === filteredAvailableTrucks.length && filteredAvailableTrucks.length > 0}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTrucks(filteredAvailableTrucks.map(t => t.id || t.TruckID));
+                              } else {
+                                setSelectedTrucks([]);
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                        </th>
+                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Plate</th>
+                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Capacity</th>
+                        <th className="px-6 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {filteredAvailableTrucks.map((truck) => {
+                        const truckId = truck.id || truck.TruckID;
+                        const isSelected = selectedTrucks.includes(truckId);
+                        return (
+                          <tr key={truckId} onClick={() => handleTruckSelection(truckId)}
+                            className={`cursor-pointer transition-colors ${isSelected ? "bg-primary-50" : "hover:bg-gray-50"}`}>
+                            <td className="px-6 py-3">
+                              <input type="checkbox" checked={isSelected} readOnly
+                                className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 pointer-events-none" />
+                            </td>
+                            <td className="px-6 py-3">
+                              <span className="font-mono text-sm font-semibold text-gray-800">{truck.truckPlate || truck.TruckPlate}</span>
+                            </td>
+                            <td className="px-6 py-3 text-sm text-gray-600">{truck.truckType || truck.TruckType}</td>
+                            <td className="px-6 py-3 text-sm text-gray-600">{truck.truckCapacity || truck.TruckCapacity} tons</td>
+                            <td className="px-6 py-3">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(truck.truckStatus || truck.TruckStatus)}`}>
+                                {formatStatus(truck.truckStatus || truck.TruckStatus)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

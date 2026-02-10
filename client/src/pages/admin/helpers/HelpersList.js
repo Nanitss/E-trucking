@@ -141,7 +141,22 @@ const HelpersList = ({ currentUser }) => {
               licenseNumber: helper.licenseNumber || "",
               licenseExpiryDate: helper.licenseExpiryDate || "",
               documents: helper.documents || {},
-              documentCompliance: helper.documentCompliance || null,
+              documentCompliance: (() => {
+                const docs = helper.documents || {};
+                const requiredDocs = ["validId", "barangayClearance"];
+                const optionalDocs = ["medicalCertificate", "helperLicense"];
+                const requiredCount = requiredDocs.filter((d) => docs[d]).length;
+                const optionalCount = optionalDocs.filter((d) => docs[d]).length;
+                let overallStatus = "pending";
+                if (requiredCount === 2) overallStatus = "complete";
+                else if (requiredCount > 0) overallStatus = "incomplete";
+                return {
+                  documentCount: requiredCount + optionalCount,
+                  requiredDocumentCount: requiredCount,
+                  optionalDocumentCount: optionalCount,
+                  overallStatus,
+                };
+              })(),
             };
           });
 

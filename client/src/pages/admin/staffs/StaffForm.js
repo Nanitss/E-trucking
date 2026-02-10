@@ -36,6 +36,7 @@ const StaffForm = () => {
     StaffStatus: "active",
   });
   const [loading, setLoading] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -95,6 +96,7 @@ const StaffForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true);
       console.log(
         "Form submission:",
         isEditMode ? "UPDATE" : "CREATE",
@@ -153,6 +155,8 @@ const StaffForm = () => {
       } else {
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -326,9 +330,13 @@ const StaffForm = () => {
               className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2">
               <TbArrowLeft size={18} /> Cancel
             </button>
-            <button type="submit"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2">
-              <TbDeviceFloppy size={18} /> {isEditMode ? "Update Staff Member" : "Save Staff Member"}
+            <button type="submit" disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              {isSubmitting ? (
+                <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</>
+              ) : (
+                <><TbDeviceFloppy size={18} /> {isEditMode ? "Update Staff Member" : "Save Staff Member"}</>
+              )}
             </button>
           </div>
         </form>

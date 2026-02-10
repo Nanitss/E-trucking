@@ -62,6 +62,7 @@ const BookTruck = () => {
   const [availableTrucksForDate, setAvailableTrucksForDate] = useState([]);
   const [bookedDatesForTruck, setBookedDatesForTruck] = useState([]);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+  const [availabilityChecked, setAvailabilityChecked] = useState(false);
 
   // Warning modal hook
   const {
@@ -169,16 +170,19 @@ const BookTruck = () => {
   const checkAvailableTrucksForDate = async (selectedDate) => {
     try {
       setIsCheckingAvailability(true);
+      setAvailabilityChecked(false);
       const response = await axios.get(
         `/api/clients/trucks/availability?date=${selectedDate}`,
       );
       if (response.data.success) {
         setAvailableTrucksForDate(response.data.availableTruckIds || []);
       }
+      setAvailabilityChecked(true);
     } catch (error) {
       console.error("Error checking availability:", error);
       // Fallback to showing all trucks
       setAvailableTrucksForDate(allocatedTrucks.map((t) => t.TruckID));
+      setAvailabilityChecked(true);
     } finally {
       setIsCheckingAvailability(false);
     }
@@ -187,6 +191,19 @@ const BookTruck = () => {
   // Handle date change with availability checking
   const handleDateChange = (e) => {
     const newDate = e.target.value;
+
+    // Enforce 24-hour minimum lead time
+    const now = new Date();
+    const minDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const selectedDate = new Date(newDate + "T00:00:00");
+    if (selectedDate < new Date(minDate.toISOString().split("T")[0] + "T00:00:00")) {
+      showError(
+        "Invalid Date",
+        "Bookings must be made at least 24 hours in advance. Please select a later date.",
+      );
+      return;
+    }
+
     setBookingData((prev) => ({
       ...prev,
       deliveryDate: newDate,
@@ -240,7 +257,7 @@ const BookTruck = () => {
     });
 
     // Filter by date availability
-    if (bookingData.deliveryDate && availableTrucksForDate.length > 0) {
+    if (bookingData.deliveryDate && availabilityChecked) {
       availableTrucks = availableTrucks.filter((truck) =>
         availableTrucksForDate.includes(truck.TruckID),
       );
@@ -459,6 +476,35 @@ const BookTruck = () => {
       return;
     }
 
+    // Validate 24-hour minimum lead time
+    const deliveryDateTime = new Date(`${bookingData.deliveryDate}T${bookingData.deliveryTime || "00:00"}`);
+    const now = new Date();
+    const hoursUntilDelivery = (deliveryDateTime - now) / (1000 * 60 * 60);
+    if (hoursUntilDelivery < 24) {
+      showError(
+        "Booking Too Soon",
+        "Bookings must be made at least 24 hours before the delivery date and time. Please select a later date or time.",
+      );
+      return;
+    }
+
+    // Validate total capacity vs cargo weight
+    const cargoWeight = parseFloat(bookingData.weight) || 0;
+    if (cargoWeight > 0) {
+      const totalSelectedCapacity = bookingData.selectedTrucks
+        .map((id) => allocatedTrucks.find((t) => t.TruckID === id))
+        .filter((t) => t)
+        .reduce((sum, t) => sum + (parseFloat(t.TruckCapacity) || 0), 0);
+
+      if (totalSelectedCapacity < cargoWeight) {
+        showError(
+          "Insufficient Truck Capacity",
+          `Your cargo weighs ${cargoWeight} tons but the selected truck(s) can only carry ${totalSelectedCapacity} tons. Please select additional trucks or reduce your cargo weight.`,
+        );
+        return;
+      }
+    }
+
     // Show booking confirmation modal with summary
     setShowBookingConfirmation(true);
   };
@@ -525,7 +571,7 @@ const BookTruck = () => {
       );
     });
 
-    if (bookingData.deliveryDate && availableTrucksForDate.length > 0) {
+    if (bookingData.deliveryDate && availabilityChecked) {
       availableTrucks = availableTrucks.filter((truck) =>
         availableTrucksForDate.includes(truck.TruckID),
       );
@@ -624,13 +670,13 @@ const BookTruck = () => {
                     >
                       <div className="flex items-center gap-2">
                         <FaTruck className="text-blue-600" />
-                        <span className="font-medium">{truck.PlateNumber}</span>
+                        <span className="font-medium">{truck.TruckPlate || truck.PlateNumber || truck.TruckID}</span>
                         <span className="text-gray-500 text-sm">
-                          {truck.VehicleType || truck.vehicleType || "Truck"}
+                          {truck.TruckType || truck.VehicleType || truck.vehicleType || "Truck"}
                         </span>
                       </div>
                       <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        {truck.Capacity || truck.capacity} tons
+                        {truck.TruckCapacity || truck.Capacity || truck.capacity || "N/A"} tons
                       </span>
                     </div>
                   ))}
@@ -703,13 +749,13 @@ const BookTruck = () => {
                     <div>
                       <span className="text-gray-500">Distance:</span>
                       <span className="ml-2 font-medium">
-                        {routeDetails.distance}
+                        {routeDetails.distanceText}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-500">Duration:</span>
                       <span className="ml-2 font-medium">
-                        {routeDetails.duration}
+                        {routeDetails.durationText}
                       </span>
                     </div>
                     <div className="col-span-2">
@@ -961,7 +1007,7 @@ const BookTruck = () => {
                 onChange={handleDateChange}
                 className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
-                min={new Date().toISOString().split("T")[0]}
+                min={(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; })()}
                 disabled={isCheckingAvailability}
               />
               {isCheckingAvailability && (
@@ -969,11 +1015,17 @@ const BookTruck = () => {
                   🔍 Checking truck availability...
                 </small>
               )}
-              {bookingData.deliveryDate &&
+              {bookingData.deliveryDate && availabilityChecked &&
                 availableTrucksForDate.length > 0 && (
                   <small className="text-xs text-emerald-600 font-medium">
                     ✅ {availableTrucksForDate.length} truck(s) available on
                     this date
+                  </small>
+                )}
+              {bookingData.deliveryDate && availabilityChecked &&
+                availableTrucksForDate.length === 0 && (
+                  <small className="text-xs text-red-600 font-medium">
+                    ❌ No trucks available on this date — all are booked. Please select a different date.
                   </small>
                 )}
             </div>

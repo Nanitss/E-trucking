@@ -71,14 +71,11 @@ const DeliveryView = ({ currentUser }) => {
     if (delivery.TotalAmount && delivery.TotalAmount > 0) {
       return delivery.TotalAmount;
     }
+    // DeliveryRate is the total calculated cost (base + distance rate), not a per-km rate
     if (delivery.DeliveryRate && delivery.DeliveryRate > 0) {
-      if (delivery.DeliveryRate > 1000) {
-        return delivery.DeliveryRate;
-      }
+      return delivery.DeliveryRate;
     }
-    const distance = delivery.DeliveryDistance || 0;
-    const rate = delivery.DeliveryRate || 0;
-    return distance * rate;
+    return 0;
   };
 
   // Get timeline step status
@@ -220,13 +217,32 @@ const DeliveryView = ({ currentUser }) => {
                 <span className="metric-label">Duration</span>
               </div>
             )}
-            <div className="metric-item">
-              <span className="metric-icon">💰</span>
-              <span className="metric-value">
-                {formatCurrency(delivery.DeliveryRate)}
-              </span>
-              <span className="metric-label">Rate</span>
-            </div>
+            {(delivery.deliveryBaseRate || delivery.DeliveryBaseRate) ? (
+              <div className="metric-item">
+                <span className="metric-icon">🏷️</span>
+                <span className="metric-value">
+                  {formatCurrency(delivery.deliveryBaseRate || delivery.DeliveryBaseRate)}
+                </span>
+                <span className="metric-label">Base Price</span>
+              </div>
+            ) : null}
+            {(delivery.deliveryRatePerKm || delivery.DeliveryRatePerKm) ? (
+              <div className="metric-item">
+                <span className="metric-icon">�</span>
+                <span className="metric-value">
+                  {formatCurrency(delivery.deliveryRatePerKm || delivery.DeliveryRatePerKm)}/km
+                </span>
+                <span className="metric-label">Rate/KM</span>
+              </div>
+            ) : (
+              <div className="metric-item">
+                <span className="metric-icon">�💰</span>
+                <span className="metric-value">
+                  {formatCurrency(delivery.DeliveryRate)}
+                </span>
+                <span className="metric-label">Rate</span>
+              </div>
+            )}
             <div className="metric-item highlight">
               <span className="metric-icon">💵</span>
               <span className="metric-value">

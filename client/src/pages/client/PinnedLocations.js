@@ -45,6 +45,7 @@ const PinnedLocations = () => {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("name");
   const [showFilters, setShowFilters] = useState(false);
+  const [savingLocation, setSavingLocation] = useState(false);
 
   // Form state for add/edit modal
   const [formData, setFormData] = useState({
@@ -238,6 +239,7 @@ const PinnedLocations = () => {
         return;
       }
 
+      setSavingLocation(true);
       const token = localStorage.getItem("token");
       const url = showEditModal
         ? `${API_BASE_URL}/api/client/pinned-locations/${selectedLocation.id}`
@@ -276,6 +278,8 @@ const PinnedLocations = () => {
     } catch (error) {
       console.error("Error saving location:", error);
       showError("Save Failed", "Unable to save location. Please try again.");
+    } finally {
+      setSavingLocation(false);
     }
   };
 
@@ -435,8 +439,6 @@ const PinnedLocations = () => {
                 >
                   <option value="name">Sort by Name</option>
                   <option value="category">Sort by Category</option>
-                  <option value="lastUsed">Sort by Last Used</option>
-                  <option value="usageCount">Sort by Usage</option>
                 </select>
               </div>
             </div>
@@ -502,12 +504,6 @@ const PinnedLocations = () => {
                   </th>
                   <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
                     Contact
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
-                    Last Used
-                  </th>
-                  <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 whitespace-nowrap">
-                    Usage
                   </th>
                   <th className="px-6 py-4 text-left font-semibold text-sm text-gray-600 uppercase tracking-wide border-b-2 border-gray-200 rounded-tr-xl whitespace-nowrap">
                     Actions
@@ -578,22 +574,6 @@ const PinnedLocations = () => {
                         ) : (
                           <span className="text-gray-300 italic">-</span>
                         )}
-                      </td>
-                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <FaClock className="text-gray-400 text-sm" />
-                          <span>
-                            {location.lastUsed
-                              ? new Date(location.lastUsed).toLocaleDateString()
-                              : "Never"}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-5 text-gray-800 text-sm align-middle">
-                        <div className="flex items-center gap-2 text-gray-500">
-                          <FaEye className="text-gray-400 text-sm" />
-                          <span>{location.usageCount || 0} times</span>
-                        </div>
                       </td>
                       <td className="px-6 py-5 text-gray-800 text-sm align-middle last:rounded-br-xl">
                         <div className="flex gap-2 justify-end">
@@ -822,9 +802,12 @@ const PinnedLocations = () => {
               >
                 Cancel
               </button>
-              <button className={btnPrimary} onClick={handleSaveLocation}>
-                <FaCheck />{" "}
-                {showEditModal ? "Update Location" : "Save Location"}
+              <button className={btnPrimary} onClick={handleSaveLocation} disabled={savingLocation}>
+                {savingLocation ? (
+                  <><svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> {showEditModal ? "Updating..." : "Saving..."}</>
+                ) : (
+                  <><FaCheck /> {showEditModal ? "Update Location" : "Save Location"}</>
+                )}
               </button>
             </div>
           </div>

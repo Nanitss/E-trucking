@@ -3,12 +3,15 @@ const path = require('path');
 const os = require('os');
 const { db } = require('../config/firebase'); // Added for Firebase access
 
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+
 class SimpleFileScanner {
   constructor() {
-    // Use same path as documentUpload middleware: trucking-web-app/uploads/
-    // Current file: trucking-web-app/client/server/services/SimpleFileScanner.js
-    // Target: trucking-web-app/uploads/
-    this.basePath = path.join(__dirname, '..', '..', '..', 'uploads');
+    // In Cloud Functions, /tmp is the only writable directory
+    this.basePath = isCloudFunctions
+      ? path.join(os.tmpdir(), 'uploads')
+      : path.join(__dirname, '..', '..', '..', 'uploads');
     console.log('📁 SimpleFileScanner using path:', this.basePath);
     this.ensureBaseFolderExists();
   }

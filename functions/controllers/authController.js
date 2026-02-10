@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { db } = require("../config/firebase");
 const AuditService = require("../services/AuditService");
 
@@ -65,11 +66,27 @@ exports.login = async (req, res) => {
     }
     console.log("✅ User status is active");
 
-    // Create and return token
+    // Generate unique session ID for single-session enforcement
+    const sessionId = crypto.randomBytes(16).toString("hex");
+
+    // Store sessionId in user's Firestore doc (invalidates any previous session)
+    try {
+      await db.collection("users").doc(userDoc.id).update({
+        activeSessionId: sessionId,
+        lastLoginAt: new Date().toISOString(),
+      });
+      console.log("🔑 Session ID stored for single-session enforcement");
+    } catch (sessionError) {
+      console.error("⚠️ Error storing session ID:", sessionError);
+      // Continue login even if session storage fails
+    }
+
+    // Create and return token (include sessionId)
     const payload = {
       id: userDoc.id,
       username: user.username,
       role: user.role,
+      sessionId: sessionId,
     };
 
     console.log("🔏 Creating JWT token with payload:", payload);
@@ -155,6 +172,40 @@ exports.getCurrentUser = async (req, res) => {
   } catch (error) {
     console.error("❌ Server error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Validate session - checks if this session is still the active one
+exports.validateSession = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const tokenSessionId = req.user.sessionId;
+
+    // If token doesn't have sessionId (old tokens before this feature), allow it
+    if (!tokenSessionId) {
+      return res.json({ valid: true });
+    }
+
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(401).json({ valid: false, reason: "USER_NOT_FOUND" });
+    }
+
+    const userData = userDoc.data();
+    if (userData.activeSessionId && userData.activeSessionId !== tokenSessionId) {
+      console.log(`🚫 Session invalidated for user ${userId} - logged in from another device`);
+      return res.status(401).json({
+        valid: false,
+        reason: "SESSION_REPLACED",
+        message: "Your account has been logged in from another device. You have been logged out.",
+      });
+    }
+
+    return res.json({ valid: true });
+  } catch (error) {
+    console.error("❌ Error validating session:", error);
+    // Don't block on errors
+    return res.json({ valid: true });
   }
 };
 

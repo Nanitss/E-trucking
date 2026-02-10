@@ -137,9 +137,12 @@ router.get('/active-deliveries', authenticateJWT, async (req, res) => {
         'ongoing',
         'active'
       ];
+      const completedStatuses = ['completed', 'delivered'];
+      const isActive = activeStatuses.includes(status);
+      const isCompleted = completedStatuses.includes(status);
       
-      if (!activeStatuses.includes(status)) {
-        console.log(`⏭️ Skipping delivery ${deliveryId} - status: "${status}" (not active)`);
+      if (!isActive && !isCompleted) {
+        console.log(`⏭️ Skipping delivery ${deliveryId} - status: "${status}" (not trackable)`);
         continue;
       }
       
@@ -147,8 +150,8 @@ router.get('/active-deliveries', authenticateJWT, async (req, res) => {
       
       let gpsData = null;
       
-      // Try to get GPS data if truck ID exists
-      if (truckId && realtimeDb) {
+      // Only fetch live GPS data for active deliveries (not completed)
+      if (isActive && truckId && realtimeDb) {
         try {
           const gpsRef = realtimeDb.ref(`Trucks/${truckId}/data`);
           const gpsSnapshot = await gpsRef.once('value');
@@ -171,8 +174,10 @@ router.get('/active-deliveries', authenticateJWT, async (req, res) => {
         pickupLocation: delivery.pickupLocation,
         deliveryAddress: delivery.deliveryAddress,
         deliveryDate: delivery.deliveryDate,
+        pickupCoordinates: delivery.pickupCoordinates || null,
+        dropoffCoordinates: delivery.dropoffCoordinates || null,
         
-        // Current location
+        // Current location (null for completed deliveries)
         currentLocation: gpsData ? {
           lat: parseFloat(gpsData.lat),
           lng: parseFloat(gpsData.lon)

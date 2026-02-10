@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import { database } from "../../config/firebase";
 import { ref, onValue, off } from "firebase/database";
+import axios from "axios";
+import { useNotifications } from "../../context/NotificationContext";
 
-const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
-  console.log("🚀 LiveMapTracker component rendering", { deliveryId, truckId });
+const LiveMapTracker = ({ deliveryId, truckId, deliveryStatus, onClose }) => {
+  console.log("🚀 LiveMapTracker component rendering", { deliveryId, truckId, deliveryStatus });
+
+  // Determine if delivery is completed/delivered
+  const isDeliveryCompleted = ["completed", "delivered"].includes(
+    (deliveryStatus || "").toLowerCase().trim()
+  );
 
   const [location, setLocation] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -12,6 +19,14 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
   const [pickupLocation, setPickupLocation] = useState(null);
   const [dropoffLocation, setDropoffLocation] = useState(null);
   const [rejectedGPSCount, setRejectedGPSCount] = useState(0);
+  const [proximityStatus, setProximityStatus] = useState({
+    nearPickup: false,
+    reachedPickup: false,
+    leftPickup: false,
+    nearDropoff: false,
+    reachedDropoff: false,
+    leftDropoff: false,
+  });
   const hasInitialGPSFix = useRef(false); // Track if we've received first GPS update
   const lastValidLocation = useRef(null); // Store last valid GPS coordinates
   const rejectedGPSTimer = useRef(null);
@@ -28,6 +43,8 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
   const pathRef = useRef(null);
   const routeLineRef = useRef(null);
   const pathCoordinates = useRef([]);
+  const proximityRef = useRef({ nearPickup: false, reachedPickup: false, leftPickup: false, nearDropoff: false, reachedDropoff: false, leftDropoff: false });
+  const { addLocalNotification } = useNotifications() || {};
 
   useEffect(() => {
     console.log("🗺️ LiveMapTracker mounted");
@@ -52,8 +69,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
 
       const script = document.createElement("script");
       // Add callback parameter to prevent postMessage errors and use async loading
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY
-        }&callback=initGoogleMap&loading=async`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&callback=initGoogleMap&loading=async`;
       script.async = true;
       script.defer = true;
       script.onerror = () => {
@@ -90,6 +106,13 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
   }, [onClose]);
 
   useEffect(() => {
+    // For completed/delivered deliveries, don't subscribe to live GPS
+    if (isDeliveryCompleted) {
+      console.log("📋 Delivery is completed - showing route record only, no live GPS");
+      setLoading(false);
+      return;
+    }
+
     // IMPORTANT: Use main GPS device (truck_12345) for ALL deliveries
     // All trucks share the same GPS hardware device
     const mainTruckId = "truck_12345";
@@ -109,7 +132,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       const truckDataRef = ref(database, `Trucks/${mainTruckId}/data`);
       off(truckDataRef);
     };
-  }, [truckId]);
+  }, [truckId, isDeliveryCompleted]);
 
   const subscribeToTruckLocation = (truckId) => {
     // Read from ESP32 hardware path: /Trucks/{truckId}/data/
@@ -234,6 +257,9 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         setLoading(false);
         setError(null);
 
+        // Check proximity to pickup/dropoff for notifications
+        checkProximityNotifications(lat, lng);
+
         // Update map if initialized
         if (googleMapRef.current && window.google) {
           updateMapLocation(locationData);
@@ -332,6 +358,107 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
     return true;
   };
 
+  // Proximity detection: notify when truck is within 100m of pickup/dropoff
+  const checkProximityNotifications = async (lat, lng) => {
+    const deliveryData = window.currentDeliveryData;
+    if (!deliveryData) return;
+
+    const PROXIMITY_RADIUS_KM = 0.1; // 100 meters
+
+    // Get pickup/dropoff coords from delivery data or geocoded state
+    const pCoords = deliveryData.pickupCoordinates || pickupLocation;
+    const dCoords = deliveryData.dropoffCoordinates || dropoffLocation;
+
+    // Check pickup proximity
+    if (pCoords) {
+      const distToPickup = calculateDistance(lat, lng, pCoords.lat, pCoords.lng);
+      const isNearPickup = distToPickup <= PROXIMITY_RADIUS_KM;
+
+      // Entered pickup zone
+      if (isNearPickup && !proximityRef.current.nearPickup) {
+        proximityRef.current.nearPickup = true;
+        proximityRef.current.reachedPickup = true;
+        console.log("📍 Truck arrived at PICKUP location (within 100m)");
+        sendProximityNotification(
+          "Arrived at Pickup",
+          `Delivery truck has arrived at the pickup location: ${deliveryData.pickupLocation || "Pickup point"}`,
+          "pickup_arrived"
+        );
+      }
+
+      // Left pickup zone (only after having reached it)
+      if (!isNearPickup && proximityRef.current.nearPickup && proximityRef.current.reachedPickup && !proximityRef.current.leftPickup) {
+        proximityRef.current.nearPickup = false;
+        proximityRef.current.leftPickup = true;
+        console.log("📍 Truck left PICKUP location (exited 100m radius)");
+        sendProximityNotification(
+          "Left Pickup Location",
+          `Delivery truck has departed from the pickup location and is en route to the drop-off: ${deliveryData.deliveryAddress || "Drop-off point"}`,
+          "pickup_departed"
+        );
+      }
+    }
+
+    // Check dropoff proximity
+    if (dCoords) {
+      const distToDropoff = calculateDistance(lat, lng, dCoords.lat, dCoords.lng);
+      const isNearDropoff = distToDropoff <= PROXIMITY_RADIUS_KM;
+
+      // Entered dropoff zone
+      if (isNearDropoff && !proximityRef.current.nearDropoff) {
+        proximityRef.current.nearDropoff = true;
+        proximityRef.current.reachedDropoff = true;
+        console.log("📍 Truck arrived at DROPOFF location (within 100m)");
+        sendProximityNotification(
+          "Arrived at Drop-off",
+          `Delivery truck has arrived at the drop-off location: ${deliveryData.deliveryAddress || "Drop-off point"}`,
+          "dropoff_arrived"
+        );
+      }
+
+      // Left dropoff zone (only after having reached it)
+      if (!isNearDropoff && proximityRef.current.nearDropoff && proximityRef.current.reachedDropoff && !proximityRef.current.leftDropoff) {
+        proximityRef.current.nearDropoff = false;
+        proximityRef.current.leftDropoff = true;
+        console.log("📍 Truck left DROPOFF location (exited 100m radius)");
+        sendProximityNotification(
+          "Left Drop-off Location",
+          `Delivery truck has departed from the drop-off location.`,
+          "dropoff_departed"
+        );
+      }
+    }
+
+    setProximityStatus({ ...proximityRef.current });
+  };
+
+  const sendProximityNotification = async (title, message, action) => {
+    // Add local notification immediately for instant UI feedback
+    if (addLocalNotification) {
+      addLocalNotification({
+        title,
+        message,
+        type: "delivery",
+        metadata: { deliveryId, action },
+      });
+    }
+
+    // Also persist to backend so it shows across sessions
+    try {
+      const token = localStorage.getItem("token");
+      if (token) {
+        await axios.post(
+          "/api/notifications/delivery-proximity",
+          { deliveryId, title, message, action },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        console.log("✅ Proximity notification saved to backend:", action);
+      }
+    } catch (err) {
+      console.warn("⚠️ Failed to save proximity notification to backend:", err.message);
+    }
+  };
+
   const geocodeAddress = async (address) => {
     if (!window.google || !address) {
       console.warn("⚠️ Geocoding skipped - no Google Maps or no address");
@@ -385,7 +512,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
 
     googleMapRef.current = new window.google.maps.Map(mapRef.current, {
       center: defaultLocation,
-      zoom: 12,
+      zoom: isDeliveryCompleted ? 10 : 12,
       mapTypeId: "roadmap",
       mapTypeControl: true,
       streetViewControl: true,
@@ -393,25 +520,28 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
       zoomControl: true,
     });
 
-    // Create truck marker
-    markerRef.current = new window.google.maps.Marker({
-      map: googleMapRef.current,
-      position: defaultLocation,
-      title: "Truck Location (Live GPS)",
-      icon: {
-        url: "https://maps.google.com/mapfiles/kml/shapes/truck.png",
-        scaledSize: new window.google.maps.Size(40, 40),
-      },
-      zIndex: 1000,
-    });
+    // Only create truck marker and path for active deliveries
+    if (!isDeliveryCompleted) {
+      // Create truck marker
+      markerRef.current = new window.google.maps.Marker({
+        map: googleMapRef.current,
+        position: defaultLocation,
+        title: "Truck Location (Live GPS)",
+        icon: {
+          url: "https://maps.google.com/mapfiles/kml/shapes/truck.png",
+          scaledSize: new window.google.maps.Size(40, 40),
+        },
+        zIndex: 1000,
+      });
 
-    // Create path polyline for truck movement history
-    pathRef.current = new window.google.maps.Polyline({
-      map: googleMapRef.current,
-      strokeColor: "#2196F3",
-      strokeOpacity: 0.8,
-      strokeWeight: 4,
-    });
+      // Create path polyline for truck movement history
+      pathRef.current = new window.google.maps.Polyline({
+        map: googleMapRef.current,
+        strokeColor: "#2196F3",
+        strokeOpacity: 0.8,
+        strokeWeight: 4,
+      });
+    }
 
     // Initialize delivery route from window data
     const deliveryData = window.currentDeliveryData;
@@ -500,25 +630,106 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         }
       }
 
-      // Create route line (dashed) connecting pickup → dropoff
-      routeLineRef.current = new window.google.maps.Polyline({
-        map: googleMapRef.current,
-        strokeColor: "#6B7280",
-        strokeOpacity: 0.6,
-        strokeWeight: 2,
-        path: [],
-        icons: [
-          {
-            icon: {
-              path: "M 0,-1 0,1",
-              strokeOpacity: 1,
-              scale: 3,
-            },
-            offset: "0",
-            repeat: "20px",
+      // Draw planned driving route between pickup and dropoff using Directions API
+      const pickupPos = pickupMarkerRef.current?.getPosition();
+      const dropoffPos = dropoffMarkerRef.current?.getPosition();
+
+      if (pickupPos && dropoffPos) {
+        console.log("🗺️ Requesting driving route from Directions API...");
+        const directionsService = new window.google.maps.DirectionsService();
+        const directionsRenderer = new window.google.maps.DirectionsRenderer({
+          map: googleMapRef.current,
+          suppressMarkers: true, // We already have custom A/B markers
+          polylineOptions: {
+            strokeColor: "#4B5563",
+            strokeWeight: 4,
+            strokeOpacity: 0.7,
           },
-        ],
-      });
+          preserveViewport: !isDeliveryCompleted, // Only auto-fit for completed
+        });
+
+        directionsService.route(
+          {
+            origin: pickupPos,
+            destination: dropoffPos,
+            travelMode: window.google.maps.TravelMode.DRIVING,
+          },
+          (result, status) => {
+            if (status === "OK") {
+              directionsRenderer.setDirections(result);
+              console.log("✅ Driving route rendered successfully");
+
+              // For completed deliveries, fit bounds to show full route
+              if (isDeliveryCompleted && googleMapRef.current) {
+                const bounds = new window.google.maps.LatLngBounds();
+                bounds.extend(pickupPos);
+                bounds.extend(dropoffPos);
+                // Also include route waypoints for better fit
+                const routeLegs = result.routes[0]?.legs[0];
+                if (routeLegs) {
+                  routeLegs.steps.forEach(step => {
+                    bounds.extend(step.start_location);
+                    bounds.extend(step.end_location);
+                  });
+                }
+                googleMapRef.current.fitBounds(bounds);
+              }
+            } else {
+              console.warn("⚠️ Directions API failed:", status, "- falling back to straight line");
+              // Fallback: draw a straight dashed line
+              routeLineRef.current = new window.google.maps.Polyline({
+                map: googleMapRef.current,
+                strokeColor: "#6B7280",
+                strokeOpacity: 0.6,
+                strokeWeight: 3,
+                path: [
+                  { lat: pickupPos.lat(), lng: pickupPos.lng() },
+                  { lat: dropoffPos.lat(), lng: dropoffPos.lng() },
+                ],
+                icons: [
+                  {
+                    icon: {
+                      path: "M 0,-1 0,1",
+                      strokeOpacity: 1,
+                      scale: 3,
+                    },
+                    offset: "0",
+                    repeat: "20px",
+                  },
+                ],
+              });
+
+              // Fit bounds for completed deliveries even with fallback
+              if (isDeliveryCompleted && googleMapRef.current) {
+                const bounds = new window.google.maps.LatLngBounds();
+                bounds.extend(pickupPos);
+                bounds.extend(dropoffPos);
+                googleMapRef.current.fitBounds(bounds);
+              }
+            }
+          }
+        );
+      } else {
+        console.warn("⚠️ Cannot draw route - missing pickup or dropoff coordinates");
+        // Create empty polyline ref for live updates to use
+        routeLineRef.current = new window.google.maps.Polyline({
+          map: googleMapRef.current,
+          strokeColor: "#6B7280",
+          strokeOpacity: 0.6,
+          strokeWeight: 2,
+          path: [],
+        });
+
+        // For completed deliveries, fit bounds to whatever markers we have
+        if (isDeliveryCompleted && googleMapRef.current) {
+          const bounds = new window.google.maps.LatLngBounds();
+          if (pickupMarkerRef.current) bounds.extend(pickupMarkerRef.current.getPosition());
+          if (dropoffMarkerRef.current) bounds.extend(dropoffMarkerRef.current.getPosition());
+          if (!bounds.isEmpty()) {
+            googleMapRef.current.fitBounds(bounds);
+          }
+        }
+      }
 
       console.log("✅ Route markers created");
     }
@@ -781,23 +992,34 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white">
+        <div className={`flex items-center justify-between px-6 py-4 text-white ${
+          isDeliveryCompleted
+            ? "bg-gradient-to-r from-gray-600 via-gray-700 to-slate-700"
+            : "bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700"
+        }`}>
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-              <span className="text-2xl">🚚</span>
+              <span className="text-2xl">{isDeliveryCompleted ? "�" : "�"}</span>
             </div>
             <div>
-              <h2 className="text-xl font-bold m-0">Live GPS Tracking</h2>
-              <p className="text-blue-100 text-sm m-0 mt-0.5">
+              <h2 className="text-xl font-bold m-0">
+                {isDeliveryCompleted ? "Route Record" : "Live GPS Tracking"}
+              </h2>
+              <p className={`text-sm m-0 mt-0.5 ${isDeliveryCompleted ? "text-gray-300" : "text-blue-100"}`}>
                 Delivery #{deliveryId?.substring(0, 12)}...
+                {isDeliveryCompleted && (
+                  <span className="ml-2 bg-white/20 px-2 py-0.5 rounded text-xs">Completed</span>
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 bg-white/10 rounded-lg text-xs text-blue-100 backdrop-blur-sm">
-              📡 GPS Device: truck_12345
-            </div>
+            {!isDeliveryCompleted && (
+              <div className="px-3 py-1.5 bg-white/10 rounded-lg text-xs text-blue-100 backdrop-blur-sm">
+                📡 GPS Device: truck_12345
+              </div>
+            )}
             <button
               className="w-10 h-10 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center transition-all duration-200"
               onClick={onClose}
@@ -849,7 +1071,14 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
             {/* Info Bar */}
             <div className="px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/50 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-6">
-                {location && (
+                {isDeliveryCompleted ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500 text-sm">📋</span>
+                    <span className="text-gray-700 font-medium text-sm">
+                      Route record — delivery has been completed. Showing pickup and drop-off locations only.
+                    </span>
+                  </div>
+                ) : location ? (
                   <>
                     <div className="flex items-center gap-2">
                       <span className="text-gray-400 text-sm">📍</span>
@@ -876,7 +1105,7 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
                       </span>
                     </div>
                   </>
-                )}
+                ) : null}
               </div>
 
               {/* Control Buttons */}
@@ -888,20 +1117,24 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
                 >
                   🗺️ Full Route
                 </button>
-                <button
-                  className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-all flex items-center gap-2"
-                  onClick={handleCenterMap}
-                  title="Center map on truck"
-                >
-                  🎯 Center
-                </button>
-                <button
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-all flex items-center gap-2"
-                  onClick={handleOpenInGoogleMaps}
-                  title="Open in Google Maps app"
-                >
-                  📱 Google Maps
-                </button>
+                {!isDeliveryCompleted && (
+                  <>
+                    <button
+                      className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-all flex items-center gap-2"
+                      onClick={handleCenterMap}
+                      title="Center map on truck"
+                    >
+                      🎯 Center
+                    </button>
+                    <button
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-sm font-medium rounded-lg shadow-sm shadow-blue-200 transition-all flex items-center gap-2"
+                      onClick={handleOpenInGoogleMaps}
+                      title="Open in Google Maps app"
+                    >
+                      📱 Google Maps
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -909,11 +1142,18 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
             <div className="flex-1 relative bg-gray-100">
               <div ref={mapRef} className="absolute inset-0" />
 
-              {/* Live Indicator */}
-              <div className="absolute top-4 left-4 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center gap-2 shadow-lg shadow-red-500/30 z-10">
-                <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
-                LIVE
-              </div>
+              {/* Live / Completed Indicator */}
+              {isDeliveryCompleted ? (
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-gray-600 text-white text-xs font-bold rounded-full flex items-center gap-2 shadow-lg z-10">
+                  <span className="w-2 h-2 bg-white rounded-full" />
+                  COMPLETED
+                </div>
+              ) : (
+                <div className="absolute top-4 left-4 px-3 py-1.5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center gap-2 shadow-lg shadow-red-500/30 z-10">
+                  <span className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                  LIVE
+                </div>
+              )}
 
               {/* GPS Quality Warning */}
               {rejectedGPSCount > 0 && (
@@ -942,17 +1182,21 @@ const LiveMapTracker = ({ deliveryId, truckId, onClose }) => {
                     <div className="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-bold">B</div>
                     <span className="text-gray-600">Dropoff Location</span>
                   </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-6 h-6 bg-blue-100 text-lg flex items-center justify-center rounded">🚚</div>
-                    <span className="text-gray-600">Truck (Live)</span>
-                  </div>
+                  {!isDeliveryCompleted && (
+                    <>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-6 h-6 bg-blue-100 text-lg flex items-center justify-center rounded">🚚</div>
+                        <span className="text-gray-600">Truck (Live)</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <div className="w-6 h-1 bg-blue-500 rounded" />
+                        <span className="text-gray-600">Truck Trail</span>
+                      </div>
+                    </>
+                  )}
                   <div className="flex items-center gap-3 text-sm">
                     <div className="w-6 h-1 bg-gray-400 rounded" style={{ backgroundImage: 'linear-gradient(90deg, #9ca3af 50%, transparent 50%)', backgroundSize: '8px 100%' }} />
                     <span className="text-gray-600">Planned Route</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm">
-                    <div className="w-6 h-1 bg-blue-500 rounded" />
-                    <span className="text-gray-600">Truck Trail</span>
                   </div>
                 </div>
               </div>

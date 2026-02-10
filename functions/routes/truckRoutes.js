@@ -2,9 +2,16 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { uploadTruckDocuments } = require('../middleware/documentUpload');
 const { db } = require('../config/firebase');
 const { authenticateJWT } = require('../middleware/auth');
+
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+const DOCUMENTS_BASE_PATH = isCloudFunctions
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 
 // Get all trucks (basic route for Dashboard and other components)
 router.get('/', authenticateJWT, async (req, res) => {
@@ -35,29 +42,15 @@ router.get('/', authenticateJWT, async (req, res) => {
 // Get available trucks for allocation (not allocated to any client)
 router.get('/available', authenticateJWT, async (req, res) => {
     try {
-        console.log('\n\n');
-        console.log('='.repeat(80));
-        console.log('🚨 /API/TRUCKS/AVAILABLE ENDPOINT HIT!');
-        console.log('='.repeat(80));
-        console.log('🔍 Fetching available trucks for allocation...');
+        console.log(' Fetching trucks for shared allocation model...');
         
         // Get all trucks
         const trucksSnapshot = await db.collection('trucks').get();
         
-        // Get all client allocations to exclude allocated trucks
-        const allocationsSnapshot = await db.collection('clientTruckAllocations').get();
-        const allocatedTruckIds = new Set();
-        
-        allocationsSnapshot.docs.forEach(doc => {
-            const allocation = doc.data();
-            if (allocation.truckId || allocation.TruckID) {
-                allocatedTruckIds.add(allocation.truckId || allocation.TruckID);
-            }
-        });
-        
-        console.log(`📊 Found ${allocatedTruckIds.size} allocated trucks`);
-        
-        // Filter trucks: not allocated AND status is available/free
+        // SHARED ALLOCATION MODEL: Return all valid trucks
+        // The frontend (ClientTruckAllocation.js) handles filtering out
+        // trucks already allocated to the current client.
+        // A single truck can be allocated to multiple clients.
         const allTrucks = trucksSnapshot.docs
             .filter(doc => {
                 // Validate truck ID - skip malformed documents
@@ -73,49 +66,14 @@ router.get('/available', authenticateJWT, async (req, res) => {
                 ...doc.data()
             }));
         
-        console.log(`📊 Total trucks in database: ${allTrucks.length}`);
-        
+        // Only exclude trucks with inactive operational status
         const availableTrucks = allTrucks.filter(truck => {
-            console.log(`\n🔍 Checking truck ${truck.id}:`, {
-                truckPlate: truck.truckPlate || truck.TruckPlate,
-                allocationStatus: truck.allocationStatus || truck.AllocationStatus,
-                availabilityStatus: truck.availabilityStatus || truck.AvailabilityStatus,
-                operationalStatus: truck.operationalStatus || truck.OperationalStatus,
-                truckStatus: truck.truckStatus || truck.TruckStatus,
-                isAllocated: allocatedTruckIds.has(truck.id)
-            });
-            
-            // Exclude already allocated trucks
-            if (allocatedTruckIds.has(truck.id)) {
-                console.log(`   ❌ Already allocated to a client`);
-                return false;
-            }
-            
-            // Check various status fields (handling different naming conventions)
-            const allocationStatus = truck.allocationStatus || truck.AllocationStatus;
-            const availabilityStatus = truck.availabilityStatus || truck.AvailabilityStatus;
             const operationalStatus = truck.operationalStatus || truck.OperationalStatus;
-            
-            // Include truck if:
-            // 1. Allocation status is 'Available' (not allocated)
-            // 2. OR no allocation status set (legacy trucks)
-            // 3. AND operational status is not 'Inactive'
-            const isAvailableForAllocation = 
-                (!allocationStatus || allocationStatus === 'Available') &&
-                (!operationalStatus || operationalStatus !== 'Inactive');
-            
-            console.log(`   ${isAvailableForAllocation ? '✅' : '❌'} Available: ${isAvailableForAllocation}`);
-            
-            return isAvailableForAllocation;
+            return !operationalStatus || operationalStatus !== 'Inactive';
         });
         
-        console.log(`✅ Returning ${availableTrucks.length} available trucks`);
-        console.log(`📊 DEBUG: Total trucks fetched: ${allTrucks.length}`);
-        console.log(`📊 DEBUG: Allocated truck IDs:`, Array.from(allocatedTruckIds));
-        
-        // TEMPORARY: Return all trucks for debugging
-        console.log('⚠️ DEBUG MODE: Returning ALL trucks (no filtering)');
-        res.json(allTrucks);
+        console.log(`✅ Returning ${availableTrucks.length} trucks (shared allocation model)`);
+        res.json(availableTrucks);
         
     } catch (error) {
         console.error('❌ Error fetching available trucks:', error);
@@ -143,50 +101,22 @@ router.get('/actual-documents', authenticateJWT, async (req, res) => {
             
             const truck = { id: doc.id, ...doc.data() };
             
-            // Check for actual documents in the filesystem
-            // Go up from routes to server, then to client, then to project root
-            const DOCUMENTS_BASE_PATH = path.join(__dirname, '..', '..', '..', 'uploads');
-            const documents = {};
-            
-            // Check each document type
-            const documentTypes = ['orDocument', 'crDocument', 'insuranceDocument', 'licenseRequirement'];
-            let requiredDocumentCount = 0;
-            let optionalDocumentCount = 0;
-            
-            for (const docType of documentTypes) {
-                if (truck.documents && truck.documents[docType]) {
-                    // Determine the correct subfolder for each document type
-                    let subfolder = '';
-                    if (docType === 'orDocument' || docType === 'crDocument') {
-                        subfolder = 'OR-CR-Files';
-                    } else if (docType === 'insuranceDocument') {
-                        subfolder = 'Insurance-Papers';
-                    } else if (docType === 'licenseRequirement') {
-                        subfolder = 'License-Documents';
-                    }
-                    
-                    const docPath = path.join(DOCUMENTS_BASE_PATH, 'Truck-Documents', subfolder, truck.documents[docType].filename);
-                    
-                    if (fs.existsSync(docPath)) {
-                        documents[docType] = truck.documents[docType];
-                        if (docType !== 'licenseRequirement') {
-                            requiredDocumentCount++;
-                        } else {
-                            optionalDocumentCount++;
-                        }
-                    }
-                }
-            }
+            // Use Firestore documents as source of truth
+            // Local filesystem check is unreliable on Cloud Functions
+            const docs = truck.documents || {};
+            const requiredDocs = ['orDocument', 'crDocument', 'insuranceDocument'];
+            const optionalDocs = ['licenseRequirement'];
+            const requiredDocumentCount = requiredDocs.filter(d => docs[d]).length;
+            const optionalDocumentCount = optionalDocs.filter(d => docs[d]).length;
             
             // Add document compliance information
             truck.documentCompliance = {
-                documentCount: Object.keys(documents).length,
+                documentCount: requiredDocumentCount + optionalDocumentCount,
                 requiredDocumentCount,
                 optionalDocumentCount,
                 overallStatus: requiredDocumentCount === 3 ? 'complete' : 'incomplete'
             };
             
-            truck.documents = documents;
             trucks.push(truck);
         }
 

@@ -400,7 +400,9 @@ const PaymentManagement = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      const filtered = getFilteredPayments();
+      const filtered = getFilteredPayments().filter(
+        (p) => p.status !== "pending_verification" && p.status !== "rejected"
+      );
       setSelectedDeliveries(filtered.map((p) => p.id));
     } else {
       setSelectedDeliveries([]);
@@ -451,6 +453,7 @@ const PaymentManagement = () => {
     if (status === "pending") colors = "bg-amber-100 text-amber-700";
     if (status === "overdue") colors = "bg-red-100 text-red-700";
     if (status === "pending_verification") colors = "bg-blue-100 text-blue-700";
+    if (status === "rejected") colors = "bg-red-100 text-red-700";
 
     const displayStatus = status === "pending_verification" ? "Pending Verification" : status;
 
@@ -598,7 +601,7 @@ const PaymentManagement = () => {
                         checked={selectedDeliveries.includes(payment.id)}
                         onChange={() => handleSelectDelivery(payment.id)}
                         className="w-4 h-4 accent-blue-600"
-                        disabled={payment.status === "pending_verification"}
+                        disabled={payment.status === "pending_verification" || payment.status === "rejected"}
                       />
                     </td>
                     <td className="p-4 font-mono text-sm">
@@ -617,6 +620,10 @@ const PaymentManagement = () => {
                       {payment.status === "pending_verification" ? (
                         <span className="text-blue-600 text-sm font-medium">
                           Awaiting Approval
+                        </span>
+                      ) : payment.status === "rejected" ? (
+                        <span className="text-red-600 text-sm font-medium">
+                          Contact Admin
                         </span>
                       ) : (
                         <button

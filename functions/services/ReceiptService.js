@@ -6,16 +6,21 @@
 
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const admin = require("firebase-admin");
 const PDFDocument = require("pdfkit");
 
 const db = admin.firestore();
 
+// Detect Cloud Functions environment
+const isCloudFunctions = process.env.FUNCTION_TARGET || process.env.K_SERVICE;
+
 class ReceiptService {
   constructor() {
-    // Use persistent folder within the project (persists across restarts)
-    // Path is relative to the functions directory: ../uploads/receipts
-    this.basePath = path.join(__dirname, "..", "uploads", "receipts");
+    // In Cloud Functions, /tmp is the only writable directory
+    this.basePath = isCloudFunctions
+      ? path.join(os.tmpdir(), "uploads", "receipts")
+      : path.join(__dirname, "..", "uploads", "receipts");
     this.ensureBaseDirectory();
     console.log(
       "✅ Using persistent local storage for receipts:",
@@ -395,6 +400,337 @@ class ReceiptService {
 
         writeStream.on("error", (err) => {
           console.error("❌ Error writing PDF:", err);
+          reject(err);
+        });
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  /**
+   * Generate a rejection notice PDF for a rejected payment proof
+   * @param {Object} proofData - The rejected payment proof data
+   * @param {Array} deliveries - Array of delivery objects that were rejected
+   * @param {Object} adminInfo - Admin who rejected the payment
+   * @param {string} rejectionReason - Reason for rejection
+   * @returns {Object} Rejection notice data with file path
+   */
+  async generateRejectionNotice(proofData, deliveries, adminInfo, rejectionReason) {
+    try {
+      const noticeNumber = this.generateRejectionNumber();
+      const now = new Date();
+
+      const clientDoc = await db
+        .collection("clients")
+        .doc(proofData.clientId)
+        .get();
+      const clientData = clientDoc.exists ? clientDoc.data() : {};
+
+      const noticeData = {
+        noticeNumber,
+        generatedAt: now,
+        clientId: proofData.clientId,
+        clientName:
+          clientData.name ||
+          clientData.companyName ||
+          proofData.clientName ||
+          "Client",
+        clientEmail: clientData.email || "",
+        proofId: proofData.id,
+        totalAmount: proofData.totalAmount,
+        rejectionReason: rejectionReason,
+        rejectedBy: adminInfo.username,
+        rejectedAt: now,
+        referenceNumber: proofData.referenceNumber || "N/A",
+        deliveries: deliveries.map((d) => ({
+          id: d.id,
+          deliveryDate: d.deliveryDate,
+          amount: d.amount || d.deliveryRate || d.DeliveryRate || 0,
+          truckPlate: d.truckPlate || d.TruckPlate,
+          pickupLocation: d.pickupLocation,
+          deliveryAddress: d.deliveryAddress || d.dropoffLocation,
+        })),
+      };
+
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const noticeDir = path.join(this.basePath, String(year), month);
+
+      if (!fs.existsSync(noticeDir)) {
+        fs.mkdirSync(noticeDir, { recursive: true });
+      }
+
+      const fileName = `rejection_${noticeNumber}.pdf`;
+      const filePath = path.join(noticeDir, fileName);
+      const relativePath = path.relative(this.basePath, filePath);
+
+      await this.generateRejectionPDF(noticeData, filePath);
+
+      const noticeRef = await db.collection("paymentReceipts").add({
+        receiptNumber: noticeNumber,
+        type: "rejection",
+        proofId: proofData.id,
+        clientId: proofData.clientId,
+        clientName: noticeData.clientName,
+        totalAmount: noticeData.totalAmount,
+        deliveryIds: proofData.deliveryIds,
+        deliveryCount: proofData.deliveryIds.length,
+        rejectedBy: adminInfo.id,
+        rejectedByName: adminInfo.username,
+        rejectionReason: rejectionReason,
+        filePath: relativePath,
+        fileType: "application/pdf",
+        generatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      console.log(`❌ Rejection notice PDF generated: ${noticeNumber}`);
+
+      return {
+        success: true,
+        noticeId: noticeRef.id,
+        noticeNumber,
+        filePath: relativePath,
+      };
+    } catch (error) {
+      console.error("❌ Error generating rejection notice:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Generate a unique rejection notice number
+   */
+  generateRejectionNumber() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0");
+    return `REJ-${year}${month}${day}-${random}`;
+  }
+
+  /**
+   * Generate rejection notice PDF using pdfkit
+   */
+  async generateRejectionPDF(data, filePath) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new PDFDocument({
+          size: "A4",
+          margins: { top: 40, bottom: 40, left: 50, right: 50 },
+          info: {
+            Title: `Payment Rejection Notice - ${data.noticeNumber}`,
+            Author: "E-Trucking Management System",
+            Subject: "Payment Rejection Notice",
+          },
+        });
+
+        const writeStream = fs.createWriteStream(filePath);
+        doc.pipe(writeStream);
+
+        const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
+
+        // HEADER - Red theme for rejection
+        doc.rect(0, 0, doc.page.width, 120).fill("#991b1b");
+
+        doc.fontSize(24).font("Helvetica-Bold").fillColor("#ffffff");
+        doc.text("E-Trucking Management System", 50, 35, { width: pageWidth });
+
+        doc.fontSize(12).font("Helvetica").fillColor("#fca5a5");
+        doc.text("Payment Rejection Notice", 50, 65, { width: pageWidth });
+
+        // REJECTED badge
+        const badgeX = doc.page.width - 160;
+        doc.roundedRect(badgeX, 40, 110, 30, 15).fill("#dc2626");
+        doc.fontSize(12).font("Helvetica-Bold").fillColor("#ffffff");
+        doc.text("REJECTED", badgeX, 48, { width: 110, align: "center" });
+
+        doc.fontSize(9).font("Helvetica").fillColor("#fecaca");
+        doc.text("Trusted Trucking & Logistics Services", 50, 90, { width: pageWidth });
+
+        // NOTICE INFO
+        let yPos = 140;
+
+        doc.fontSize(16).font("Helvetica-Bold").fillColor("#111827");
+        doc.text(`Notice #${data.noticeNumber}`, 50, yPos);
+
+        doc.fontSize(10).font("Helvetica").fillColor("#6b7280");
+        doc.text(`Generated on ${this.formatDate(data.generatedAt)}`, 50, yPos + 22);
+
+        yPos += 55;
+
+        // META INFO GRID
+        const colWidth = (pageWidth - 15) / 2;
+        const metaItems = [
+          { label: "CLIENT NAME", value: data.clientName },
+          { label: "REFERENCE NUMBER", value: data.referenceNumber },
+          { label: "REVIEWED BY", value: data.rejectedBy },
+          { label: "REVIEW DATE", value: this.formatDate(data.rejectedAt) },
+        ];
+
+        metaItems.forEach((item, index) => {
+          const col = index % 2;
+          const row = Math.floor(index / 2);
+          const x = 50 + col * (colWidth + 15);
+          const y = yPos + row * 55;
+
+          doc.roundedRect(x, y, colWidth, 45, 6).fill("#f9fafb");
+
+          doc.fontSize(8).font("Helvetica-Bold").fillColor("#6b7280");
+          doc.text(item.label, x + 12, y + 8, { width: colWidth - 24 });
+
+          doc.fontSize(11).font("Helvetica-Bold").fillColor("#111827");
+          doc.text(item.value || "N/A", x + 12, y + 22, { width: colWidth - 24 });
+        });
+
+        yPos += 125;
+
+        // REJECTION REASON
+        doc.fontSize(10).font("Helvetica-Bold").fillColor("#991b1b");
+        doc.text("REASON FOR REJECTION", 50, yPos);
+        yPos += 18;
+
+        doc.roundedRect(50, yPos, pageWidth, 60, 6)
+          .fill("#fef2f2")
+          .strokeColor("#fecaca")
+          .lineWidth(1)
+          .stroke();
+
+        doc.fontSize(10).font("Helvetica").fillColor("#991b1b");
+        doc.text(data.rejectionReason, 62, yPos + 12, {
+          width: pageWidth - 24,
+          lineGap: 4,
+        });
+
+        yPos += 75;
+
+        // DELIVERIES TABLE
+        doc.fontSize(10).font("Helvetica-Bold").fillColor("#6b7280");
+        doc.text(`AFFECTED DELIVERIES (${data.deliveries.length})`, 50, yPos);
+        yPos += 20;
+
+        const tableX = 50;
+        const colWidths = [30, 140, 80, 110, 100];
+        const headers = ["#", "Delivery ID", "Truck", "Date", "Amount"];
+
+        doc.rect(tableX, yPos, pageWidth, 25).fill("#f3f4f6");
+        doc.fontSize(8).font("Helvetica-Bold").fillColor("#6b7280");
+
+        let headerX = tableX + 8;
+        headers.forEach((header, i) => {
+          const align = i === headers.length - 1 ? "right" : "left";
+          const textX = i === headers.length - 1 ? headerX - 8 : headerX;
+          doc.text(header, textX, yPos + 8, { width: colWidths[i], align });
+          headerX += colWidths[i];
+        });
+
+        yPos += 25;
+
+        data.deliveries.forEach((delivery, index) => {
+          if (index % 2 === 0) {
+            doc.rect(tableX, yPos, pageWidth, 28).fill("#fafafa");
+          }
+
+          doc.fontSize(9).font("Helvetica").fillColor("#374151");
+
+          let cellX = tableX + 8;
+
+          doc.text(`${index + 1}`, cellX, yPos + 8, { width: colWidths[0] });
+          cellX += colWidths[0];
+
+          const shortId = delivery.id ? delivery.id.substring(0, 18) : "N/A";
+          doc.font("Courier").fontSize(8);
+          doc.text(shortId, cellX, yPos + 9, { width: colWidths[1] });
+          cellX += colWidths[1];
+
+          doc.font("Helvetica").fontSize(9);
+          doc.text(delivery.truckPlate || "N/A", cellX, yPos + 8, { width: colWidths[2] });
+          cellX += colWidths[2];
+
+          doc.text(this.formatDate(delivery.deliveryDate), cellX, yPos + 8, { width: colWidths[3] });
+          cellX += colWidths[3];
+
+          doc.font("Helvetica-Bold").fillColor("#111827");
+          doc.text(this.formatCurrency(delivery.amount), cellX - 8, yPos + 8, {
+            width: colWidths[4],
+            align: "right",
+          });
+
+          doc.moveTo(tableX, yPos + 28).lineTo(tableX + pageWidth, yPos + 28).lineWidth(0.5).strokeColor("#e5e7eb").stroke();
+
+          yPos += 28;
+        });
+
+        // TOTAL ROW
+        yPos += 5;
+        doc.rect(tableX, yPos, pageWidth, 35).fill("#fef2f2");
+
+        doc.fontSize(12).font("Helvetica-Bold").fillColor("#991b1b");
+        doc.text("Total Amount Rejected:", tableX + 8, yPos + 10, {
+          width: pageWidth - colWidths[4] - 24,
+          align: "right",
+        });
+        doc.text(this.formatCurrency(data.totalAmount), tableX + pageWidth - colWidths[4] - 8, yPos + 10, {
+          width: colWidths[4],
+          align: "right",
+        });
+
+        yPos += 55;
+
+        // IMPORTANT NOTICE BOX
+        doc.roundedRect(50, yPos, pageWidth, 80, 6)
+          .fill("#fffbeb")
+          .strokeColor("#fcd34d")
+          .lineWidth(1)
+          .stroke();
+
+        doc.fontSize(10).font("Helvetica-Bold").fillColor("#92400e");
+        doc.text("IMPORTANT NOTICE", 62, yPos + 10, { width: pageWidth - 24 });
+
+        doc.fontSize(9).font("Helvetica").fillColor("#78350f");
+        doc.text(
+          "Your payment proof has been rejected. The affected deliveries cannot be paid again through the portal. " +
+          "Please contact the administrator to resolve this issue and arrange for payment verification.",
+          62,
+          yPos + 28,
+          { width: pageWidth - 24, lineGap: 4 },
+        );
+
+        yPos += 100;
+
+        // FOOTER
+        doc.moveTo(50, yPos).lineTo(50 + pageWidth, yPos).lineWidth(1).strokeColor("#e5e7eb").stroke();
+        yPos += 15;
+
+        doc.fontSize(9).font("Helvetica").fillColor("#6b7280");
+        doc.text(
+          "This is an official rejection notice from E-Trucking Management System.",
+          50, yPos,
+          { width: pageWidth, align: "center" },
+        );
+        doc.text(
+          "Please contact your administrator to resolve this matter.",
+          50, yPos + 14,
+          { width: pageWidth, align: "center" },
+        );
+        doc.text(
+          "For inquiries, please reach out to our support team.",
+          50, yPos + 28,
+          { width: pageWidth, align: "center" },
+        );
+
+        doc.end();
+
+        writeStream.on("finish", () => {
+          console.log(`✅ Rejection PDF written to: ${filePath}`);
+          resolve();
+        });
+
+        writeStream.on("error", (err) => {
+          console.error("❌ Error writing rejection PDF:", err);
           reject(err);
         });
       } catch (error) {

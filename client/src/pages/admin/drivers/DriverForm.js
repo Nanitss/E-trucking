@@ -21,7 +21,8 @@ import {
   TbEye,
   TbArrowLeft,
   TbDeviceFloppy,
-  TbX
+  TbX,
+  TbLock
 } from "react-icons/tb";
 
 const DriverForm = () => {
@@ -48,6 +49,7 @@ const DriverForm = () => {
     emergencyContactRelationship: "",
   });
   const [loading, setLoading] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState({
@@ -178,12 +180,8 @@ const DriverForm = () => {
       const apiUrl = `${baseURL}/api/documents/view/${encodedPath}`;
 
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-      if (isImage) {
-        setPreviewDocument({ url: apiUrl, filename: filename, type: documentType });
-        setShowPreviewModal(true);
-      } else {
-        window.open(apiUrl, "_blank");
-      }
+      setPreviewDocument({ url: apiUrl, filename: filename, type: documentType, isImage });
+      setShowPreviewModal(true);
     } catch (error) {
       setError("Failed to view document. Please try again.");
     }
@@ -201,6 +199,7 @@ const DriverForm = () => {
         }
       }
 
+      setIsSubmitting(true);
       const formDataToSend = new FormData();
       Object.keys(formData).forEach((key) => {
         formDataToSend.append(key, formData[key]);
@@ -253,6 +252,8 @@ const DriverForm = () => {
       } else {
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -316,10 +317,10 @@ const DriverForm = () => {
               <span className="text-sm font-medium">Uploaded</span>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
+              <button type="button" onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
                 <TbEye size={18} />
               </button>
-              <button onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
+              <button type="button" onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
                 <TbUpload size={18} />
               </button>
             </div>
@@ -441,6 +442,41 @@ const DriverForm = () => {
             </div>
           </section>
 
+          {/* Account Credentials */}
+          <section className="mb-10">
+            {renderSectionHeader(<TbLock size={24} />, "Account Credentials", isEditMode ? "View and update driver username" : "Set up driver login credentials for the mobile app")}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Username <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <TbUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                  <input type="text" name="DriverUserName" value={formData.DriverUserName} onChange={handleChange} required={!isEditMode} maxLength="50" placeholder="e.g. driver.juandelacruz"
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                </div>
+                {isEditMode && formData.DriverUserName && (
+                  <p className="mt-1 text-xs text-gray-500">Current username: <span className="font-medium">{formData.DriverUserName}</span></p>
+                )}
+              </div>
+              {!isEditMode && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <TbLock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+                    <input type="password" name="DriverPassword" value={formData.DriverPassword} onChange={handleChange} required minLength={6} placeholder="Minimum 6 characters"
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
+                  </div>
+                </div>
+              )}
+              {isEditMode && (
+                <div className="flex items-center">
+                  <p className="text-sm text-gray-500 italic">Password cannot be changed by admin. Drivers must update their own password through the mobile app.</p>
+                </div>
+              )}
+            </div>
+          </section>
+
           {/* License Information */}
           <section className="mb-10">
             {renderSectionHeader(<TbId size={24} />, "License Information", "Driver license details and qualifications")}
@@ -453,7 +489,7 @@ const DriverForm = () => {
                   <option value="Class CE">Class CE</option>
                 </select>
                 <p className="mt-1 text-xs text-gray-500">
-                  {formData.licenseType === "Class C" ? "Can drive mini trucks only" : "Can drive all truck types"}
+                  {formData.licenseType === "Class C" ? "Can drive mini trucks and 4 wheelers only" : "Can drive all truck types"}
                 </p>
               </div>
               <div>
@@ -527,9 +563,13 @@ const DriverForm = () => {
               className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2">
               <TbArrowLeft size={18} /> Cancel
             </button>
-            <button type="submit"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2">
-              <TbDeviceFloppy size={18} /> {isEditMode ? "Update Driver" : "Save Driver"}
+            <button type="submit" disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              {isSubmitting ? (
+                <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</>
+              ) : (
+                <><TbDeviceFloppy size={18} /> {isEditMode ? "Update Driver" : "Save Driver"}</>
+              )}
             </button>
           </div>
         </form>
@@ -548,8 +588,12 @@ const DriverForm = () => {
                 <TbX size={18} />
               </button>
             </div>
-            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center">
-              <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center" style={{ minHeight: "60vh" }}>
+              {previewDocument.isImage ? (
+                <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+              ) : (
+                <iframe src={previewDocument.url} title="Document Preview" className="w-full h-full rounded-lg shadow-lg bg-white" style={{ minHeight: "60vh" }} />
+              )}
             </div>
           </div>
         </div>

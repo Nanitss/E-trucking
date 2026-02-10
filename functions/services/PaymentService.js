@@ -99,12 +99,15 @@ class PaymentService {
         let paymentStatus = 'pending';
         const now = new Date();
 
-        // Check if payment has been made or is pending verification
+        // Check if payment has been made, is pending verification, or rejected
         if (delivery.paymentStatus === 'paid') {
           paymentStatus = 'paid';
         } else if (delivery.paymentStatus === 'pending_verification') {
           // Preserve pending_verification status - has uploaded proof awaiting admin approval
           paymentStatus = 'pending_verification';
+        } else if (delivery.paymentStatus === 'rejected') {
+          // Preserve rejected status - proof was rejected by admin
+          paymentStatus = 'rejected';
         } else if (dueDate < now) {
           // Any unpaid delivery past due date is overdue
           paymentStatus = 'overdue';
@@ -142,6 +145,9 @@ class PaymentService {
         } else if (paymentStatus === 'pending_verification') {
           // Count as pending since it's awaiting approval (not yet paid)
           pendingPayments++;
+          totalAmountDue += amount;
+        } else if (paymentStatus === 'rejected') {
+          // Rejected proof - still counts as amount due (contact admin)
           totalAmountDue += amount;
         } else if (paymentStatus === 'overdue') {
           overduePayments++;

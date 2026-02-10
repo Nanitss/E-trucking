@@ -107,4 +107,42 @@ router.put('/read-all', authenticateJWT, async (req, res) => {
   }
 });
 
+// Create a delivery proximity notification (GPS-triggered)
+router.post('/delivery-proximity', authenticateJWT, async (req, res) => {
+  try {
+    const { deliveryId, title, message, action } = req.body;
+    const userId = req.user.id;
+    const clientId = req.user.clientId;
+
+    if (!deliveryId || !title || !message || !action) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    // Create notification for the authenticated user
+    const notification = await NotificationService.createNotification({
+      userId: clientId || userId,
+      title,
+      message,
+      type: 'delivery',
+      entityType: 'delivery',
+      entityId: deliveryId,
+      source: 'gps_proximity',
+      metadata: { deliveryId, action }
+    });
+
+    console.log(`📍 Proximity notification created: ${action} for delivery ${deliveryId}`);
+
+    res.json({
+      success: true,
+      notification
+    });
+  } catch (error) {
+    console.error('Error creating proximity notification:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error creating proximity notification'
+    });
+  }
+});
+
 module.exports = router; 

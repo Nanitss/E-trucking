@@ -1568,6 +1568,19 @@ const Dashboard = () => {
                 onChange={(e) => {
                   const newDate = e.target.value;
                   console.log(`📅 Date changed to: ${newDate}`);
+
+                  // Enforce 24-hour minimum lead time
+                  const now = new Date();
+                  const minDate = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+                  const selectedDate = new Date(newDate + "T00:00:00");
+                  if (selectedDate < new Date(minDate.toISOString().split("T")[0] + "T00:00:00")) {
+                    showError(
+                      "Invalid Date",
+                      "Bookings must be made at least 24 hours in advance. Please select a later date.",
+                    );
+                    return;
+                  }
+
                   setBookingData((prev) => ({
                     ...prev,
                     deliveryDate: newDate,
@@ -1584,7 +1597,7 @@ const Dashboard = () => {
                 }}
                 className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all"
                 required
-                min={new Date().toISOString().split("T")[0]}
+                min={(() => { const d = new Date(); d.setDate(d.getDate() + 1); return d.toISOString().split("T")[0]; })()}
                 placeholder="yyyy-mm-dd"
               />
               <small className="text-xs text-gray-500">

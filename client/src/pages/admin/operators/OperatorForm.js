@@ -22,6 +22,7 @@ const OperatorForm = () => {
     OperatorStatus: "active",
   });
   const [loading, setLoading] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -83,6 +84,7 @@ const OperatorForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      setIsSubmitting(true);
       console.log(
         "Form submission:",
         isEditMode ? "UPDATE" : "CREATE",
@@ -140,6 +142,8 @@ const OperatorForm = () => {
       } else {
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -278,16 +282,21 @@ const OperatorForm = () => {
           </select>
         </div>
 
-        <div className="form-actions">
+        <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-100 mt-6">
           <button
             type="button"
-            className="btn btn-secondary"
             onClick={() => history.push("/admin/operators")}
+            className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2"
           >
             Cancel
           </button>
-          <button type="submit" className="btn btn-primary">
-            {isEditMode ? "Update Operator" : "Add Operator"}
+          <button type="submit" disabled={isSubmitting}
+            className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+            {isSubmitting ? (
+              <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</>
+            ) : (
+              isEditMode ? "Update Operator" : "Add Operator"
+            )}
           </button>
         </div>
       </form>

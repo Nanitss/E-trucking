@@ -109,8 +109,8 @@ const DeliveryTracker = () => {
         );
         console.log("📋 Client API response:", clientResponse.data);
 
-        // Filter for active deliveries only (case-insensitive)
-        const activeDeliveries = clientResponse.data.filter((delivery) => {
+        // Filter deliveries: show active (live tracking) + completed (route record)
+        const trackableDeliveries = clientResponse.data.filter((delivery) => {
           const status = (
             delivery.DeliveryStatus ||
             delivery.deliveryStatus ||
@@ -119,8 +119,7 @@ const DeliveryTracker = () => {
             .toLowerCase()
             .trim();
 
-          // Only show deliveries that are actually IN PROGRESS (not pending)
-          const activeStatuses = [
+          const trackableStatuses = [
             "in-progress",
             "in progress",
             "in_progress",
@@ -132,21 +131,17 @@ const DeliveryTracker = () => {
             "pickedup",
             "ongoing",
             "active",
+            "completed",
+            "delivered",
           ];
 
-          console.log(`📊 Checking delivery ${delivery.DeliveryID}:`);
-          console.log(`   - DeliveryStatus: "${delivery.DeliveryStatus}"`);
-          console.log(`   - deliveryStatus: "${delivery.deliveryStatus}"`);
-          console.log(`   - Normalized status: "${status}"`);
-          console.log(`   - Is active: ${activeStatuses.includes(status)}`);
-
-          return activeStatuses.includes(status);
+          return trackableStatuses.includes(status);
         });
 
-        console.log("🎯 Active deliveries found:", activeDeliveries.length);
+        console.log("🎯 Trackable deliveries found:", trackableDeliveries.length);
 
         // Convert to new format for consistency
-        const formattedDeliveries = activeDeliveries.map((delivery) => ({
+        const formattedDeliveries = trackableDeliveries.map((delivery) => ({
           deliveryId: delivery.DeliveryID || delivery.id,
           deliveryStatus: delivery.DeliveryStatus || delivery.deliveryStatus,
           truckId: delivery.TruckID || delivery.truckId,
@@ -160,6 +155,8 @@ const DeliveryTracker = () => {
           currentLocation: null, // No GPS data from client API
           isActive: false,
           currentSpeed: 0,
+          pickupCoordinates: delivery.pickupCoordinates || null,
+          dropoffCoordinates: delivery.dropoffCoordinates || null,
         }));
 
         setDeliveries(formattedDeliveries);
@@ -567,24 +564,34 @@ const DeliveryTracker = () => {
                       <StatusBadge status={delivery.deliveryStatus} />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <button
-                        className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-100 transition-all flex items-center justify-center mx-auto shadow-sm hover:shadow-md hover:shadow-blue-500/20"
-                        onClick={() => {
-                          const truckIdentifier =
-                            delivery.truckPlate || delivery.TruckPlate;
-                          if (!truckIdentifier) {
-                            alert("No truck assigned to this delivery");
-                            return;
-                          }
-                          setSelectedDeliveryId(delivery.deliveryId);
-                          setSelectedTruckId(truckIdentifier);
-                          window.currentDeliveryData = delivery;
-                          setShowTrackingModal(true);
-                        }}
-                        title="Track Live GPS"
-                      >
-                        <FaEye />
-                      </button>
+                      {(() => {
+                        const st = (delivery.deliveryStatus || "").toLowerCase().trim();
+                        const isCompleted = ["completed", "delivered"].includes(st);
+                        return (
+                          <button
+                            className={`w-9 h-9 rounded-xl border transition-all flex items-center justify-center mx-auto shadow-sm hover:shadow-md ${
+                              isCompleted
+                                ? "bg-gray-50 text-gray-500 hover:bg-gray-500 hover:text-white border-gray-200 hover:shadow-gray-500/20"
+                                : "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border-blue-100 hover:shadow-blue-500/20"
+                            }`}
+                            onClick={() => {
+                              const truckIdentifier =
+                                delivery.truckPlate || delivery.TruckPlate;
+                              if (!truckIdentifier && !isCompleted) {
+                                alert("No truck assigned to this delivery");
+                                return;
+                              }
+                              setSelectedDeliveryId(delivery.deliveryId);
+                              setSelectedTruckId(truckIdentifier);
+                              window.currentDeliveryData = delivery;
+                              setShowTrackingModal(true);
+                            }}
+                            title={isCompleted ? "View Route Record" : "Track Live GPS"}
+                          >
+                            <FaEye />
+                          </button>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -612,6 +619,10 @@ const DeliveryTracker = () => {
         <LiveMapTracker
           deliveryId={selectedDeliveryId}
           truckId={selectedTruckId}
+          deliveryStatus={
+            deliveries.find((d) => d.deliveryId === selectedDeliveryId)
+              ?.deliveryStatus || ""
+          }
           onClose={() => {
             setShowTrackingModal(false);
             setSelectedDeliveryId(null);

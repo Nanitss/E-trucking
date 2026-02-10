@@ -242,28 +242,26 @@ exports.deleteClient = async (req, res) => {
 // Helper Management
 exports.getAllHelpers = async (req, res) => {
   try {
-    const helpers = await db.collection('helpers').get();
-    const helpersData = helpers.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    res.json(helpersData);
+    const HelperService = require('../services/HelperService');
+    const helpers = await HelperService.getAllHelpers();
+    res.json(helpers);
   } catch (error) {
     console.error('Error getting all helpers:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
 exports.getHelperById = async (req, res) => {
   try {
-    const helper = await db.collection('helpers').doc(req.params.id).get();
-    if (!helper.exists) {
-      return res.status(404).json({ message: 'Helper not found' });
-    }
-    res.json({ id: helper.id, ...helper.data() });
+    const HelperService = require('../services/HelperService');
+    const helper = await HelperService.getHelperById(req.params.id);
+    res.json(helper);
   } catch (error) {
     console.error('Error getting helper by ID:', error);
-    res.status(500).json({ message: 'Server error' });
+    if (error.message === 'Helper not found') {
+      return res.status(404).json({ message: 'Helper not found' });
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -304,9 +302,32 @@ exports.updateHelper = async (req, res) => {
     // Use HelperService to properly update helper and user account
     const HelperService = require('../services/HelperService');
     
+    // Parse existing_ document fields sent by frontend
+    const preservedDocuments = {};
+    Object.keys(req.body).forEach(key => {
+      if (key.startsWith('existing_')) {
+        const docType = key.replace('existing_', '');
+        try {
+          preservedDocuments[docType] = JSON.parse(req.body[key]);
+          console.log(`📄 Preserving existing helper document ${docType}`);
+        } catch (error) {
+          console.error(`❌ Error parsing existing document ${docType}:`, error);
+        }
+      }
+    });
+
+    // Clean existing_ keys from body
+    const cleanBody = {};
+    Object.keys(req.body).forEach(key => {
+      if (!key.startsWith('existing_')) {
+        cleanBody[key] = req.body[key];
+      }
+    });
+
     const helperData = {
-      ...req.body,
-      newDocuments: req.uploadedDocuments || {}
+      ...cleanBody,
+      newDocuments: req.uploadedDocuments || {},
+      preservedDocuments: preservedDocuments
     };
     
     const helper = await HelperService.updateHelper(req.params.id, helperData);
@@ -331,37 +352,9 @@ exports.updateHelper = async (req, res) => {
   }
 };
 
-exports.deleteHelper = async (req, res) => {
-  try {
-    const helperRef = db.collection('helpers').doc(req.params.id);
-    const helper = await helperRef.get();
-    
-    if (!helper.exists) {
-      return res.status(404).json({ message: 'Helper not found' });
-    }
-    
-    await helperRef.delete();
-    
-    // Add audit logging
-    await AuditService.logDelete(
-      req.user.id,
-      req.user.username,
-      'helper',
-      req.params.id,
-      { name: helper.data().name }
-    );
-    
-    res.json({ message: 'Helper deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting helper:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 // Truck Management
 exports.getAllTrucks = async (req, res) => {
   try {
-    // Use the enhanced method that includes document scanning and compliance
     const trucks = await TruckService.getTrucksWithActualDocuments();
     res.json(trucks);
   } catch (error) {
@@ -372,17 +365,11 @@ exports.getAllTrucks = async (req, res) => {
 
 exports.createTruck = async (req, res) => {
   try {
-    console.log('📝 Creating truck with data:', req.body);
-    console.log('📝 Files:', req.files);
-    console.log('📝 Uploaded documents:', req.uploadedDocuments);
-    
-    // Merge uploaded documents with truck data
     const truckData = {
       ...req.body,
       documents: req.uploadedDocuments || {}
     };
     
-    // Use the enhanced truck creation method
     const truck = await TruckService.createTruckWithStatus(truckData);
     
     // Add audit logging
@@ -391,7 +378,10 @@ exports.createTruck = async (req, res) => {
       req.user.username,
       'truck',
       truck.id,
-      { plate: truck.truckPlate, type: truck.truckType }
+      { 
+        truckPlate: truck.truckPlate,
+        documentsUploaded: req.uploadedDocuments ? Object.keys(req.uploadedDocuments) : []
+      }
     );
     
     res.status(201).json(truck);
@@ -403,7 +393,6 @@ exports.createTruck = async (req, res) => {
 
 exports.getTruckById = async (req, res) => {
   try {
-    // Use the enhanced method that includes document scanning and compliance
     const truck = await TruckService.getTruckByIdWithDocuments(req.params.id);
     if (!truck) {
       return res.status(404).json({ message: 'Truck not found' });
@@ -411,192 +400,6 @@ exports.getTruckById = async (req, res) => {
     res.json(truck);
   } catch (error) {
     console.error('Error getting truck:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateTruck = async (req, res) => {
-  try {
-    // Handle document updates
-    const existingTruck = await TruckService.getById(req.params.id);
-    let updatedDocuments = { ...existingTruck.documents };
-
-    // Add new uploaded documents
-    if (req.uploadedDocuments) {
-      updatedDocuments = {
-        ...updatedDocuments,
-        ...req.uploadedDocuments
-      };
-    }
-
-    // Handle existing documents that should be preserved
-    Object.keys(req.body).forEach(key => {
-      if (key.startsWith('existing_')) {
-        const docType = key.replace('existing_', '');
-        try {
-          const existingDoc = JSON.parse(req.body[key]);
-          updatedDocuments[docType] = existingDoc;
-          console.log(`📄 Preserving existing document ${docType}:`, existingDoc.filename);
-        } catch (error) {
-          console.error(`❌ Error parsing existing document ${docType}:`, error);
-        }
-      }
-    });
-
-    req.body.documents = updatedDocuments;
-
-    const truck = await TruckService.update(req.params.id, req.body);
-    
-    // Add audit logging
-    await AuditService.logUpdate(
-      req.user.id,
-      req.user.username,
-      'truck',
-      req.params.id,
-      { 
-        changes: req.body,
-        documentsUploaded: req.uploadedDocuments ? Object.keys(req.uploadedDocuments) : []
-      }
-    );
-    
-    res.json(truck);
-  } catch (error) {
-    console.error('Error updating truck:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getTrucksWithExpiringDocuments = async (req, res) => {
-  try {
-    const days = parseInt(req.params.days) || 30;
-    const trucks = await TruckService.getTrucksWithExpiringDocuments(days);
-    res.json({
-      trucks,
-      daysAhead: days,
-      count: trucks.length
-    });
-  } catch (error) {
-    console.error('Error getting trucks with expiring documents:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Enhanced truck management functions
-exports.getTrucksWithDetailedStatus = async (req, res) => {
-  try {
-    const trucks = await TruckService.getTrucksWithDetailedStatus();
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting trucks with detailed status:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getAvailableTrucks = async (req, res) => {
-  try {
-    const trucks = await TruckService.getAvailableTrucks();
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting available trucks:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getAllocatedTrucks = async (req, res) => {
-  try {
-    const trucks = await TruckService.getAllocatedTrucks();
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting allocated trucks:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getActiveTrucks = async (req, res) => {
-  try {
-    const trucks = await TruckService.getActiveTrucks();
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting active trucks:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getMaintenanceTrucks = async (req, res) => {
-  try {
-    const trucks = await TruckService.getMaintenanceTrucks();
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting maintenance trucks:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getTrucksByAllocationStatus = async (req, res) => {
-  try {
-    const { status } = req.params;
-    const trucks = await TruckService.getTrucksByAllocationStatus(status);
-    res.json(trucks);
-  } catch (error) {
-    console.error('Error getting trucks by allocation status:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateTruckStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { truckStatus, allocationStatus, operationalStatus, availabilityStatus, reason } = req.body;
-    
-    const statusData = {};
-    if (truckStatus) statusData.truckStatus = truckStatus;
-    if (allocationStatus) statusData.allocationStatus = allocationStatus;
-    if (operationalStatus) statusData.operationalStatus = operationalStatus;
-    if (availabilityStatus) statusData.availabilityStatus = availabilityStatus;
-    if (reason) statusData.lastStatusReason = reason;
-    
-    const truck = await TruckService.updateTruckStatus(id, statusData);
-    
-    // Log the status change
-    await AuditService.logUpdate(
-      req.user.id,
-      req.user.username,
-      'truck_status',
-      id,
-      { statusChange: statusData, reason }
-    );
-    
-    res.json(truck);
-  } catch (error) {
-    console.error('Error updating truck status:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateTruckAllocation = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { allocationStatus, clientId, allocationId, reason } = req.body;
-    
-    const additionalData = {};
-    if (clientId) additionalData.currentClientId = clientId;
-    if (allocationId) additionalData.currentAllocationId = allocationId;
-    if (reason) additionalData.lastAllocationReason = reason;
-    
-    const truck = await TruckService.updateAllocationStatus(id, allocationStatus, additionalData);
-    
-    // Log the allocation change
-    await AuditService.logUpdate(
-      req.user.id,
-      req.user.username,
-      'truck_allocation',
-      id,
-      { allocationChange: { allocationStatus, ...additionalData }, reason }
-    );
-    
-    res.json(truck);
-  } catch (error) {
-    console.error('Error updating truck allocation:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -620,6 +423,77 @@ exports.deleteTruck = async (req, res) => {
   }
 };
 
+exports.getTrucksWithExpiringDocuments = async (req, res) => {
+  try {
+    const days = parseInt(req.params.days) || 30;
+    const trucks = await TruckService.getTrucksWithExpiringDocuments(days);
+    res.json(trucks);
+  } catch (error) {
+    console.error('Error getting trucks with expiring documents:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.updateTruck = async (req, res) => {
+  try {
+    // Handle document updates
+    const existingTruck = await TruckService.getById(req.params.id);
+    let updatedDocuments = { ...(existingTruck.documents || {}) };
+
+    // Add new uploaded documents
+    if (req.uploadedDocuments) {
+      updatedDocuments = {
+        ...updatedDocuments,
+        ...req.uploadedDocuments
+      };
+    }
+
+    // Handle existing documents that should be preserved
+    Object.keys(req.body).forEach(key => {
+      if (key.startsWith('existing_')) {
+        const docType = key.replace('existing_', '');
+        try {
+          const existingDoc = JSON.parse(req.body[key]);
+          if (!updatedDocuments[docType]) {
+            updatedDocuments[docType] = existingDoc;
+          }
+          console.log(`📄 Preserving existing document ${docType}:`, existingDoc.filename);
+        } catch (error) {
+          console.error(`❌ Error parsing existing document ${docType}:`, error);
+        }
+      }
+    });
+
+    // Clean existing_ keys from body before passing to service
+    const cleanBody = {};
+    Object.keys(req.body).forEach(key => {
+      if (!key.startsWith('existing_')) {
+        cleanBody[key] = req.body[key];
+      }
+    });
+    cleanBody.documents = updatedDocuments;
+
+    const truck = await TruckService.update(req.params.id, cleanBody);
+    
+    // Add audit logging
+    await AuditService.logUpdate(
+      req.user.id,
+      req.user.username,
+      'truck',
+      req.params.id,
+      { 
+        changes: cleanBody,
+        documentsUploaded: req.uploadedDocuments ? Object.keys(req.uploadedDocuments) : []
+      }
+    );
+    
+    res.json(truck);
+  } catch (error) {
+    console.error('Error updating truck:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // Driver Management
 exports.getAllDrivers = async (req, res) => {
   try {
@@ -634,8 +508,26 @@ exports.getAllDrivers = async (req, res) => {
 exports.createDriver = async (req, res) => {
   try {
     console.log('🚗 ===== CREATE DRIVER DEBUG =====');
+    console.log('📤 req.body fields:', Object.keys(req.body));
+    console.log('📤 req.body.DriverName:', req.body.DriverName);
+    console.log('📤 req.body.DriverUserName:', req.body.DriverUserName);
+    console.log('📤 req.body.DriverPassword:', req.body.DriverPassword ? '***SET***' : '***EMPTY/MISSING***');
+    console.log('📤 req.body.DriverNumber:', req.body.DriverNumber);
     console.log('📤 req.uploadedDocuments:', JSON.stringify(req.uploadedDocuments, null, 2));
-    console.log('📤 req.body.documents:', JSON.stringify(req.body.documents, null, 2));
+    
+    // Validate required fields before proceeding
+    const errors = [];
+    if (!req.body.DriverName || !req.body.DriverName.trim()) errors.push('Driver name is required');
+    if (!req.body.DriverUserName || !req.body.DriverUserName.trim()) errors.push('Username is required');
+    if (!req.body.DriverPassword || !req.body.DriverPassword.trim()) errors.push('Password is required');
+    if (req.body.DriverPassword && req.body.DriverPassword.length < 6) errors.push('Password must be at least 6 characters');
+    if (!req.body.DriverNumber || !req.body.DriverNumber.trim()) errors.push('Phone number is required');
+    if (!req.body.DriverAddress || !req.body.DriverAddress.trim()) errors.push('Address is required');
+    
+    if (errors.length > 0) {
+      console.log('❌ Validation errors:', errors);
+      return res.status(400).json({ message: errors.join('. '), errors });
+    }
     
     // Include uploaded documents if available
     const driverData = {
@@ -668,7 +560,17 @@ exports.createDriver = async (req, res) => {
       documentsUploaded: req.uploadedDocuments ? Object.keys(req.uploadedDocuments).length : 0
     });
   } catch (error) {
-    console.error('Error creating driver:', error);
+    console.error('❌ Error creating driver:', error);
+    console.error('❌ Error stack:', error.stack);
+    
+    // Return specific error messages for known issues
+    if (error.message === 'Username already exists') {
+      return res.status(400).json({ message: 'This username is already taken. Please choose a different username.' });
+    }
+    if (error.message && error.message.includes('phone') || error.message && error.message.includes('duplicate')) {
+      return res.status(400).json({ message: `Duplicate record detected: ${error.message}` });
+    }
+    
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -697,7 +599,7 @@ exports.updateDriver = async (req, res) => {
     
     // Handle document updates
     const existingDriver = await DriverService.getById(req.params.id);
-    let updatedDocuments = { ...existingDriver.documents };
+    let updatedDocuments = { ...(existingDriver.documents || {}) };
 
     // Add new uploaded documents
     if (req.uploadedDocuments) {
@@ -713,7 +615,9 @@ exports.updateDriver = async (req, res) => {
         const docType = key.replace('existing_', '');
         try {
           const existingDoc = JSON.parse(req.body[key]);
-          updatedDocuments[docType] = existingDoc;
+          if (!updatedDocuments[docType]) {
+            updatedDocuments[docType] = existingDoc;
+          }
           console.log(`📄 Preserving existing document ${docType}:`, existingDoc.filename);
         } catch (error) {
           console.error(`❌ Error parsing existing document ${docType}:`, error);
@@ -721,9 +625,16 @@ exports.updateDriver = async (req, res) => {
       }
     });
 
-    req.body.documents = updatedDocuments;
+    // Clean existing_ keys from body before passing to service
+    const cleanBody = {};
+    Object.keys(req.body).forEach(key => {
+      if (!key.startsWith('existing_')) {
+        cleanBody[key] = req.body[key];
+      }
+    });
+    cleanBody.documents = updatedDocuments;
 
-    const driver = await DriverService.updateDriver(req.params.id, req.body);
+    const driver = await DriverService.updateDriver(req.params.id, cleanBody);
     
     // Add audit logging
     await AuditService.logUpdate(
@@ -1153,6 +1064,7 @@ exports.updateDeliveryStatus = async (req, res) => {
       // Update driver and helper status back to active
       if (delivery.driverId) {
         await db.collection('drivers').doc(delivery.driverId).update({
+          DriverStatus: 'active',
           driverStatus: 'active',
           currentDeliveryId: null,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
@@ -1162,6 +1074,7 @@ exports.updateDeliveryStatus = async (req, res) => {
       
       if (delivery.helperId) {
         await db.collection('helpers').doc(delivery.helperId).update({
+          HelperStatus: 'active',
           helperStatus: 'active',
           currentDeliveryId: null,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
@@ -1204,6 +1117,7 @@ exports.updateDeliveryStatus = async (req, res) => {
       // Update driver status back to active
       if (delivery.driverId) {
         await db.collection('drivers').doc(delivery.driverId).update({
+          DriverStatus: 'active',
           driverStatus: 'active',
           currentDeliveryId: null,
           updated_at: admin.firestore.FieldValue.serverTimestamp()
@@ -1214,6 +1128,7 @@ exports.updateDeliveryStatus = async (req, res) => {
       // Update helper status back to active
       if (delivery.helperId) {
         await db.collection('helpers').doc(delivery.helperId).update({
+          HelperStatus: 'active',
           helperStatus: 'active',
           currentDeliveryId: null,
           updated_at: admin.firestore.FieldValue.serverTimestamp()

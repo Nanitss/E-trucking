@@ -47,6 +47,7 @@ const TruckForm = () => {
   const [isOtherBrand, setIsOtherBrand] = useState(false);
   const [customBrand, setCustomBrand] = useState("");
   const [loading, setLoading] = useState(isEditMode);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState({
@@ -96,8 +97,8 @@ const TruckForm = () => {
           TruckCapacity: truck.truckCapacity || "2",
           TruckBrand: isCustomBrand ? "Other" : brandValue,
           ModelYear: truck.modelYear || new Date().getFullYear(),
-          registrationDate: truck.registrationDate || "",
-          registrationExpiryDate: truck.registrationExpiryDate || "",
+          registrationDate: truck.registrationDate ? truck.registrationDate.substring(0, 10) : "",
+          registrationExpiryDate: truck.registrationExpiryDate ? truck.registrationExpiryDate.substring(0, 10) : "",
           TruckStatus: truck.truckStatus || "available",
           AllocationStatus: truck.allocationStatus || "available",
           OperationalStatus: truck.operationalStatus || "active",
@@ -201,12 +202,8 @@ const TruckForm = () => {
       const apiUrl = `${baseURL}/api/documents/view/${encodedPath}`;
 
       const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-      if (isImage) {
-        setPreviewDocument({ url: apiUrl, filename: filename, type: documentType });
-        setShowPreviewModal(true);
-      } else {
-        window.open(apiUrl, "_blank");
-      }
+      setPreviewDocument({ url: apiUrl, filename: filename, type: documentType, isImage });
+      setShowPreviewModal(true);
     } catch (error) {
       setError("Failed to view document. Please try again.");
     }
@@ -214,11 +211,11 @@ const TruckForm = () => {
 
   const getLicenseRequirements = (truckType) => {
     const requirements = {
-      "mini truck": { driverLicense: "Non-professional License", helpers: 1, helperRequirements: ["Valid ID", "Barangay Clearance"] },
-      "4 wheeler": { driverLicense: "Professional License", helpers: 1, helperRequirements: ["Valid ID", "Barangay Clearance", "Medical Certificate"] },
-      "6 wheeler": { driverLicense: "Professional License", helpers: 2, helperRequirements: ["Valid ID", "Barangay Clearance", "Medical Certificate"] },
-      "8 wheeler": { driverLicense: "Professional License", helpers: 2, helperRequirements: ["Valid ID", "Barangay Clearance", "Medical Certificate"] },
-      "10 wheeler": { driverLicense: "Professional License", helpers: 3, helperRequirements: ["Valid ID", "Barangay Clearance", "Medical Certificate"] },
+      "mini truck": { driverLicense: "Class C", helpers: 1, helperRequirements: ["Valid ID", "Barangay Clearance"] },
+      "4 wheeler": { driverLicense: "Class C", helpers: 1, helperRequirements: ["Valid ID", "Barangay Clearance"] },
+      "6 wheeler": { driverLicense: "Class CE", helpers: 2, helperRequirements: ["Valid ID", "Barangay Clearance"] },
+      "8 wheeler": { driverLicense: "Class CE", helpers: 2, helperRequirements: ["Valid ID", "Barangay Clearance"] },
+      "10 wheeler": { driverLicense: "Class CE", helpers: 3, helperRequirements: ["Valid ID", "Barangay Clearance"] },
     };
     return requirements[truckType] || requirements["mini truck"];
   };
@@ -240,6 +237,7 @@ const TruckForm = () => {
         }
       }
 
+      setIsSubmitting(true);
       const formDataToSend = new FormData();
       formDataToSend.append("truckPlate", formData.TruckPlate);
       formDataToSend.append("truckType", formData.TruckType);
@@ -295,6 +293,8 @@ const TruckForm = () => {
       } else {
         setError(`Request error: ${err.message}`);
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -367,10 +367,10 @@ const TruckForm = () => {
               <span className="text-sm font-medium">Uploaded</span>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
+              <button type="button" onClick={() => handleViewDocument(docType)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="View">
                 <TbEye size={18} />
               </button>
-              <button onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
+              <button type="button" onClick={() => handleReplaceDocument(docType)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Replace">
                 <TbUpload size={18} />
               </button>
             </div>
@@ -620,9 +620,13 @@ const TruckForm = () => {
               className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 hover:text-gray-900 transition-all flex items-center gap-2">
               <TbArrowLeft size={18} /> Cancel
             </button>
-            <button type="submit"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2">
-              <TbDeviceFloppy size={18} /> {isEditMode ? "Update Truck" : "Save Truck"}
+            <button type="submit" disabled={isSubmitting}
+              className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-700 hover:to-primary-800 rounded-xl shadow-lg shadow-primary-500/30 hover:shadow-primary-500/50 transition-all flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed">
+              {isSubmitting ? (
+                <><div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div> Saving...</>
+              ) : (
+                <><TbDeviceFloppy size={18} /> {isEditMode ? "Update Truck" : "Save Truck"}</>
+              )}
             </button>
           </div>
         </form>
@@ -641,8 +645,12 @@ const TruckForm = () => {
                 <TbX size={18} />
               </button>
             </div>
-            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center">
-              <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex items-center justify-center" style={{ minHeight: "60vh" }}>
+              {previewDocument.isImage ? (
+                <img src={previewDocument.url} alt="Document Preview" className="max-w-full max-h-full object-contain shadow-lg rounded-lg" />
+              ) : (
+                <iframe src={previewDocument.url} title="Document Preview" className="w-full h-full rounded-lg shadow-lg bg-white" style={{ minHeight: "60vh" }} />
+              )}
             </div>
           </div>
         </div>
