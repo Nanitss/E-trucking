@@ -526,6 +526,18 @@ const TruckList = ({ currentUser }) => {
             return truck.NeedsMaintenance;
           case "scheduled":
             return truck.AvailabilityStatus === "scheduled";
+          case "registration-expiring": {
+            // Special filter: show trucks with expiring or expired registration
+            const days = (() => {
+              if (truck.registrationExpiryDaysRemaining !== undefined && truck.registrationExpiryDaysRemaining !== null) return truck.registrationExpiryDaysRemaining;
+              if (!truck.registrationExpiryDate) return null;
+              const exp = new Date(truck.registrationExpiryDate);
+              if (isNaN(exp.getTime())) return null;
+              const today = new Date(); today.setHours(0,0,0,0);
+              return Math.ceil((exp - today) / (1000*60*60*24));
+            })();
+            return days !== null && days <= 30;
+          }
           default:
             return true;
         }
@@ -1048,6 +1060,70 @@ const TruckList = ({ currentUser }) => {
             </div>
           )}
         </div>
+
+        {/* Registration Expiry Warning Banner */}
+        {(() => {
+          const expiringTrucks = trucks.filter((t) => {
+            const days = (() => {
+              if (t.registrationExpiryDaysRemaining !== undefined && t.registrationExpiryDaysRemaining !== null) return t.registrationExpiryDaysRemaining;
+              if (!t.registrationExpiryDate) return null;
+              const exp = new Date(t.registrationExpiryDate);
+              if (isNaN(exp.getTime())) return null;
+              const today = new Date(); today.setHours(0,0,0,0);
+              return Math.ceil((exp - today) / (1000*60*60*24));
+            })();
+            return days !== null && days <= 30;
+          });
+          const expiredCount = expiringTrucks.filter((t) => {
+            const days = t.registrationExpiryDaysRemaining !== undefined ? t.registrationExpiryDaysRemaining : (() => {
+              if (!t.registrationExpiryDate) return null;
+              const exp = new Date(t.registrationExpiryDate); if (isNaN(exp.getTime())) return null;
+              const today = new Date(); today.setHours(0,0,0,0);
+              return Math.ceil((exp - today) / (1000*60*60*24));
+            })();
+            return days !== null && days < 0;
+          }).length;
+          const expiringCount = expiringTrucks.length - expiredCount;
+          if (expiringTrucks.length === 0) return null;
+          return (
+            <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                    <TbAlertCircle size={22} className="text-amber-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-900">Registration Attention Required</h4>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      {expiredCount > 0 && <span className="font-semibold text-red-600">{expiredCount} expired</span>}
+                      {expiredCount > 0 && expiringCount > 0 && " and "}
+                      {expiringCount > 0 && <span className="font-semibold text-amber-700">{expiringCount} expiring soon</span>}
+                      {" — "}truck registration{expiringTrucks.length !== 1 ? "s" : ""} need{expiringTrucks.length === 1 ? "s" : ""} attention
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {statusFilter === "registration-expiring" ? (
+                    <button
+                      onClick={() => setStatusFilter("all")}
+                      className="px-4 py-2 text-xs font-semibold bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                      Show All Trucks
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setStatusFilter("registration-expiring")}
+                      className="px-4 py-2 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
+                    >
+                      <TbEye size={14} className="inline mr-1" />
+                      View {expiringTrucks.length} Truck{expiringTrucks.length !== 1 ? "s" : ""}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Trucks Content */}
         {filteredTrucks.length === 0 ? (

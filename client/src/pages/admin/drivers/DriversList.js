@@ -397,15 +397,30 @@ const DriversList = ({ currentUser }) => {
 
     // Apply status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((driver) => {
-        const normalizedDriverStatus = driver.status
-          ?.toLowerCase()
-          .replace(/[\s-]/g, "");
-        const normalizedFilter = statusFilter
-          .toLowerCase()
-          .replace(/[\s-]/g, "");
-        return normalizedDriverStatus === normalizedFilter;
-      });
+      if (statusFilter === "license-expiring") {
+        // Special filter: show all drivers with expiring or expired licenses
+        filtered = filtered.filter((driver) => {
+          const days = (() => {
+            if (driver.licenseExpiryDaysRemaining !== undefined && driver.licenseExpiryDaysRemaining !== null) return driver.licenseExpiryDaysRemaining;
+            if (!driver.licenseExpiryDate) return null;
+            const exp = new Date(driver.licenseExpiryDate);
+            if (isNaN(exp.getTime())) return null;
+            const today = new Date(); today.setHours(0,0,0,0);
+            return Math.ceil((exp - today) / (1000*60*60*24));
+          })();
+          return days !== null && days <= 30;
+        });
+      } else {
+        filtered = filtered.filter((driver) => {
+          const normalizedDriverStatus = driver.status
+            ?.toLowerCase()
+            .replace(/[\s-]/g, "");
+          const normalizedFilter = statusFilter
+            .toLowerCase()
+            .replace(/[\s-]/g, "");
+          return normalizedDriverStatus === normalizedFilter;
+        });
+      }
     }
 
     // Apply search query
@@ -875,6 +890,70 @@ const DriversList = ({ currentUser }) => {
             </div>
           )}
         </div>
+
+        {/* License Expiry Warning Banner */}
+        {(() => {
+          const expiringDrivers = drivers.filter((d) => {
+            const days = (() => {
+              if (d.licenseExpiryDaysRemaining !== undefined && d.licenseExpiryDaysRemaining !== null) return d.licenseExpiryDaysRemaining;
+              if (!d.licenseExpiryDate) return null;
+              const exp = new Date(d.licenseExpiryDate);
+              if (isNaN(exp.getTime())) return null;
+              const today = new Date(); today.setHours(0,0,0,0);
+              return Math.ceil((exp - today) / (1000*60*60*24));
+            })();
+            return days !== null && days <= 30;
+          });
+          const expiredCount = expiringDrivers.filter((d) => {
+            const days = d.licenseExpiryDaysRemaining !== undefined ? d.licenseExpiryDaysRemaining : (() => {
+              if (!d.licenseExpiryDate) return null;
+              const exp = new Date(d.licenseExpiryDate); if (isNaN(exp.getTime())) return null;
+              const today = new Date(); today.setHours(0,0,0,0);
+              return Math.ceil((exp - today) / (1000*60*60*24));
+            })();
+            return days !== null && days < 0;
+          }).length;
+          const expiringCount = expiringDrivers.length - expiredCount;
+          if (expiringDrivers.length === 0) return null;
+          return (
+            <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center shrink-0">
+                    <TbAlertCircle size={22} className="text-amber-600" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-900">License Attention Required</h4>
+                    <p className="text-xs text-amber-700 mt-0.5">
+                      {expiredCount > 0 && <span className="font-semibold text-red-600">{expiredCount} expired</span>}
+                      {expiredCount > 0 && expiringCount > 0 && " and "}
+                      {expiringCount > 0 && <span className="font-semibold text-amber-700">{expiringCount} expiring soon</span>}
+                      {" — "}driver license{expiringDrivers.length !== 1 ? "s" : ""} need{expiringDrivers.length === 1 ? "s" : ""} attention
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {statusFilter === "license-expiring" || statusFilter === "license-expired" ? (
+                    <button
+                      onClick={() => setStatusFilter("all")}
+                      className="px-4 py-2 text-xs font-semibold bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                      Show All Drivers
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setStatusFilter("license-expiring")}
+                      className="px-4 py-2 text-xs font-semibold bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors shadow-sm"
+                    >
+                      <TbEye size={14} className="inline mr-1" />
+                      View {expiringDrivers.length} Driver{expiringDrivers.length !== 1 ? "s" : ""}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Drivers Content */}
         {filteredDrivers.length === 0 ? (
