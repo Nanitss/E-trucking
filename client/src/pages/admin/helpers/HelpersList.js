@@ -222,7 +222,6 @@ const HelpersList = ({ currentUser }) => {
         (helper) =>
           helper.name?.toLowerCase().includes(query) ||
           helper.contactNumber?.includes(query) ||
-          helper.licenseType?.toLowerCase().includes(query) ||
           helper.address?.toLowerCase().includes(query),
       );
     }
@@ -384,13 +383,12 @@ const HelpersList = ({ currentUser }) => {
                   {
                     helpers.filter(
                       (h) =>
-                        h.licenseExpiryDate &&
-                        new Date(h.licenseExpiryDate) < new Date(),
+                        h.documentCompliance?.overallStatus !== "complete",
                     ).length
                   }
                 </div>
                 <div className="text-sm text-gray-500 font-medium">
-                  Expired Licenses
+                  Missing Documents
                 </div>
               </div>
             </div>
@@ -405,7 +403,7 @@ const HelpersList = ({ currentUser }) => {
             </div>
             <input
               type="text"
-              placeholder="Search by name, contact, license..."
+              placeholder="Search by name, contact, address..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
@@ -562,34 +560,6 @@ const HelpersList = ({ currentUser }) => {
                       </div>
                     </th>
                     <th
-                      onClick={() => handleSort("licenseType")}
-                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-1">
-                        License Type{" "}
-                        {sortField === "licenseType" &&
-                          (sortDirection === "asc" ? (
-                            <TbArrowUp size={14} />
-                          ) : (
-                            <TbArrowDown size={14} />
-                          ))}
-                      </div>
-                    </th>
-                    <th
-                      onClick={() => handleSort("licenseNumber")}
-                      className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center gap-1">
-                        License #{" "}
-                        {sortField === "licenseNumber" &&
-                          (sortDirection === "asc" ? (
-                            <TbArrowUp size={14} />
-                          ) : (
-                            <TbArrowDown size={14} />
-                          ))}
-                      </div>
-                    </th>
-                    <th
                       onClick={() => handleSort("status")}
                       className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                     >
@@ -643,14 +613,6 @@ const HelpersList = ({ currentUser }) => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {helper.contactNumber || "N/A"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-2.5 py-0.5 rounded-lg bg-gray-100 text-gray-700 text-xs font-semibold border border-gray-200">
-                          {helper.licenseType || "N/A"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm font-mono text-gray-600">
-                        {helper.licenseNumber || "N/A"}
                       </td>
                       <td className="px-6 py-4">
                         <StatusBadge status={helper.status || "Active"} />
@@ -740,7 +702,7 @@ const HelpersList = ({ currentUser }) => {
                         {helper.name}
                       </h3>
                       <p className="text-xs text-gray-500 font-medium bg-gray-100 px-2 py-0.5 rounded mt-1 inline-block capitalize">
-                        {helper.licenseType || "No License"}
+                        Helper
                       </p>
                     </div>
                   </div>
@@ -761,26 +723,6 @@ const HelpersList = ({ currentUser }) => {
                         title={helper.contactNumber}
                       >
                         {helper.contactNumber || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-xs text-gray-500 mb-1">
-                        License #
-                      </span>
-                      <span className="font-mono text-xs font-semibold text-gray-700 bg-gray-50 px-2 py-1 rounded border border-gray-200 block w-fit">
-                        {helper.licenseNumber || "N/A"}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="block text-xs text-gray-500 mb-1">
-                        Expiry
-                      </span>
-                      <span className="font-medium text-gray-900 text-sm">
-                        {helper.licenseExpiryDate
-                          ? new Date(
-                            helper.licenseExpiryDate,
-                          ).toLocaleDateString()
-                          : "N/A"}
                       </span>
                     </div>
                     <div>

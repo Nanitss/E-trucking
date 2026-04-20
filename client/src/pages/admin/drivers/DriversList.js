@@ -176,6 +176,8 @@ const DriversList = ({ currentUser }) => {
             licenseNumber: driver.licenseNumber,
             licenseExpiryDate: driver.licenseExpiryDate,
             licenseRegistrationDate: driver.licenseRegistrationDate,
+            licenseExpiryWarning: driver.licenseExpiryWarning || false,
+            licenseExpiryDaysRemaining: driver.licenseExpiryDaysRemaining,
             emergencyContactName: driver.emergencyContactName,
             emergencyContactPhone: driver.emergencyContactPhone,
             emergencyContactRelationship: driver.emergencyContactRelationship,
@@ -240,6 +242,8 @@ const DriversList = ({ currentUser }) => {
         licenseNumber: driver.licenseNumber,
         licenseExpiryDate: driver.licenseExpiryDate,
         licenseRegistrationDate: driver.licenseRegistrationDate,
+        licenseExpiryWarning: driver.licenseExpiryWarning || false,
+        licenseExpiryDaysRemaining: driver.licenseExpiryDaysRemaining,
         emergencyContactName: driver.emergencyContactName,
         emergencyContactPhone: driver.emergencyContactPhone,
         emergencyContactRelationship: driver.emergencyContactRelationship,
@@ -552,24 +556,53 @@ const DriversList = ({ currentUser }) => {
     return details.join(", ");
   };
 
+  // Calculate license expiry days from the expiry date (client-side fallback)
+  const calculateLicenseExpiryDays = (driver) => {
+    if (driver.licenseExpiryDaysRemaining !== undefined && driver.licenseExpiryDaysRemaining !== null) {
+      return driver.licenseExpiryDaysRemaining;
+    }
+    if (!driver.licenseExpiryDate) return null;
+    const expiryDate = new Date(driver.licenseExpiryDate);
+    if (isNaN(expiryDate.getTime())) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+  };
+
+  // Check if license has an expiry warning (client-side calculation)
+  const hasLicenseExpiryWarning = (driver) => {
+    if (driver.licenseExpiryWarning) return true;
+    if (driver.status === "license-expired" || driver.status === "license-expiring") return true;
+    const days = calculateLicenseExpiryDays(driver);
+    if (days !== null && days <= 30) return true;
+    return false;
+  };
+
+  // Check if license is expired
+  const isLicenseExpired = (driver) => {
+    if (driver.status === "license-expired") return true;
+    const days = calculateLicenseExpiryDays(driver);
+    return days !== null && days < 0;
+  };
+
   // Get license expiry warning text (for License Status column - only license info)
   const getLicenseExpiryWarning = (driver) => {
-    if (driver.status === "license-expired") {
+    if (isLicenseExpired(driver)) {
       return (
         <span className="flex items-center gap-1 text-red-600 font-medium">
           <TbX size={14} /> License Expired
         </span>
       );
     }
+    const days = calculateLicenseExpiryDays(driver);
     if (
-      driver.status === "license-expiring" &&
-      driver.licenseExpiryDaysRemaining !== undefined
+      (driver.status === "license-expiring" || (days !== null && days <= 30 && days >= 0))
     ) {
-      const days = driver.licenseExpiryDaysRemaining;
+      const displayDays = days !== null ? days : driver.licenseExpiryDaysRemaining;
       return (
         <span className="flex items-center gap-1 text-amber-600 font-medium">
-          <TbAlertCircle size={14} /> Expires in {days} day
-          {days !== 1 ? "s" : ""}
+          <TbAlertCircle size={14} /> Expires in {displayDays} day
+          {displayDays !== 1 ? "s" : ""}
         </span>
       );
     }
@@ -995,13 +1028,34 @@ const DriversList = ({ currentUser }) => {
                       <td className="px-6 py-4">
                         <StatusBadge status={getDisplayStatus(driver)} />
                       </td>
-                      <td className="px-6 py-4 text-sm">
-                        {/* License Status Column */}
-                        {getLicenseExpiryWarning(driver) ? (
-                          getLicenseExpiryWarning(driver)
+                      <td className="px-6 py-4">
+                        {/* License Status Column - same pattern as truck registration */}
+                        {hasLicenseExpiryWarning(driver) ? (
+                          <div
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${isLicenseExpired(driver)
+                                ? "bg-red-50 text-red-700 border-red-200"
+                                : "bg-amber-50 text-amber-700 border-amber-200"
+                              }`}
+                          >
+                            {isLicenseExpired(driver) ? (
+                              <span>
+                                <TbAlertCircle
+                                  size={14}
+                                  className="inline mr-1"
+                                />
+                                Expired
+                              </span>
+                            ) : (
+                              <span>
+                                <TbClock size={14} className="inline mr-1" />
+                                Expires in{" "}
+                                {calculateLicenseExpiryDays(driver)} days
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <span className="flex items-center gap-1 text-emerald-600 font-medium text-xs">
-                            <TbCheck size={14} /> Valid
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Active
                           </span>
                         )}
                       </td>

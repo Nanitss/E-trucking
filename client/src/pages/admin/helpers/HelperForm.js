@@ -39,10 +39,6 @@ const HelperForm = () => {
     HelperDocuments: "",
     HelperUserName: "",
     HelperPassword: "",
-    licenseType: "Class C",
-    licenseNumber: "",
-    licenseRegistrationDate: "",
-    licenseExpiryDate: "",
     emergencyContactName: "",
     emergencyContactPhone: "",
     emergencyContactRelationship: "",
@@ -102,10 +98,6 @@ const HelperForm = () => {
           HelperDocuments: helper.HelperDocuments || "",
           HelperUserName: helper.HelperUserName || "",
           HelperPassword: "",
-          licenseType: helper.licenseType || "Class C",
-          licenseNumber: helper.licenseNumber || "",
-          licenseRegistrationDate: formatDateSafely(helper.licenseRegistrationDate),
-          licenseExpiryDate: formatDateSafely(helper.licenseExpiryDate),
           emergencyContactName: helper.emergencyContactName || helper.emergencyContact || "",
           emergencyContactPhone: helper.emergencyContactPhone || helper.emergencyContactNumber || "",
           emergencyContactRelationship: helper.emergencyContactRelationship || "",
@@ -214,10 +206,10 @@ const HelperForm = () => {
       if (formData.HelperPassword) {
         formDataToSend.append("HelperPassword", formData.HelperPassword);
       }
-      formDataToSend.append("licenseType", formData.licenseType);
-      formDataToSend.append("licenseNumber", formData.licenseNumber || "");
-      formDataToSend.append("licenseRegistrationDate", formData.licenseRegistrationDate || "");
-      formDataToSend.append("licenseExpiryDate", formData.licenseExpiryDate || "");
+      formDataToSend.append("licenseType", "N/A");
+      formDataToSend.append("licenseNumber", "N/A");
+      formDataToSend.append("licenseRegistrationDate", "");
+      formDataToSend.append("licenseExpiryDate", "");
       formDataToSend.append("emergencyContactName", formData.emergencyContactName || "");
       formDataToSend.append("emergencyContactPhone", formData.emergencyContactPhone || "");
       formDataToSend.append("emergencyContactRelationship", formData.emergencyContactRelationship || "");
@@ -253,7 +245,6 @@ const HelperForm = () => {
         setFormData({
           name: "", contactNumber: "", address: "", dateHired: "", status: "Active",
           HelperDocuments: "", HelperUserName: "", HelperPassword: "",
-          licenseType: "Class C", licenseNumber: "", licenseRegistrationDate: "", licenseExpiryDate: "",
           emergencyContactName: "", emergencyContactPhone: "", emergencyContactRelationship: "",
         });
         setUploadedFiles({ validId: null, barangayClearance: null, medicalCertificate: null, helperLicense: null });
@@ -493,46 +484,7 @@ const HelperForm = () => {
             </div>
           </section>
 
-          {/* License Information */}
-          <section className="mb-10">
-            {renderSectionHeader(<TbId size={24} />, "License Information", "Helper license details and qualifications")}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">License Type <span className="text-red-500">*</span></label>
-                <select name="licenseType" value={formData.licenseType} onChange={handleChange} required
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none">
-                  <option value="Class C">Class C</option>
-                  <option value="Class CE">Class CE</option>
-                </select>
-                <p className="mt-1 text-xs text-gray-500">
-                  {formData.licenseType === "Class C" ? "Can assist with mini trucks and 4 wheelers only" : "Can assist with all truck types"}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
-                <input type="text" name="licenseNumber" value={formData.licenseNumber} onChange={handleChange} placeholder="Enter license number"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
-                <div className="relative">
-                  <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input type="date" name="licenseRegistrationDate" value={formData.licenseRegistrationDate} onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
-                <div className="relative">
-                  <TbCalendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                  <input type="date" name="licenseExpiryDate" value={formData.licenseExpiryDate} onChange={handleChange}
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none" />
-                </div>
-              </div>
-            </div>
-          </section>
+
 
           {/* Emergency Contact */}
           <section className="mb-10">
