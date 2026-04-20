@@ -20,12 +20,14 @@
     "react-icons": "^4.10.1",
     "react-router-dom": "5.3.4",
     "react-scripts": "5.0.1",
+    "serve": "^14.2.0",
     "web-vitals": "^5.0.1",
     "yaml": "^2.8.3"
   },
   "scripts": {
-    "start": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts start",
-    "build": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts build",
+    "dev": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts start",
+    "start": "serve -s build -l $PORT",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
