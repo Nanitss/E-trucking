@@ -20,7 +20,8 @@
     "react-icons": "^4.10.1",
     "react-router-dom": "5.3.4",
     "react-scripts": "5.0.1",
-    "web-vitals": "^5.0.1"
+    "web-vitals": "^5.0.1",
+    "yaml": "^2.8.3"
   },
   "scripts": {
     "start": "set NODE_OPTIONS=--max-old-space-size=4096 && react-scripts start",
